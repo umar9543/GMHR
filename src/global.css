@@ -1,0 +1,70 @@
+/* scrollbar */
+@import 'simplebar-react/dist/simplebar.min.css';
+
+/* lazy image */
+@import 'react-lazy-load-image-component/src/effects/blur.css';
+
+/* map */
+@import 'mapbox-gl/dist/mapbox-gl.css';
+
+/* editor */
+@import 'react-quill/dist/quill.snow.css';
+
+/* carousel */
+@import 'slick-carousel/slick/slick.css';
+@import 'slick-carousel/slick/slick-theme.css';
+
+/* lightbox */
+@import 'yet-another-react-lightbox/styles.css';
+@import 'yet-another-react-lightbox/plugins/captions.css';
+@import 'yet-another-react-lightbox/plugins/thumbnails.css';
+
+.font-bold span{
+    font-weight: bold !important;
+}
+
+.flex-buttons{
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+.MuiAutocomplete-hasPopupIcon.MuiAutocomplete-hasClearIcon.css-9g1r1d-MuiAutocomplete-root .MuiOutlinedInput-root{
+    padding-right: 45px !important;
+}
+
+.no-padding > div:first-child {
+    padding: 24px 0px !important;
+}
+
+/* .css-jjtu05{
+    margin-top: -8px;
+} */
+
+
+@media(max-width: 600px){
+    .flex-buttons{
+        flex-direction: column !important;
+    }
+    .width-button{
+        width: 100%;
+    }
+}
+
+/* Image uploader height set */
+.css-1lrddw3{
+    padding: 47% !important;
+}
+
+/* Stepper mobile responsive */
+
+@media(max-width: 630px){
+    .css-1kt0s4l-MuiStepLabel-label, .css-8imv5b.MuiStepLabel-alternativeLabel{
+        font-size: 12px !important;
+    }
+}
+
+@media(max-width: 540px){
+    .css-1kt0s4l-MuiStepLabel-label, .css-8imv5b.MuiStepLabel-alternativeLabel{
+        font-size: 6px !important;
+    }
+}
