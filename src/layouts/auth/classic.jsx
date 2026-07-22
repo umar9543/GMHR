@@ -38,13 +38,13 @@ export default function AuthClassicLayout({ children, image, title }) {
   const renderLogo = (
     <Box
       component="img"
-      src="/assets/illustrations/bg-logos.png"
+      src="/assets/images/gms.jpg"
       alt="logo"
       sx={{
         zIndex: 9,
         position: 'absolute',
         margin: { xs: 2, md: 5 },
-        width: '64px',
+        width: '164px',
         height: "auto",
       }}
     />
@@ -88,14 +88,14 @@ export default function AuthClassicLayout({ children, image, title }) {
       <Box
         component="img"
         alt="auth"
-        src={image ||'/assets/illustrations/bg-logo.png'}
+        src={image || '/assets/illustrations/bg-logo.png'}
         sx={{
           maxWidth: {
             xs: 480,
             lg: 560,
             xl: 720,
           },
-          marginTop:-3
+          marginTop: -3
         }}
       />
 

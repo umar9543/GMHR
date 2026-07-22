@@ -8,7 +8,16 @@ import Chip from '@mui/material/Chip';
 import { roundCountries } from 'src/assets/data';
 import Iconify from 'src/components/iconify';
 
-export default function RHFAutocomplete({ name, label, type, helperText, placeholder, onchange, defaultvalue, ...other }) {
+export default function RHFAutocomplete({
+  name,
+  label,
+  type,
+  helperText,
+  placeholder,
+  onchange,
+  defaultvalue,
+  ...other
+}) {
   const { control, setValue } = useFormContext();
 
   const { multiple } = other;
@@ -33,25 +42,27 @@ export default function RHFAutocomplete({ name, label, type, helperText, placeho
                 }
               }}
               renderOption={(props, option) => {
-                const country = getCountry(option);
-
-                if (!country.label) {
-                  return null;
-                }
+                const country = getCountry(option?.Country_Name);
+                const flagIcon = country?.code ? `circle-flags:${country.code.toLowerCase()}` : '';
 
                 return (
-                  <li {...props} key={country.label}>
-                    <Iconify
-                      key={country.label}
-                      icon={`circle-flags:${country.code?.toLowerCase()}`}
-                      sx={{ mr: 1 }}
-                    />
-                    {country.label} ({country.code}) +{country.phone}
+                  <li {...props} key={country?.label || option?.Country_Name}>
+                    {flagIcon && (
+                      <Iconify
+                        icon={flagIcon}
+                        sx={{ mr: 1 }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                    {country?.label || option?.Country_Name}
                   </li>
                 );
               }}
               renderInput={(params) => {
                 const country = getCountry(params.inputProps.value);
+                const flagIcon = country?.code ? `circle-flags:${country.code.toLowerCase()}` : '';
 
                 const baseField = {
                   ...params,
@@ -61,42 +72,31 @@ export default function RHFAutocomplete({ name, label, type, helperText, placeho
                   helperText: error ? error?.message : helperText,
                   inputProps: {
                     ...params.inputProps,
-                    autoComplete: 'new-password',
+                    autoComplete: 'off',
                   },
                 };
 
                 if (multiple) {
-                  return <TextField
-                    inputProps={{
-                      ...params.inputProps,
-                      autoComplete: 'off',
-                    }}
-                    {...baseField} />;
+                  return <TextField {...baseField} />;
                 }
 
                 return (
                   <TextField
                     {...baseField}
-                    inputProps={{
-                      ...params.inputProps,
-                      autoComplete: 'off',
-                    }}    
                     InputProps={{
                       ...params.InputProps,
-                      startAdornment: (
+                      startAdornment: flagIcon && (
                         <InputAdornment
                           position="start"
                           sx={{
-                            ...(country && !country.code && {
+                            ...(country &&
+                              !country.code && {
                               display: 'none',
                             }),
                           }}
                         >
                           {country && country.code && (
-                            <Iconify
-                              icon={`circle-flags:${country.code?.toLowerCase()}`}
-                              sx={{ mr: -0.5, ml: 0.5 }}
-                            />
+                            <Iconify icon={flagIcon} sx={{ mr: -0.5, ml: 0.5 }} />
                           )}
                         </InputAdornment>
                       ),
@@ -106,7 +106,7 @@ export default function RHFAutocomplete({ name, label, type, helperText, placeho
               }}
               renderTags={(selected, getTagProps) =>
                 selected.map((option, index) => {
-                  const country = getCountry(option);
+                  const country = getCountry(option?.Country_Name);
 
                   if (!country) {
                     return null;

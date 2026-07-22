@@ -42,6 +42,12 @@ const EmployeeDismissalEditPage = lazy(
 const SalarySetupListPage = lazy(() => import('src/pages/dashboard/HR_Module/salarysetup/list'));
 const SalarySetupNewPage = lazy(() => import('src/pages/dashboard/HR_Module/salarysetup/new'));
 const SalarySetupEditPage = lazy(() => import('src/pages/dashboard/HR_Module/salarysetup/edit'));
+const SalaryStatusListPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/Status/list'));
+const SalaryStatusNewPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/Status/new'));
+const SalaryStatusEditPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/Status/edit'));
+const HRGeneralInformationPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/general-information'));
+const EmployeeListPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/list'));
+const EmployeeEditPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/edit'));
 
 
 export const dashboardRoutes = [
@@ -176,6 +182,30 @@ export const dashboardRoutes = [
             ],
           },
           {
+            path: 'employee/list',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <EmployeeListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'employee/general-information',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <HRGeneralInformationPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'employee/:id/edit',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <EmployeeEditPage />
+              </Suspense>
+            ),
+          },
+          {
             path: 'setup/section',
             element: (
               <Suspense fallback={<LoadingScreen />}>
@@ -263,6 +293,36 @@ export const dashboardRoutes = [
                 element: (
                   <Suspense fallback={<LoadingScreen />}>
                     <SalarySetupEditPage />
+                  </Suspense>
+                ),
+              },
+            ],
+          },
+          {
+            path: 'Salary/Status',
+            children: [
+              {
+                path: 'list',
+                element: (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <SalaryStatusListPage />
+                  </Suspense>
+                ),
+                index: true,
+              },
+              {
+                path: 'new',
+                element: (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <SalaryStatusNewPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'edit/:id',
+                element: (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <SalaryStatusEditPage />
                   </Suspense>
                 ),
               },

@@ -42,6 +42,12 @@ export const paths = {
 // HR
     HR_Module: {
       root: `${ROOTS.DASHBOARD}/HR_Module`,
+      Employee: {
+        root: `${ROOTS.DASHBOARD}/HR_Module/employee`,
+        list: `${ROOTS.DASHBOARD}/HR_Module/employee/list`,
+        GeneralInformation: `${ROOTS.DASHBOARD}/HR_Module/employee/general-information`,
+        edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/employee/${id}/edit`,
+      },
       HR_Users: {
         root: `${ROOTS.DASHBOARD}/HR_Module/user`,
         new: `${ROOTS.DASHBOARD}/HR_Module/user/new`,
@@ -76,7 +82,12 @@ export const paths = {
           list: `${ROOTS.DASHBOARD}/HR_Module/Salary/setup/list`,
           new: `${ROOTS.DASHBOARD}/HR_Module/Salary/setup/new`,
           edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/Salary/setup/edit/${id}`,
-          // pdf: (id) => `${ROOTS.DASHBOARD}/HR_Module/salarysetup/pdf/${id}`,
+        },
+        Status: {
+          root: `${ROOTS.DASHBOARD}/HR_Module/Salary/Status`,
+          list: `${ROOTS.DASHBOARD}/HR_Module/Salary/Status/list`,
+          new: `${ROOTS.DASHBOARD}/HR_Module/Salary/Status/new`,
+          edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/Salary/Status/edit/${id}`,
         },
       },
       Policy: {

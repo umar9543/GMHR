@@ -61,9 +61,9 @@ export default function Footer() {
       <Container>
         <Box
           component="img"
-          src="/assets/illustrations/bg-logos.png"
+          src="/assets/images/gms.jpg"
           alt="logo"
-          sx={{ mb: 1, mx: 'auto', width: '40px',height: "auto"}}
+          sx={{ mb: 1, mx: 'auto', width: '40px', height: "auto" }}
         />
       </Container>
     </Box>
@@ -86,12 +86,12 @@ export default function Footer() {
           textAlign: { xs: 'center', md: 'unset' },
         }}
       >
-       
+
         <Box
           component="img"
-          src="/assets/illustrations/bg-logos.png"
+          src="/assets/images/gms.jpg"
           alt="logo"
-          sx={{ mb: 3, width: '40px',height: "auto" }}
+          sx={{ mb: 3, width: '40px', height: "auto" }}
         />
 
         <Grid

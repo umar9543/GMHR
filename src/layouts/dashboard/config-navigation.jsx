@@ -74,8 +74,8 @@ const ICONS = {
 export function useNavData() {
   const { t } = useTranslate();
   const userData = useMemo(() => JSON.parse(localStorage.getItem('UserData')), []);
-  const userRoles = userData?.roleId ? [userData.roleId] : [];
-console.log(userRoles)
+  const userRoles = userData?.roleID ? [userData.roleID] : [];
+  console.log(userRoles)
   const groupARoles = [70, 80];
   const groupBRoles = [85, 70];
   const InvRoles = [87, 88, 70];
@@ -118,45 +118,45 @@ console.log(userRoles)
       navItems.push({
         subheader: t('Application'),
         items: [
-         
+
           // HR start
 
-          hasRole(HRRoles) && {
-            title: t('General Setup'),
-            icon: ICONS.settings,
-            path: paths.dashboard.HR_Module.Setup.root,
-            children: [
-              {
-                title: t('Section'),
-                path: paths.dashboard.HR_Module.Setup.section,
-                // icon: ICONS.invoice,
-              },
-              {
-                title: t('Department'),
-                path: paths.dashboard.HR_Module.Setup.department,
-                // icon: ICONS.invoice,
-              },
-              {
-                title: t('Designation'),
-                path: paths.dashboard.HR_Module.Setup.designation,
-                // icon: ICONS.invoice,
-              },
-              {
-                title: t('Holidays'),
-                path: paths.dashboard.HR_Module.Setup.holidays,
-                // icon: ICONS.invoice,
-              },
-              {
-                title: t('Employee Dismissal'),
-                path: paths.dashboard.HR_Module.Setup.EmployeeDismissal.view,
-                // icon: ICONS.invoice,
-              },
-            ],
-          },
+          // hasRole(HRRoles) && {
+          //   title: t('General Setup'),
+          //   icon: ICONS.settings,
+          //   path: paths.dashboard.HR_Module.Setup.root,
+          //   children: [
+          //     {
+          //       title: t('Section'),
+          //       path: paths.dashboard.HR_Module.Setup.section,
+          //       // icon: ICONS.invoice,
+          //     },
+          //     {
+          //       title: t('Department'),
+          //       path: paths.dashboard.HR_Module.Setup.department,
+          //       // icon: ICONS.invoice,
+          //     },
+          //     {
+          //       title: t('Designation'),
+          //       path: paths.dashboard.HR_Module.Setup.designation,
+          //       // icon: ICONS.invoice,
+          //     },
+          //     {
+          //       title: t('Holidays'),
+          //       path: paths.dashboard.HR_Module.Setup.holidays,
+          //       // icon: ICONS.invoice,
+          //     },
+          //     {
+          //       title: t('Employee Dismissal'),
+          //       path: paths.dashboard.HR_Module.Setup.EmployeeDismissal.view,
+          //       // icon: ICONS.invoice,
+          //     },
+          //   ],
+          // },
 
           hasRole(HRRoles) && {
-            title: t('Profile'),
-            icon: ICONS.staff,
+            title: t('HR Module'),
+            icon: ICONS.user,
             path: paths.dashboard.HR_Module.HR_Users.root,
             children: [
               // {
@@ -164,43 +164,51 @@ console.log(userRoles)
               //   path: paths.dashboard.Commercial.export.ExportInvoice.root,
               //   // icon: ICONS.invoice,
               // },
+              // {
+              //   title: t('HR Employee'),
+              //   path: paths.dashboard.HR_Module.HR_Users.root,
+              //   // icon: ICONS.invoice,
+              // },
               {
-                title: t('HR Employee'),
-                path: paths.dashboard.HR_Module.HR_Users.root,
-                // icon: ICONS.invoice,
+                title: t('General Info List'),
+                path: paths.dashboard.HR_Module.Employee.list,
               },
             ],
           },
-          hasRole(HRRoles) && {
-            title: t('Policy'),
-            icon: ICONS.assignment,
-            path: paths.dashboard.HR_Module.Policy.root,
-            children: [
-              {
-                title: t('Monthly Shift Roster'),
-                path: paths.dashboard.HR_Module.Policy.ShiftRoster,
-                // icon: ICONS.invoice,
-              },
-            ],
-          },
+          // hasRole(HRRoles) && {
+          //   title: t('Policy'),
+          //   icon: ICONS.assignment,
+          //   path: paths.dashboard.HR_Module.Policy.root,
+          //   children: [
+          //     {
+          //       title: t('Monthly Shift Roster'),
+          //       path: paths.dashboard.HR_Module.Policy.ShiftRoster,
+          //       // icon: ICONS.invoice,
+          //     },
+          //   ],
+          // },
           hasRole(HRRoles) && {
             title: t('Payroll'),
             icon: ICONS.management,
             path: paths.dashboard.HR_Module.Salary.root,
             children: [
+              // {
+              //   title: t('Salary Setup'),
+              //   path: paths.dashboard.HR_Module.Salary.Setup.list,
+              //   // icon: ICONS.invoice,
+              // },
               {
-                title: t('Salary Setup'),
-                path: paths.dashboard.HR_Module.Salary.Setup.list,
-                // icon: ICONS.invoice,
+                title: t('Salary Status'),
+                path: paths.dashboard.HR_Module.Salary.Status.list,
               },
             ],
           },
 
           //  HR end
 
-         
-        
-        
+
+
+
         ].filter(Boolean),
       });
     }

@@ -45,9 +45,9 @@ export default function NavMini() {
       >
         <Box
           component="img"
-          src="/assets/illustrations/bg-logos.png"
+          src="/assets/images/gms.jpg"
           alt="logo"
-          sx={{ mx: 'auto', my: 2, width: '40px',height: "auto" }}
+          sx={{ mx: 'auto', my: 2, width: '40px', height: "auto" }}
         />
 
         <NavSectionMini

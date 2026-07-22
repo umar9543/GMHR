@@ -14,7 +14,7 @@ export default function RoleGuard({ allowedRoles, allowedSectionIDs, children })
   }, []);
 
   useEffect(() => {
-    const userRoles =userData?.roleId ? [userData.roleId] : [];
+    const userRoles = userData?.roleID ? [userData.roleID] : [];
     const userSectionID = userData?.userDetails?.SectionID;
 
     let hasAccess = true;

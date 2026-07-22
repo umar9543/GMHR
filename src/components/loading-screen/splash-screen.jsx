@@ -50,7 +50,7 @@ export default function SplashScreen({ sx, ...other }) {
             repeat: Infinity,
           }}
         >
-          <img src="/assets/illustrations/bg-logos.png" alt="logo" style={{ width: 64, height: "auto" }} />
+          <img src="/assets/images/gms.jpg.jpg" alt="logo" style={{ width: 64, height: "auto" }} />
         </m.div>
 
         <Box

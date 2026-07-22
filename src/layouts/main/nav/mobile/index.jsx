@@ -55,9 +55,9 @@ export default function NavMobile({ data }) {
 
           <Box
             component="img"
-            src="/assets/illustrations/bg-logos.png"
+            src="/assets/images/gms.jpg"
             alt="logo"
-            sx={{ mx: 2.5, my: 3, width: '40px',height: "auto" }}
+            sx={{ mx: 2.5, my: 3, width: '40px', height: "auto" }}
           />
 
           {data.map((list) => (

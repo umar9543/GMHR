@@ -82,7 +82,7 @@ export default function Header() {
           >
             <Box
               component="img"
-              src="/assets/illustrations/bg-logos.png"
+              src="/assets/images/gms.jpg"
               alt="logo"
               sx={{ width: '40px', height: "auto" }}
             />

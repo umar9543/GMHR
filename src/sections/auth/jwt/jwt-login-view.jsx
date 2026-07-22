@@ -65,12 +65,11 @@ export default function JwtLoginView() {
   // ────────────────────────────────────────────────────────────────────
   const onSubmit = handleSubmit(async ({ userName, password: pwd }) => {
     try {
-      const response = await fetch('https://localhost:7169/api/Auth/login', {
+      const response = await fetch('https://localhost:7034/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        
         body: JSON.stringify({
-          userCode: userName,
+          username: userName,
           password: pwd,
         }),
       });

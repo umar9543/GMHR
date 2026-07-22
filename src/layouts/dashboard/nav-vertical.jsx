@@ -50,7 +50,7 @@ export default function NavVertical({ openNav, onCloseNav }) {
     >
       <Box
         component="img"
-        src="/assets/illustrations/bg-logos.png"
+        src="/assets/images/gms.jpg"
         alt="logo"
         sx={{ mt: 3, ml: 4, mb: 1, width: '40px', height: "auto" }}
       />

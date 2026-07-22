@@ -25,7 +25,7 @@ export default function AuthModernLayout({ children, image }) {
 
       <Box
         component="img"
-        src="/assets/illustrations/bg-logos.png"
+        src="/assets/images/gms.jpg"
         alt="logo"
         sx={{
           mt: { xs: 2, md: 8 },
