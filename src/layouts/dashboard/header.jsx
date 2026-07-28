@@ -45,7 +45,7 @@ export default function Header({ onOpenNav }) {
     <>
       {lgUp && isNavHorizontal && <Box
         component="img"
-        src="/assets/images/gms.jpg"
+        src="/assets/images/gms.png"
         alt="logo"
         sx={{
           mr: 2.5,

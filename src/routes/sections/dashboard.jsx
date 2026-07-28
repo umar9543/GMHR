@@ -45,10 +45,16 @@ const SalarySetupEditPage = lazy(() => import('src/pages/dashboard/HR_Module/sal
 const SalaryStatusListPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/Status/list'));
 const SalaryStatusNewPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/Status/new'));
 const SalaryStatusEditPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/Status/edit'));
+const SalarySheetListPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/sheet/list'));
+const SalarySheetNewPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/sheet/new'));
+const SalarySheetEditPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/sheet/edit'));
+const PayrollReportPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/report'));
 const HRGeneralInformationPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/general-information'));
 const EmployeeListPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/list'));
+const EmployeeStatusPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/status'));
 const EmployeeEditPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/edit'));
-
+const AttendanceViewPage = lazy(() => import('src/pages/dashboard/HR_Module/attendance/view'));
+const MonthWiseReportPage = lazy(() => import('src/pages/dashboard/HR_Module/attendance/month-wise-report'));
 
 export const dashboardRoutes = [
   {
@@ -186,6 +192,14 @@ export const dashboardRoutes = [
             element: (
               <Suspense fallback={<LoadingScreen />}>
                 <EmployeeListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'employee/status',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <EmployeeStatusPage />
               </Suspense>
             ),
           },
@@ -329,6 +343,44 @@ export const dashboardRoutes = [
             ],
           },
           {
+            path: 'Salary/Sheet',
+            children: [
+              // { element: <Navigate to="/dashboard/HR_Module/Salary/Sheet/list" replace />, index: true },
+              {
+                path: 'list',
+                element: (
+                  <AuthGuard>
+                    <SalarySheetListPage />
+                  </AuthGuard>
+                ),
+              },
+              {
+                path: 'new',
+                element: (
+                  <AuthGuard>
+                    <SalarySheetNewPage />
+                  </AuthGuard>
+                ),
+              },
+              {
+                path: 'edit/:id',
+                element: (
+                  <AuthGuard>
+                    <SalarySheetEditPage />
+                  </AuthGuard>
+                ),
+              },
+            ],
+          },
+          {
+            path: 'Salary/report',
+            element: (
+              <AuthGuard>
+                <PayrollReportPage />
+              </AuthGuard>
+            ),
+          },
+          {
             path: 'Policy',
             children: [
               {
@@ -339,6 +391,27 @@ export const dashboardRoutes = [
                   </Suspense>
                 ),
                 index: true,
+              },
+            ],
+          },
+          {
+            path: 'Attendance',
+            children: [
+              {
+                path: 'view',
+                element: (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <AttendanceViewPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'month-wise-report',
+                element: (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <MonthWiseReportPage />
+                  </Suspense>
+                ),
               },
             ],
           },

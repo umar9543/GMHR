@@ -103,30 +103,34 @@ export default function SalaryStatusListView() {
             </TableHead>
 
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">Loading...</TableCell>
-                </TableRow>
-              ) : tableData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">No Data Found</TableCell>
-                </TableRow>
-              ) : (
-                tableData.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.id}</TableCell>
-                    <TableCell>{row.fkEmployeeId}</TableCell>
-                    <TableCell>{row.rank}</TableCell>
-                    <TableCell>{row.basicSalary}</TableCell>
-                    <TableCell>{row.paid}</TableCell>
-                    <TableCell align="right">
-                      <IconButton onClick={() => handleEditRow(row.id)}>
-                        <Iconify icon="solar:pen-bold" />
-                      </IconButton>
-                    </TableCell>
+              {
+                // eslint-disable-next-line
+                loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">Loading...</TableCell>
                   </TableRow>
-                ))
-              )}
+                ) :
+
+                  tableData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">No Data Found</TableCell>
+                    </TableRow>
+                  ) : (
+                    tableData.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell>{row.id}</TableCell>
+                        <TableCell>{row.fkEmployeeId}</TableCell>
+                        <TableCell>{row.rank}</TableCell>
+                        <TableCell>{row.basicSalary}</TableCell>
+                        <TableCell>{row.paid}</TableCell>
+                        <TableCell align="right">
+                          <IconButton onClick={() => handleEditRow(row.id)}>
+                            <Iconify icon="solar:pen-bold" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
             </TableBody>
           </Table>
         </TableContainer>

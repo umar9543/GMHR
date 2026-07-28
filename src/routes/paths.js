@@ -45,6 +45,7 @@ export const paths = {
       Employee: {
         root: `${ROOTS.DASHBOARD}/HR_Module/employee`,
         list: `${ROOTS.DASHBOARD}/HR_Module/employee/list`,
+        status: `${ROOTS.DASHBOARD}/HR_Module/employee/status`,
         GeneralInformation: `${ROOTS.DASHBOARD}/HR_Module/employee/general-information`,
         edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/employee/${id}/edit`,
       },
@@ -89,10 +90,22 @@ export const paths = {
           new: `${ROOTS.DASHBOARD}/HR_Module/Salary/Status/new`,
           edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/Salary/Status/edit/${id}`,
         },
+        Sheet: {
+          root: `${ROOTS.DASHBOARD}/HR_Module/Salary/Sheet`,
+          list: `${ROOTS.DASHBOARD}/HR_Module/Salary/Sheet/list`,
+          new: `${ROOTS.DASHBOARD}/HR_Module/Salary/Sheet/new`,
+          edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/Salary/Sheet/edit/${id}`,
+        },
+        report: `${ROOTS.DASHBOARD}/HR_Module/Salary/report`,
       },
       Policy: {
         root: `${ROOTS.DASHBOARD}/HR_Module/Policy`,
         ShiftRoster: `${ROOTS.DASHBOARD}/HR_Module/Policy/ShiftRoster`,
+      },
+      Attendance: {
+        root: `${ROOTS.DASHBOARD}/HR_Module/Attendance`,
+        view: `${ROOTS.DASHBOARD}/HR_Module/Attendance/view`,
+        monthWiseReport: `${ROOTS.DASHBOARD}/HR_Module/Attendance/month-wise-report`,
       },
     },
 

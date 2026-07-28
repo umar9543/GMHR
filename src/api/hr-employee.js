@@ -191,12 +191,12 @@ export function useHrEmployeeApi() {
 
   const getEmployees = useCallback(async (code = '') => {
     const qs = code ? `?code=${encodeURIComponent(code)}` : '';
-    const res = await authFetch(`${APP_API}/api/hremployees${qs}`);
+    const res = await authFetch(`${APP_API}/api/employee`);
     return res.json();
   }, [authFetch]);
 
   const getEmployeeById = useCallback(async (id) => {
-    const res = await authFetch(`${APP_API}/api/hremployees/${id}`);
+    const res = await authFetch(`${APP_API}/api/employee/${id}`);
     return res.json();
   }, [authFetch]);
 
@@ -210,13 +210,23 @@ export function useHrEmployeeApi() {
     const isUpdate = payload && Number(payload.hrEmployeeID) > 0;
     const path = isUpdate ? `${APP_API}/api/hremployees/${payload.hrEmployeeID}` : `${APP_API}/api/hremployees`;
     const method = isUpdate ? 'PUT' : 'POST';
+
     const res = await authFetch(path, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
-    return res.json();
+    return res;
   }, [authFetch]);
 
-  return { getEmployees, getEmployeeById, getNextCode, saveEmployee };
+  const toggleStatus = useCallback(async (id, isActive, reason = null, authPerson = null) => {
+    const res = await authFetch(`${APP_API}/api/Employee/ToggleStatus`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, isActive, reason, authPerson })
+    });
+    return res;
+  }, [authFetch]);
+
+  return { getEmployees, getEmployeeById, saveEmployee, toggleStatus };
 }

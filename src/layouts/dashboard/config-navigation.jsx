@@ -173,6 +173,36 @@ export function useNavData() {
                 title: t('General Info List'),
                 path: paths.dashboard.HR_Module.Employee.list,
               },
+              {
+                title: t('Employee Status'),
+                path: paths.dashboard.HR_Module.Employee.status,
+              },
+            ],
+          },
+
+          hasRole(HRRoles) && {
+            title: t('Attendance'),
+            icon: ICONS.invoice,
+            path: paths.dashboard.HR_Module.Attendance.root,
+            children: [
+              // {
+              //   title: t('Export Invoice'),
+              //   path: paths.dashboard.Commercial.export.ExportInvoice.root,
+              //   // icon: ICONS.invoice,
+              // },
+              // {
+              //   title: t('HR Employee'),
+              //   path: paths.dashboard.HR_Module.HR_Users.root,
+              //   // icon: ICONS.invoice,
+              // },
+              {
+                title: t('Attendance'),
+                path: paths.dashboard.HR_Module.Attendance.view,
+              },
+              {
+                title: t('Month-Wise Report'),
+                path: paths.dashboard.HR_Module.Attendance.monthWiseReport,
+              },
             ],
           },
           // hasRole(HRRoles) && {
@@ -200,6 +230,14 @@ export function useNavData() {
               {
                 title: t('Salary Status'),
                 path: paths.dashboard.HR_Module.Salary.Status.list,
+              },
+              {
+                title: t('Employee Salary Sheet'),
+                path: paths.dashboard.HR_Module.Salary.Sheet.list,
+              },
+              {
+                title: t('Payroll Report'),
+                path: paths.dashboard.HR_Module.Salary.report,
               },
             ],
           },

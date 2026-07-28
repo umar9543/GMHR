@@ -25,6 +25,8 @@ import FormProvider, {
   RHFUploadAvatar,
 } from 'src/components/hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
 const STEPS = [
   'General',
@@ -38,7 +40,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
   const [activeStep, setActiveStep] = useState(0);
   const [jobTitles, setJobTitles] = useState([]);
   const [locations, setLocations] = useState([]);
-
+  const router = useRouter();
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
@@ -448,6 +450,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         });
         if (response.ok) {
           enqueueSnackbar(isEdit ? 'Employee updated successfully' : 'Employee added successfully');
+          router.push(paths.dashboard.HR_Module.Employee.list);
         } else {
           enqueueSnackbar(isEdit ? 'Failed to update employee' : 'Failed to add employee', {
             variant: 'error',

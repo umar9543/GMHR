@@ -127,7 +127,7 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
     };
 
     fetchData();
-    //eslint-disable-next-line
+    // eslint-disable-next-line
     return () => { isMounted = false; };
   }, [currentSalaryStatusId, reset]);
 
