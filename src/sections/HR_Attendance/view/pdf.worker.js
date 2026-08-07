@@ -28,6 +28,39 @@ self.onmessage = async (e) => {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
+        // Fetch Logo
+        let logoBase64 = null;
+        let logoWidth = 60;
+        let logoHeight = 25;
+        try {
+            const response = await fetch('/assets/images/gms.png');
+            if (response.ok) {
+                const blob = await response.blob();
+
+                try {
+                    const bmp = await createImageBitmap(blob);
+                    const aspectRatio = bmp.width / bmp.height;
+                    logoHeight = 25;
+                    logoWidth = logoHeight * aspectRatio;
+                } catch (err) {
+                    console.warn('Could not get image dimensions', err);
+                }
+
+                logoBase64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            }
+        } catch (err) {
+            console.warn('Could not load logo', err);
+        }
+
+        // Add Logo
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 10, 5, logoWidth, logoHeight);
+        }
+
         // Company Header
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
@@ -47,7 +80,7 @@ self.onmessage = async (e) => {
         doc.text(
             `ATTENDANCE SHEET FOR THE MONTH OF ${formatDate(currentMonth)}`,
             pageWidth / 2,
-            30,
+            35,
             { align: 'center' }
         );
 
@@ -106,9 +139,9 @@ self.onmessage = async (e) => {
 
         const customColumnStyles = {};
         scaledWidths.forEach((width, index) => {
-            customColumnStyles[index] = { 
-                cellWidth: width, 
-                halign: index < 2 ? 'left' : 'center' 
+            customColumnStyles[index] = {
+                cellWidth: width,
+                halign: index < 2 ? 'left' : 'center'
             };
         });
 
@@ -116,7 +149,7 @@ self.onmessage = async (e) => {
         autoTable(doc, {
             head: [headers],
             body: rows,
-            startY: 35,
+            startY: 40,
             theme: 'grid',
             rowPageBreak: 'avoid',
             styles: {

@@ -69,7 +69,7 @@ export default function Auth0LoginView() {
   return (
     <>
       <Typography variant="h4" sx={{ mb: 5 }}>
-        Sign in to Progressions International
+        Sign in to GMHS
       </Typography>
 
       <Stack spacing={2}>

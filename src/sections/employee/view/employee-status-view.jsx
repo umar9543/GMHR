@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -205,7 +205,7 @@ export default function EmployeeStatusView() {
                     return (
                     <TableRow hover key={row.ID || row.id}>
                       <TableCell>{row.ID || row.id}</TableCell>
-                      <TableCell>{row.name || (row.FIRSTNAME || row.firstName) + ' ' + (row.LASTNAME || row.lastName || '')}</TableCell>
+                      <TableCell>{row.name || `${row.FIRSTNAME || row.firstName} ${row.LASTNAME || row.lastName || ''}`}</TableCell>
                       <TableCell>{row.MIDDLENAME || '-'}</TableCell>
                       <TableCell>{row.NIC || '-'}</TableCell>
                       <TableCell>{row.CELLPHONE || '-'}</TableCell>

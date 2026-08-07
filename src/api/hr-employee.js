@@ -228,5 +228,17 @@ export function useHrEmployeeApi() {
     return res;
   }, [authFetch]);
 
-  return { getEmployees, getEmployeeById, saveEmployee, toggleStatus };
+  const getDashboardStats = useCallback(async () => {
+    const res = await authFetch(`${APP_API}/api/Employee/GetDashboardStats`);
+    const data = await res.json();
+    return data;
+  }, [authFetch]);
+
+  return {
+    getEmployees,
+    getEmployeeById,
+    saveEmployee,
+    toggleStatus,
+    getDashboardStats
+  };
 }

@@ -94,7 +94,13 @@ export default function UserTableRow({
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{FatherName}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{NIC}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{CellNo}</TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{Address}</TableCell>
+        <TableCell sx={{ maxWidth: 220 }}>
+          <Tooltip title={Address || ''} placement="top" arrow>
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {Address}
+            </div>
+          </Tooltip>
+        </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           {DepartmentName || 'No Role Assigned'}
         </TableCell>

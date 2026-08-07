@@ -47,7 +47,7 @@ export default function NavMini() {
           component="img"
           src="/assets/images/gms.png"
           alt="logo"
-          sx={{ mx: 'auto', my: 2, width: '40px', height: "auto" }}
+          sx={{ mx: 'auto', my: 2, width: '80px', height: "auto" }}
         />
 
         <NavSectionMini

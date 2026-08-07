@@ -109,7 +109,7 @@ export default function Footer() {
                 mx: { xs: 'auto', md: 'unset' },
               }}
             >
-              Progressions International
+              GMHS
             </Typography>
 
             <Stack

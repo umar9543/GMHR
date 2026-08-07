@@ -16,8 +16,6 @@ import TableContainer from '@mui/material/TableContainer';
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
-import { useBoolean } from 'src/hooks/use-boolean';
-
 import { fDate } from 'src/utils/format-time';
 
 import { getSalarySheets } from 'src/api/employee-salary';
@@ -53,21 +51,20 @@ export default function EmployeeSalaryListView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await getSalarySheets();
+        setTableData(res);
+      } catch (error) {
+        console.error('Failed to load salary sheets:', error);
+        enqueueSnackbar('Failed to load salary sheets', { variant: 'error' });
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const res = await getSalarySheets();
-      setTableData(res);
-    } catch (error) {
-      console.error('Failed to load salary sheets:', error);
-      enqueueSnackbar('Failed to load salary sheets', { variant: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [enqueueSnackbar]);
 
   const handleEditRow = (id) => {
     router(paths.dashboard.HR_Module.Salary.Sheet.edit(id));

@@ -27,6 +27,39 @@ self.onmessage = async (e) => {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
+        // Fetch Logo
+        let logoBase64 = null;
+        let logoWidth = 60;
+        let logoHeight = 25;
+        try {
+            const response = await fetch('/assets/images/gms.png');
+            if (response.ok) {
+                const blob = await response.blob();
+
+                try {
+                    const bmp = await createImageBitmap(blob);
+                    const aspectRatio = bmp.width / bmp.height;
+                    logoHeight = 25;
+                    logoWidth = logoHeight * aspectRatio;
+                } catch (err) {
+                    console.warn('Could not get image dimensions', err);
+                }
+
+                logoBase64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            }
+        } catch (err) {
+            console.warn('Could not load logo', err);
+        }
+
+        // Add Logo
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 10, 5, logoWidth, logoHeight);
+        }
+
         // Company Header
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
@@ -43,11 +76,24 @@ self.onmessage = async (e) => {
 
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(
-            `Salary For The Month Of ${formatDate(currentMonth)}`,
-            pageWidth / 2,
-            30,
-            { align: 'center' }
+
+        const titleText = `Salary For The Month Of ${formatDate(currentMonth)}`;
+
+        // 1. Draw the text
+        doc.text(titleText, pageWidth / 2, 35, { align: 'center' });
+
+        // 2. Calculate the exact width of the text
+        const textWidth = doc.getTextWidth(titleText);
+
+        // 3. Draw a line under it (doc.line(x1, y1, x2, y2))
+        // We start from the center minus half the width, and draw to the center plus half the width
+        // The Y coordinate is 36 (1mm below the text which is at Y=35)
+        doc.setLineWidth(0.5); // Thickness of the underline
+        doc.line(
+            (pageWidth / 2) - (textWidth / 2),
+            36,
+            (pageWidth / 2) + (textWidth / 2),
+            36
         );
 
         // Prepare headers (excluding FSL-Code)
@@ -132,7 +178,7 @@ self.onmessage = async (e) => {
         autoTable(doc, {
             head: [headers],
             body: rows,
-            startY: 35,
+            startY: 40,
             theme: 'grid',
             rowPageBreak: 'avoid',
             styles: {
@@ -172,7 +218,8 @@ self.onmessage = async (e) => {
                 14: { halign: 'center' },
                 15: { halign: 'center' }
             },
-            willDrawCell: function (data) {
+            // eslint-disable-next-line func-names
+            willDrawCell(data) {
                 // Bold the GRAND TOTAL row
                 if (data.row.index === rows.length - 1 && reportData.length > 0) {
                     doc.setFont('helvetica', 'bold');

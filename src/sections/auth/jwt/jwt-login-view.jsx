@@ -58,7 +58,7 @@ export default function JwtLoginView() {
     reset,
   } = methods;
 
- 
+
 
   // ────────────────────────────────────────────────────────────────────
   // LOGIN SUBMIT
@@ -112,10 +112,15 @@ export default function JwtLoginView() {
     }
   });
 
- 
+
   const renderHead = (
-    <Stack spacing={2} sx={{ mb: 5 }}>
-      <Typography variant="h4">Sign in to Service Management</Typography>
+    <Stack spacing={1.5} sx={{ mb: 5, textAlign: 'center' }}>
+      <Typography variant="overline" sx={{ color: '#1a3a6b', fontWeight: 700 }}>
+        HR MANAGEMENT SYSTEM
+      </Typography>
+      <Typography variant="h4" sx={{ color: '#1a3a6b', fontWeight: 800 }}>
+        WELCOME BACK
+      </Typography>
     </Stack>
   );
 
@@ -124,16 +129,34 @@ export default function JwtLoginView() {
       <RHFTextField
         InputLabelProps={{ shrink: true }}
         name="userName"
-        label="User Code"
+        placeholder="Email/Username"
         onChange={(e) => setValue('userName', e.target.value)}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            backgroundColor: '#f3f5f9',
+            borderRadius: 1,
+            '& fieldset': { borderColor: 'transparent' },
+            '&:hover fieldset': { borderColor: 'transparent' },
+            '&.Mui-focused fieldset': { borderColor: '#1a3a6b' },
+          }
+        }}
       />
 
       <RHFTextField
         name="password"
-        label="Password"
+        placeholder="Password"
         type={password.value ? 'text' : 'password'}
         InputLabelProps={{ shrink: true }}
         onChange={(e) => setValue('password', e.target.value)}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            backgroundColor: '#f3f5f9',
+            borderRadius: 1,
+            '& fieldset': { borderColor: 'transparent' },
+            '&:hover fieldset': { borderColor: 'transparent' },
+            '&.Mui-focused fieldset': { borderColor: '#1a3a6b' },
+          }
+        }}
         InputProps={{
           endAdornment: (
             <InputAdornment position="end">
@@ -147,14 +170,36 @@ export default function JwtLoginView() {
 
       <LoadingButton
         fullWidth
-        color="inherit"
         size="large"
         type="submit"
         variant="contained"
         loading={isSubmitting}
+        sx={{
+          mt: 3,
+          py: 1.5,
+          fontSize: '1.1rem',
+          fontWeight: 700,
+          backgroundColor: '#173663',
+          color: '#ffffff',
+          borderRadius: 4,
+          boxShadow: '0 8px 16px 0 rgba(23, 54, 99, 0.24)',
+          '&:hover': {
+            backgroundColor: '#0f2442',
+            boxShadow: '0 8px 16px 0 rgba(23, 54, 99, 0.48)'
+          }
+        }}
       >
         Login
       </LoadingButton>
+
+      {/* <Stack spacing={2} sx={{ mt: 4, textAlign: 'center' }}>
+        <Typography variant="body2" sx={{ color: '#1a3a6b', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+          Forgot Password?
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#1a3a6b', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+          Sign Up
+        </Typography>
+      </Stack> */}
     </Stack>
   );
 

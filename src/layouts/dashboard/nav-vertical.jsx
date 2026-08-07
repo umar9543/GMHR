@@ -50,9 +50,9 @@ export default function NavVertical({ openNav, onCloseNav }) {
     >
       <Box
         component="img"
-        src="/assets/images/gms.png"
+        src="/assets/images/gms-logo.png"
         alt="logo"
-        sx={{ mt: 3, ml: 4, mb: 1, width: '40px', height: "auto" }}
+        sx={{ mt: 3, ml: 2, mb: 1, width: '220px', height: "auto" }}
       />
 
       <NavSectionVertical

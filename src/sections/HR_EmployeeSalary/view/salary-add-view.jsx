@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 
@@ -29,7 +30,6 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import { getEmployeeSalarySheet, saveEmployeeSalarySheet, updateEmployeeSalarySheet } from 'src/api/employee-salary';
 import { useAuthFetch } from 'src/api/apibasemethods';
 import { APP_API } from 'src/config-global';
-import { Router } from 'react-router';
 import { useRouter } from 'src/routes/hooks';
 
 // ----------------------------------------------------------------------
@@ -86,6 +86,7 @@ export default function EmployeeSalaryAddView({ id }) {
     if (isEdit) {
       loadSheetById(id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authFetch, id, isEdit]);
 
   const loadSheetById = async (sheetId) => {
@@ -95,7 +96,7 @@ export default function EmployeeSalaryAddView({ id }) {
       if (res.ok) {
         const data = await res.json();
         if (data.exists) {
-          const sheet = data.sheet;
+          const { sheet } = data;
           setSheetData(sheet);
           setLocationId(sheet.locationId);
           setMonth(sheet.monthId);
@@ -216,12 +217,12 @@ export default function EmployeeSalaryAddView({ id }) {
     setSelectedRows([]);
   };
 
-  const handleClick = (event, id) => {
-    const selectedIndex = selectedRows.indexOf(id);
+  const handleClick = (event, empId) => {
+    const selectedIndex = selectedRows.indexOf(empId);
     let newSelected = [];
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedRows, id);
+      newSelected = newSelected.concat(selectedRows, empId);
     } else if (selectedIndex === 0) {
       newSelected = newSelected.concat(selectedRows.slice(1));
     } else if (selectedIndex === selectedRows.length - 1) {
@@ -588,3 +589,7 @@ export default function EmployeeSalaryAddView({ id }) {
     </Container>
   );
 }
+
+EmployeeSalaryAddView.propTypes = {
+  id: PropTypes.string,
+};

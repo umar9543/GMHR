@@ -155,111 +155,124 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
         {loading ? (
           <Typography sx={{ p: 5, textAlign: 'center' }}>Loading...</Typography>
         ) : (
-          <Grid container spacing={3} sx={{ mt: 1 }}>
-            {/* LEFT COLUMN: Text Fields */}
-            <Grid item xs={12} md={6}>
-              <Stack spacing={3}>
-
-                {/* Nadra section */}
-                <Box sx={{ p: 2, border: '1px solid #eee', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2 }}>Nadra Verification</Typography>
-                  <Stack spacing={2}>
-                    <TextField label="NIC" value={formData.Nic} onChange={handleChange('Nic')} fullWidth />
-                    <DatePicker label="NIC Validity" value={formData.NicValid} onChange={handleDateChange('NicValid')} slotProps={{ textField: { fullWidth: true } }} />
-                    <TextField select label="Verified" value={formData.NadraVerify} onChange={handleChange('NadraVerify')} fullWidth>
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                    </TextField>
-                  </Stack>
-                </Box>
-
-                <Stack direction="row" spacing={2}>
-                  <TextField select label="APSAA Verification" value={formData.ApsaaVer} onChange={handleChange('ApsaaVer')} fullWidth>
-                    <MenuItem value="Yes">Yes</MenuItem>
-                    <MenuItem value="No">No</MenuItem>
-                  </TextField>
-                  <TextField select label="Forensic Verification" value={formData.Forensic} onChange={handleChange('Forensic')} fullWidth>
-                    <MenuItem value="Yes">Yes</MenuItem>
-                    <MenuItem value="No">No</MenuItem>
-                  </TextField>
-                </Stack>
-                <DatePicker label="Forensic Date" value={formData.ForensicDt} onChange={handleDateChange('ForensicDt')} slotProps={{ textField: { fullWidth: true } }} />
-
-                {/* Local Town section */}
-                <Box sx={{ p: 2, border: '1px solid #eee', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2 }}>Local Town Verification</Typography>
-                  <Stack spacing={2}>
-                    <TextField label="Address" value={formData.Address} onChange={handleChange('Address')} fullWidth />
-                    <TextField select label="Status of Verification Dispatched" value={formData.LocalDispatch} onChange={handleChange('LocalDispatch')} fullWidth>
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                    </TextField>
-                    <TextField select label="Verification Done" value={formData.LocalVerify} onChange={handleChange('LocalVerify')} fullWidth>
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                    </TextField>
-                    <TextField label="Verified By Police Station (Name)" value={formData.LocalPolice} onChange={handleChange('LocalPolice')} fullWidth />
-                  </Stack>
-                </Box>
-
-                {/* Home Town section */}
-                <Box sx={{ p: 2, border: '1px solid #eee', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2 }}>Home Town Verification</Typography>
-                  <Stack spacing={2}>
-                    <TextField label="Address" value={formData.PAddress} onChange={handleChange('PAddress')} fullWidth />
-                    <TextField select label="Status of Verification Dispatched" value={formData.HomeDispatch} onChange={handleChange('HomeDispatch')} fullWidth>
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                    </TextField>
-                    <TextField select label="Verification Done" value={formData.HomeVerify} onChange={handleChange('HomeVerify')} fullWidth>
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                    </TextField>
-                    <TextField label="Verified By Police Station (Name)" value={formData.HomePolice} onChange={handleChange('HomePolice')} fullWidth />
-                  </Stack>
-                </Box>
-              </Stack>
-            </Grid>
-
-            {/* RIGHT COLUMN: Images */}
-            <Grid item xs={12} md={6}>
-              <Stack spacing={3} alignItems="center">
-                <Box sx={{ width: '100%', textAlign: 'center' }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>NIC FRONT</Typography>
+          <Stack spacing={4} sx={{ mt: 1 }}>
+            {/* TOP ROW: Images Side by Side */}
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: '1px dashed #ccc', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0,0,0,0.01)' }, transition: 'all 0.3s' }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>NIC FRONT</Typography>
                   <Box
                     component="img"
                     src={frontPreview}
                     onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; }}
-                    sx={{ width: '100%', height: 250, objectFit: 'contain', border: '1px dashed #ccc', borderRadius: 1, mb: 1 }}
+                    sx={{ width: '100%', height: 250, objectFit: 'contain', mb: 2, borderRadius: 1, backgroundColor: '#f9fafb' }}
                   />
                   <Stack direction="row" spacing={1} justifyContent="center">
-                    <Button variant="outlined" component="label" size="small">
+                    <Button variant="contained" component="label" size="small">
                       Upload
                       <input type="file" hidden accept="image/*" onChange={handleFileChange('front')} />
                     </Button>
                     <Button variant="outlined" color="error" size="small" onClick={() => { setFrontPreview(null); setNicFrontImage(null); }}>Clear</Button>
                   </Stack>
                 </Box>
-
-                <Box sx={{ width: '100%', textAlign: 'center' }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>NIC BACK</Typography>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: '1px dashed #ccc', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0,0,0,0.01)' }, transition: 'all 0.3s' }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>NIC BACK</Typography>
                   <Box
                     component="img"
                     src={backPreview}
                     onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; }}
-                    sx={{ width: '100%', height: 250, objectFit: 'contain', border: '1px dashed #ccc', borderRadius: 1, mb: 1 }}
+                    sx={{ width: '100%', height: 250, objectFit: 'contain', mb: 2, borderRadius: 1, backgroundColor: '#f9fafb' }}
                   />
                   <Stack direction="row" spacing={1} justifyContent="center">
-                    <Button variant="outlined" component="label" size="small">
+                    <Button variant="contained" component="label" size="small">
                       Upload
                       <input type="file" hidden accept="image/*" onChange={handleFileChange('back')} />
                     </Button>
                     <Button variant="outlined" color="error" size="small" onClick={() => { setBackPreview(null); setNicBackImage(null); }}>Clear</Button>
                   </Stack>
                 </Box>
-              </Stack>
+              </Grid>
             </Grid>
-          </Grid>
+
+            {/* BOTTOM ROW: Text Fields */}
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Stack spacing={3}>
+                  {/* Nadra section */}
+                  <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600 }}>Nadra Verification</Typography>
+                    <Stack spacing={2.5}>
+                      <TextField label="NIC" value={formData.Nic} onChange={handleChange('Nic')} fullWidth />
+                      <DatePicker label="NIC Validity" value={formData.NicValid} onChange={handleDateChange('NicValid')} slotProps={{ textField: { fullWidth: true } }} />
+                      <TextField select label="Verified" value={formData.NadraVerify} onChange={handleChange('NadraVerify')} fullWidth>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </TextField>
+                    </Stack>
+                  </Box>
+
+                  {/* Other Verifications section */}
+                  <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600 }}>Other Verifications</Typography>
+                    <Stack spacing={2.5}>
+                      <Stack direction="row" spacing={2}>
+                        <TextField select label="APSAA Verification" value={formData.ApsaaVer} onChange={handleChange('ApsaaVer')} fullWidth>
+                          <MenuItem value="Yes">Yes</MenuItem>
+                          <MenuItem value="No">No</MenuItem>
+                        </TextField>
+                        <TextField select label="Forensic Verification" value={formData.Forensic} onChange={handleChange('Forensic')} fullWidth>
+                          <MenuItem value="Yes">Yes</MenuItem>
+                          <MenuItem value="No">No</MenuItem>
+                        </TextField>
+                      </Stack>
+                      <DatePicker label="Forensic Date" value={formData.ForensicDt} onChange={handleDateChange('ForensicDt')} slotProps={{ textField: { fullWidth: true } }} />
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Stack spacing={3}>
+                  {/* Local Town section */}
+                  <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600 }}>Local Town Verification</Typography>
+                    <Stack spacing={2.5}>
+                      <TextField label="Address" value={formData.Address} onChange={handleChange('Address')} fullWidth />
+                      <TextField select label="Status of Verification Dispatched" value={formData.LocalDispatch} onChange={handleChange('LocalDispatch')} fullWidth>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </TextField>
+                      <TextField select label="Verification Done" value={formData.LocalVerify} onChange={handleChange('LocalVerify')} fullWidth>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </TextField>
+                      <TextField label="Verified By Police Station (Name)" value={formData.LocalPolice} onChange={handleChange('LocalPolice')} fullWidth />
+                    </Stack>
+                  </Box>
+
+                  {/* Home Town section */}
+                  <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600 }}>Home Town Verification</Typography>
+                    <Stack spacing={2.5}>
+                      <TextField label="Address" value={formData.PAddress} onChange={handleChange('PAddress')} fullWidth />
+                      <TextField select label="Status of Verification Dispatched" value={formData.HomeDispatch} onChange={handleChange('HomeDispatch')} fullWidth>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </TextField>
+                      <TextField select label="Verification Done" value={formData.HomeVerify} onChange={handleChange('HomeVerify')} fullWidth>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </TextField>
+                      <TextField label="Verified By Police Station (Name)" value={formData.HomePolice} onChange={handleChange('HomePolice')} fullWidth />
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Grid>
+            </Grid>
+          </Stack>
         )}
       </DialogContent>
 
