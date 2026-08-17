@@ -435,9 +435,9 @@ export default function EmployeeListView() {
                         table.page * table.rowsPerPage,
                         table.page * table.rowsPerPage + table.rowsPerPage
                       )
-                      .map((row) => (
+                      .map((row, index) => (
                         <UserTableRow
-                          key={row.UserId}
+                          key={row.id || row.HRID || row.UserId || index}
                           row={row}
                           selected={table.selected.includes(row.HRID)}
                           // onSelectRow={() => table.onSelectRow(row.HRID)}

@@ -176,7 +176,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
                   </Stack>
                 </Box>
               </Grid>
-              
+
               <Grid item xs={12} md={6}>
                 <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: '1px dashed #ccc', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0,0,0,0.01)' }, transition: 'all 0.3s' }}>
                   <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>NIC BACK</Typography>
@@ -278,7 +278,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
 
       <DialogActions sx={{ p: 3 }}>
         <Button onClick={onClose} color="inherit" disabled={saving}>Cancel</Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={saving || loading}>
+        <Button variant="contained" onClick={handleSubmit} disabled={saving || loading} color="primary">
           {saving ? 'Saving...' : 'Save'}
         </Button>
       </DialogActions>

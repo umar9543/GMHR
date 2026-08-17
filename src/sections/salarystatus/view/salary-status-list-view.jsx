@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
+import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -29,6 +31,7 @@ export default function SalaryStatusListView() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [filterName, setFilterName] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -89,12 +92,29 @@ export default function SalaryStatusListView() {
       />
 
       <Card>
+        <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <TextField
+            fullWidth
+            value={filterName}
+            onChange={(e) => {
+              setFilterName(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Search employee..."
+            InputProps={{
+              startAdornment: (
+                <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
+              ),
+            }}
+          />
+        </Box>
         <TableContainer>
           <Table sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Employee ID</TableCell>
+                {/* <TableCell>ID</TableCell>
+                <TableCell>Employee ID</TableCell> */}
+                <TableCell>Employee Name</TableCell>
                 <TableCell>Rank</TableCell>
                 <TableCell>Basic Salary</TableCell>
                 <TableCell>Status</TableCell>
@@ -107,29 +127,42 @@ export default function SalaryStatusListView() {
                 // eslint-disable-next-line
                 loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">Loading...</TableCell>
+                    <TableCell colSpan={7} align="center">Loading...</TableCell>
                   </TableRow>
                 ) :
 
-                  tableData.length === 0 ? (
+                  tableData.filter(row =>
+                    !filterName ||
+                    String(row.fkEmployeeId).toLowerCase().includes(filterName.toLowerCase()) ||
+                    String(row.id).toLowerCase().includes(filterName.toLowerCase()) ||
+                    String(row.rank).toLowerCase().includes(filterName.toLowerCase())
+                  ).length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center">No Data Found</TableCell>
+                      <TableCell colSpan={7} align="center">No Data Found</TableCell>
                     </TableRow>
                   ) : (
-                    tableData.map((row) => (
-                      <TableRow key={row.id}>
-                        <TableCell>{row.id}</TableCell>
-                        <TableCell>{row.fkEmployeeId}</TableCell>
-                        <TableCell>{row.rank}</TableCell>
-                        <TableCell>{row.basicSalary}</TableCell>
-                        <TableCell>{row.paid}</TableCell>
-                        <TableCell align="right">
-                          <IconButton onClick={() => handleEditRow(row.id)}>
-                            <Iconify icon="solar:pen-bold" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    tableData
+                      .filter(row =>
+                        !filterName ||
+                        String(row.fkEmployeeId).toLowerCase().includes(filterName.toLowerCase()) ||
+                        String(row.id).toLowerCase().includes(filterName.toLowerCase()) ||
+                        String(row.rank).toLowerCase().includes(filterName.toLowerCase())
+                      )
+                      .map((row) => (
+                        <TableRow key={row.id}>
+                          {/* <TableCell>{row.id}</TableCell>
+                        <TableCell>{row.fkEmployeeId}</TableCell> */}
+                          <TableCell>{row.firstname || row.FIRSTNAME || row.firstName || '-'}</TableCell>
+                          <TableCell>{row.rank}</TableCell>
+                          <TableCell>{row.basicSalary}</TableCell>
+                          <TableCell>{row.paid}</TableCell>
+                          <TableCell align="right">
+                            <IconButton onClick={() => handleEditRow(row.id)}>
+                              <Iconify icon="solar:pen-bold" />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
                   )}
             </TableBody>
           </Table>

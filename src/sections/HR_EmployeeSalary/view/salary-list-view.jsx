@@ -84,6 +84,7 @@ export default function EmployeeSalaryListView() {
             component={RouterLink}
             href={paths.dashboard.HR_Module.Salary.Sheet.new}
             variant="contained"
+            color='primary'
             startIcon={<Iconify icon="mingcute:add-line" />}
           >
             New Salary Sheet

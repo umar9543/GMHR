@@ -10,7 +10,7 @@ export default function SalaryStatusCreateView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Create a new Salary Status"
+        heading="Salary Status"
         links={[
           {
             name: 'Dashboard',

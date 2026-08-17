@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import Button from '@mui/material/Button';
@@ -60,6 +60,10 @@ export default function UserTableRow({
   const popover = usePopover();
   const collapse = useBoolean();
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
 
   // Parse Roledtl if it's a string
   // const Roles = typeof Roles === 'string' ? JSON.parse(Roles) : [];\

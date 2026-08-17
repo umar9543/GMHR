@@ -155,7 +155,7 @@ export function useNavData() {
           // },
 
           hasRole(HRRoles) && {
-            title: t('HR Module'),
+            title: t('Employee Management'),
             icon: ICONS.user,
             path: paths.dashboard.HR_Module.HR_Users.root,
             children: [
@@ -170,7 +170,7 @@ export function useNavData() {
               //   // icon: ICONS.invoice,
               // },
               {
-                title: t('General Info List'),
+                title: t('Employees'),
                 path: paths.dashboard.HR_Module.Employee.list,
               },
               {
@@ -182,7 +182,7 @@ export function useNavData() {
 
           hasRole(HRRoles) && {
             title: t('Attendance'),
-            icon: ICONS.invoice,
+            icon: ICONS.calendar,
             path: paths.dashboard.HR_Module.Attendance.root,
             children: [
               // {
@@ -219,7 +219,7 @@ export function useNavData() {
           // },
           hasRole(HRRoles) && {
             title: t('Payroll'),
-            icon: ICONS.management,
+            icon: ICONS.banking,
             path: paths.dashboard.HR_Module.Salary.root,
             children: [
               // {
@@ -227,16 +227,17 @@ export function useNavData() {
               //   path: paths.dashboard.HR_Module.Salary.Setup.list,
               //   // icon: ICONS.invoice,
               // },
+
+              {
+                title: t('Salary Sheet'),
+                path: paths.dashboard.HR_Module.Salary.Sheet.list,
+              },
               {
                 title: t('Salary Status'),
                 path: paths.dashboard.HR_Module.Salary.Status.list,
               },
               {
-                title: t('Employee Salary Sheet'),
-                path: paths.dashboard.HR_Module.Salary.Sheet.list,
-              },
-              {
-                title: t('Payroll Report'),
+                title: t('Salary Report'),
                 path: paths.dashboard.HR_Module.Salary.report,
               },
             ],

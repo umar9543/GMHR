@@ -1,320 +1,470 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
-import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Autocomplete from '@mui/material/Autocomplete';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Checkbox from '@mui/material/Checkbox';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import TextField from '@mui/material/TextField';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import FormProvider, { RHFAutocomplete } from 'src/components/hook-form';
+import { useForm } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-import Iconify from 'src/components/iconify';
-import FormProvider, { RHFAutocomplete, RHFTextField } from 'src/components/hook-form';
-import { Controller, useForm } from 'react-hook-form';
+import { useAuthFetch } from 'src/api/apibasemethods';
+import { APP_API } from 'src/config-global';
+import { getEmployeeSalarySheet } from 'src/api/employee-salary';
+
+const MONTHS = [
+  { value: 1, label: 'January' }, { value: 2, label: 'February' },
+  { value: 3, label: 'March' }, { value: 4, label: 'April' },
+  { value: 5, label: 'May' }, { value: 6, label: 'June' },
+  { value: 7, label: 'July' }, { value: 8, label: 'August' },
+  { value: 9, label: 'September' }, { value: 10, label: 'October' },
+  { value: 11, label: 'November' }, { value: 12, label: 'December' },
+];
+
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
 export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+  const authFetch = useAuthFetch();
 
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [employees, setEmployees] = useState([]);
-  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [locations, setLocations] = useState([]);
   const [jobTitles, setJobTitles] = useState([]);
+
+  useEffect(() => {
+    const fetchJobTitles = async () => {
+      try {
+        const response = await fetch('https://localhost:7034/api/dropdown/job-titles');
+        if (response.ok) setJobTitles(await response.json());
+      } catch (error) {
+        console.error('Failed to fetch job titles', error);
+      }
+    };
+    fetchJobTitles();
+  }, []);
 
   const methods = useForm({
     defaultValues: {
-      FkEmployeeId: '',
-      Rank: null,
-      BasicSalary: 0,
-      Wdays: 0,
-      ActualBSalary: 0,
-      Allow: 0,
-      OtDays: 0,
-      OtRate: 0,
-      Advance: 0,
-      Itax: 0,
-      Loan: 0,
-      Verification: 0,
-      Fine: 0,
-      TotWdays: 0,
-      SalaryDate: null,
-      Paid: 'Unpaid',
-      Remarks: '',
+      locationId: null,
+      month: MONTHS.find(m => m.value === (new Date().getMonth() + 1)) || null,
+      year: { value: currentYear, label: currentYear.toString() }
     }
   });
 
-  const { reset, handleSubmit, control, watch, setValue, formState: { isSubmitting } } = methods;
+  const { watch } = methods;
+  const filterValues = watch();
 
-  const values = watch();
+  const [sheetData, setSheetData] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
 
-  const fetchDropdowns = async () => {
-    try {
-      const response = await fetch('https://localhost:7034/api/dropdown/job-titles');
-      if (response.ok) setJobTitles(await response.json());
-    } catch (error) {
-      console.error('Failed to fetch job titles', error);
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const res = await authFetch(`${APP_API}/api/Dropdown/locations`);
+        if (res.ok) setLocations(await res.json());
+      } catch (err) {
+        console.error('Failed to fetch locations', err);
+      }
+    };
+    fetchLocations();
+  }, [authFetch]);
+
+  useEffect(() => {
+    if (currentSalaryStatusId) {
+      loadSingleStatus(currentSalaryStatusId);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSalaryStatusId]);
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const res = await fetch(`https://localhost:7034/api/employee/dropdown?search=${employeeSearch}`);
-        if (res.ok) {
-          const data = await res.json();
-          setEmployees(data.records || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch employees', error);
-      }
-    };
-
-    const timeoutId = setTimeout(() => {
-      fetchEmployees();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [employeeSearch]);
-
-  useEffect(() => {
-    fetchDropdowns();
-  }, []);
-
-  useEffect(() => {
-    if (!currentSalaryStatusId) return;
-
-    let isMounted = true;
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`https://localhost:7034/api/salarysheet/${currentSalaryStatusId}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (isMounted) {
-            reset({
-              FkEmployeeId: data.fkEmployeeId || '',
-              Rank: data.rank ? { value: data.rank, label: data.rank } : null,
-              BasicSalary: data.basicSalary || 0,
-              Wdays: data.wDays || 0,
-              ActualBSalary: data.actualBSalary || 0,
-              Allow: data.allow || 0,
-              OtDays: data.otDays || 0,
-              OtRate: data.otRate || 0,
-              Advance: data.advance || 0,
-              Itax: data.iTax || 0,
-              Loan: data.loan || 0,
-              Verification: data.verification || 0,
-              Fine: data.fine || 0,
-              TotWdays: data.totWDays || 0,
-              SalaryDate: data.salaryDate ? new Date(data.salaryDate) : null,
-              Paid: data.paid || 'Unpaid',
-              Remarks: data.remarks || '',
-            });
-          }
-        }
-      } catch (error) {
-        console.error(error);
-      }
-      if (isMounted) {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-    // eslint-disable-next-line
-    return () => { isMounted = false; };
-  }, [currentSalaryStatusId, reset]);
-
-  const onSubmit = handleSubmit(async (data) => {
+  const loadSingleStatus = async (id) => {
+    setLoading(true);
     try {
-      const method = currentSalaryStatusId ? 'PUT' : 'POST';
-      const url = currentSalaryStatusId
-        ? `https://localhost:7034/api/salarysheet/${currentSalaryStatusId}`
-        : `https://localhost:7034/api/salarysheet`;
-
-      const payload = { ...data };
-
-      if (payload.Rank && typeof payload.Rank === 'object' && payload.Rank.value) {
-        payload.Rank = payload.Rank.value;
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
+      const response = await fetch(`https://localhost:7034/api/salarysheet/${id}`);
       if (response.ok) {
-        enqueueSnackbar(`Salary Status ${currentSalaryStatusId ? 'updated' : 'created'} successfully!`);
-        router.push(paths.dashboard.HR_Module.Salary.Status.list);
-      } else {
-        enqueueSnackbar('Failed to save data', { variant: 'error' });
+        const data = await response.json();
+        const empId = data.fkEmployeeId;
+        const row = {
+          empId,
+          employeeName: data.firstName || 'Employee',
+          rank: data.rank,
+          salary: data.basicSalary,
+          daysMonth: data.totWDays,
+          actualBSalary: data.actualBSalary,
+          allow: data.allow,
+          otDays: data.otDays,
+          otRate: data.otRate,
+          advance: data.advance,
+          iTax: data.iTax,
+          loan: data.loan,
+          verification: data.verification,
+          fine: data.fine,
+          paid: data.paid || 'Unpaid',
+          salaryDate: data.salaryDate ? new Date(data.salaryDate).toISOString().split('T')[0] : '',
+          remarks: data.remarks || '',
+          id: data.id,
+        };
+        setSheetData([row]);
+        setSelectedRows([empId]);
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('An error occurred', { variant: 'error' });
+      enqueueSnackbar('Failed to load status', { variant: 'error' });
+    } finally {
+      setLoading(false);
     }
-  });
+  };
 
-  if (loading) {
-    return <Typography sx={{ p: 5, textAlign: 'center' }}>Loading...</Typography>;
-  }
+  const handleLoadSheet = async () => {
+    const locId = filterValues.locationId?.id || filterValues.locationId?.ID;
+    const m = filterValues.month?.value;
+    const y = filterValues.year?.value;
+
+    if (!locId || !m || !y) {
+      enqueueSnackbar('Please select Location, Month and Year', { variant: 'warning' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await getEmployeeSalarySheet(locId, m, y);
+
+      const details = (res?.sheet?.details || []).map(row => ({
+        empId: row.empId,
+        employeeName: row.employeeName,
+        rank: row.designation || '',
+        salary: row.totalSalary || row.salary || 0,
+        daysMonth: row.daysMonth || new Date(y, m, 0).getDate(),
+        actualBSalary: row.salary || 0,
+        allow: 0,
+        otDays: 0,
+        otRate: row.otRate || 0,
+        advance: row.lessAdvance || 0,
+        iTax: 0,
+        loan: row.lessLoan || 0,
+        verification: 0,
+        fine: 0,
+        paid: 'Unpaid',
+        salaryDate: new Date().toISOString().split('T')[0],
+        remarks: '',
+      }));
+
+      setSheetData(details);
+      setSelectedRows(details.map(d => d.empId)); // Check all by default
+      if (!res.exists) {
+        enqueueSnackbar('Note: Salary Sheet for this period was not saved yet.', { variant: 'info' });
+      } else {
+        enqueueSnackbar('Loaded employees from Salary Sheet', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('Failed to load sheet data', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectAllClick = (event) => {
+    if (event.target.checked) {
+      setSelectedRows(sheetData.map((n) => n.empId));
+      return;
+    }
+    setSelectedRows([]);
+  };
+
+  const handleClick = (event, empId) => {
+    const selectedIndex = selectedRows.indexOf(empId);
+    let newSelected = [];
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selectedRows, empId);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selectedRows.slice(1));
+    } else if (selectedIndex === selectedRows.length - 1) {
+      newSelected = newSelected.concat(selectedRows.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selectedRows.slice(0, selectedIndex),
+        selectedRows.slice(selectedIndex + 1)
+      );
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleInputChange = (empId, field, val) => {
+    setSheetData((prev) => {
+      const newDetails = [...prev];
+      const index = newDetails.findIndex((d) => d.empId === empId);
+      if (index !== -1) {
+        newDetails[index] = { ...newDetails[index], [field]: val };
+      }
+      return newDetails;
+    });
+  };
+
+  const handleSave = async () => {
+    if (selectedRows.length === 0) {
+      enqueueSnackbar('No employees selected to save!', { variant: 'warning' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const selectedData = sheetData.filter(d => selectedRows.includes(d.empId));
+
+      if (currentSalaryStatusId) {
+        // Single Update
+        const d = selectedData[0];
+        const payload = {
+          Id: d.id,
+          SlNo: d.id,
+          FkEmployeeId: d.empId,
+          Rank: d.rank,
+          BasicSalary: Math.round(Number(d.salary) || 0),
+          WDays: Math.round(Number(d.daysMonth) || 0),
+          ActualBSalary: Math.round(Number(d.actualBSalary) || 0),
+          Allow: Number(d.allow) || 0,
+          OtDays: Math.round(Number(d.otDays) || 0),
+          OtRate: Number(d.otRate) || 0,
+          Advance: Number(d.advance) || 0,
+          Itax: Number(d.iTax) || 0,
+          Loan: Number(d.loan) || 0,
+          Verification: Number(d.verification) || 0,
+          Fine: Number(d.fine) || 0,
+          ClientId: 0,
+          TotWDays: Math.round(Number(d.daysMonth) || 0),
+          AllowDetail: '',
+          SalaryDate: d.salaryDate,
+          Paid: d.paid,
+          Remarks: d.remarks,
+          Eobi: 0
+        };
+        const res = await fetch(`https://localhost:7034/api/salarysheet/${currentSalaryStatusId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          enqueueSnackbar('Updated successfully', { variant: 'success' });
+          router.push(paths.dashboard.HR_Module.Salary.Status.list);
+        } else {
+          enqueueSnackbar('Failed to update', { variant: 'error' });
+        }
+      } else {
+        // Bulk Create
+        const payloadList = selectedData.map((d, index) => ({
+          SlNo: index + 1,
+          FkEmployeeId: d.empId,
+          Rank: d.rank,
+          BasicSalary: Math.round(Number(d.salary) || 0),
+          WDays: Math.round(Number(d.daysMonth) || 0),
+          ActualBSalary: Math.round(Number(d.actualBSalary) || 0),
+          Allow: Number(d.allow) || 0,
+          OtDays: Math.round(Number(d.otDays) || 0),
+          OtRate: Number(d.otRate) || 0,
+          Advance: Number(d.advance) || 0,
+          Itax: Number(d.iTax) || 0,
+          Loan: Number(d.loan) || 0,
+          Verification: Number(d.verification) || 0,
+          Fine: Number(d.fine) || 0,
+          ClientId: 0,
+          TotWDays: Math.round(Number(d.daysMonth) || 0),
+          AllowDetail: '',
+          SalaryDate: d.salaryDate,
+          Paid: d.paid,
+          Remarks: d.remarks,
+          Eobi: 0
+        }));
+
+        const res = await fetch(`https://localhost:7034/api/salarysheet/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payloadList),
+        });
+        if (res.ok) {
+          enqueueSnackbar(`Saved ${payloadList.length} statuses successfully`, { variant: 'success' });
+          router.push(paths.dashboard.HR_Module.Salary.Status.list);
+        } else {
+          enqueueSnackbar('Failed to save bulk statuses', { variant: 'error' });
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar('An error occurred', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <FormProvider methods={methods} onSubmit={onSubmit}>
-      <Card sx={{ p: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Stack spacing={3}>
-              <Controller
-                name="FkEmployeeId"
-                control={control}
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <Autocomplete
-                    options={employees}
-                    getOptionLabel={(option) => {
-                      if (typeof option === 'string') return option;
-                      if (typeof option === 'number') return String(option);
-                      return `${option.Id} - ${option.Name}`;
-                    }}
-                    value={employees.find(e => e.Id === values.FkEmployeeId) || null}
-                    onInputChange={(event, newInputValue, reason) => {
-                      if (reason === 'input') {
-                        setEmployeeSearch(newInputValue);
-                      }
-                    }}
-                    onChange={(event, newValue) => {
-                      setValue('FkEmployeeId', newValue ? newValue.Id : '', { shouldValidate: true });
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Employee ID"
-                        required
-                        error={!!error}
-                        helperText={error?.message}
-                      />
-                    )}
-                  />
-                )}
-              />
-
+    <Card sx={{ p: 3 }}>
+      {!currentSalaryStatusId && (
+        <FormProvider methods={methods}>
+          <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={3}>
               <RHFAutocomplete
-                name="Rank"
-                label="Job Title (Rank)"
-                fullWidth
-                options={jobTitles.map((job) => ({ value: job.JOBTITLE, label: job.JOBTITLE }))}
-                getOptionLabel={(option) => option?.label || ''}
-                isOptionEqualToValue={(option, value) => option?.value === value?.value}
-              />
+                name="locationId"
+                label="Location"
+                options={locations}
+                getOptionLabel={(option) => option.location || option.LOCATION || option.name || ''}
+                isOptionEqualToValue={(option, value) => (option.id || option.ID) === (value.id || value.ID)}
 
-              <RHFTextField
-                select
-                name="Paid"
-                label="Status"
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <RHFAutocomplete
+                name="month"
+                label="Month"
+                options={MONTHS}
+                getOptionLabel={(option) => option.label || ''}
+                isOptionEqualToValue={(option, value) => option.value === value.value}
+
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <RHFAutocomplete
+                name="year"
+                label="Year"
+                options={YEARS.map(y => ({ value: y, label: y.toString() }))}
+                getOptionLabel={(option) => option.label || ''}
+                isOptionEqualToValue={(option, value) => option.value === value.value}
+
+              />
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleLoadSheet}
                 fullWidth
+                disabled={loading}
+                sx={{ height: 40 }}
               >
-                <MenuItem value="Paid">Paid</MenuItem>
-                <MenuItem value="Unpaid">Unpaid</MenuItem>
-                <MenuItem value="Hold">Hold</MenuItem>
-              </RHFTextField>
+                {loading ? 'Loading...' : 'Load Sheet'}
+              </Button>
+            </Grid>
+          </Grid>
+        </FormProvider>
+      )}
 
-              <RHFTextField
-                name="BasicSalary"
-                label="Basic Salary"
-                fullWidth
-                type="number"
-              />
-
-              <RHFTextField
-                name="OtRate"
-                label="OT Rate"
-                fullWidth
-                type="number"
-              />
-
-              <Controller
-                name="SalaryDate"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <DatePicker
-                    label="Salary Date"
-                    value={field.value}
-                    onChange={(newValue) => field.onChange(newValue)}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: !!error,
-                        helperText: error?.message
-                      }
-                    }}
+      {sheetData.length > 0 && (
+        <TableContainer sx={{ maxHeight: 600, mb: 3 }}>
+          <Table stickyHeader size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    indeterminate={selectedRows.length > 0 && selectedRows.length < sheetData.length}
+                    checked={sheetData.length > 0 && selectedRows.length === sheetData.length}
+                    onChange={handleSelectAllClick}
                   />
-                )}
-              />
-            </Stack>
-          </Grid>
+                </TableCell>
+                <TableCell>Employee</TableCell>
+                <TableCell>TOTAL</TableCell>
+                <TableCell>Rank</TableCell>
+                <TableCell>Paid Status</TableCell>
+                <TableCell>Salary Date</TableCell>
+                <TableCell>Remarks</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sheetData.map((row) => {
+                const isSelected = selectedRows.indexOf(row.empId) !== -1;
+                return (
+                  <TableRow hover key={row.empId} selected={isSelected}>
+                    <TableCell padding="checkbox">
+                      <Checkbox checked={isSelected} onChange={(e) => handleClick(e, row.empId)} />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="bold">{row.employeeName}</Typography>
+                      <Typography variant="caption" color="text.secondary">{row.empId}</Typography>
+                    </TableCell>
+                    <TableCell>{row.salary}</TableCell>
 
-          <Grid item xs={12} md={6}>
-            <Stack spacing={3}>
-              <RHFTextField
-                name="ActualBSalary"
-                label="Current Salary (Actual)"
-                fullWidth
-                type="number"
-              />
-              <RHFTextField
-                name="TotWdays"
-                label="Total # of Duties (Days)"
-                fullWidth
-                type="number"
-              />
-              <RHFTextField
-                name="Allow"
-                label="Allowances"
-                fullWidth
-                type="number"
-              />
-              <RHFTextField
-                name="Advance"
-                label="Advances"
-                fullWidth
-                type="number"
-              />
-              <RHFTextField
-                name="Remarks"
-                label="Remarks"
-                fullWidth
-                multiline
-                rows={3}
-              />
-            </Stack>
-          </Grid>
-        </Grid>
+                    <TableCell>
+                      <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 160 }}
+                        options={jobTitles.map((job) => job.JOBTITLE)}
+                        value={row.rank || null}
+                        onChange={(event, newValue) => {
+                          handleInputChange(row.empId, 'rank', newValue || '');
+                        }}
+                        renderInput={(params) => <TextField {...params} placeholder="Select Rank" />}
+                      />
+                    </TableCell>
 
-        <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-          <Button
-            variant="outlined"
-            onClick={() => router.push(paths.dashboard.HR_Module.Salary.Status.list)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            type="submit"
-            color='primary'
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Save'}
-          </Button>
-        </Stack>
-      </Card>
-    </FormProvider>
+                    <TableCell>
+                      <FormControl size="small" sx={{ minWidth: 120 }}>
+                        <Select
+                          value={row.paid}
+                          onChange={(e) => handleInputChange(row.empId, 'paid', e.target.value)}
+                        >
+                          <MenuItem value="Paid">Paid</MenuItem>
+                          <MenuItem value="Unpaid">Unpaid</MenuItem>
+                          <MenuItem value="Hold">Hold</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </TableCell>
+
+                    <TableCell>
+                      <DatePicker
+                        value={row.salaryDate ? new Date(row.salaryDate) : null}
+                        onChange={(newValue) => {
+                          const dateString = newValue ? newValue.toISOString().split('T')[0] : '';
+                          handleInputChange(row.empId, 'salaryDate', dateString);
+                        }}
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            sx: { minWidth: 150 }
+                          }
+                        }}
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <TextField
+                        size="small"
+                        placeholder="Remarks..."
+                        value={row.remarks}
+                        onChange={(e) => handleInputChange(row.empId, 'remarks', e.target.value)}
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Stack direction="row" spacing={2} justifyContent="flex-end">
+        <Button variant="outlined" onClick={() => router.push(paths.dashboard.HR_Module.Salary.Status.list)}>
+          Cancel
+        </Button>
+        <Button variant="contained" color="primary" onClick={handleSave} disabled={loading || sheetData.length === 0}>
+          {
+            // eslint-disable-next-line
+            loading ? 'Saving...' : (currentSalaryStatusId ? 'Update Status' : 'Save Selected Statuses')}
+        </Button>
+      </Stack>
+    </Card>
   );
 }
 

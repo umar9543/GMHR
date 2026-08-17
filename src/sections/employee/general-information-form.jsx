@@ -94,7 +94,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
     permanentAddress: Yup.string().required('Permanent Address is required'),
     state: Yup.string().required('State is required'),
     city: Yup.string().required('City is required'),
-    homeTown: Yup.string().required('Home Town is required'),
+    homeTown: Yup.string(),
     cellPhone: Yup.string().required('Cell Phone is required'),
     jazzCash: Yup.string().required('Jazz Cash is required'),
     ptcl: Yup.string().required('PTCL is required'),
@@ -611,6 +611,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
             }
           }}
           placeholder="NIC Image"
+          sx={{ maxWidth: 400, margin: 'auto' }}
         />
       </Stack>
     </Stack>
