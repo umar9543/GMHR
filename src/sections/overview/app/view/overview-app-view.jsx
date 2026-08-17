@@ -89,7 +89,7 @@ export default function OverviewAppView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <Grid container spacing={3}>
-        
+
         {/* WELCOME SECTION AND CAROUSEL */}
         <Grid xs={12} md={8}>
           <AppWelcome
@@ -161,13 +161,13 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={4}>
           <AppGenderRatio
-            title="Department Distribution"
+            title="Location Distribution"
             chart={{
               series: (stats.departmentCounts || [
-                { label: 'Engineering', value: 45 },
-                { label: 'Marketing', value: 20 },
-                { label: 'Sales', value: 25 },
-                { label: 'HR', value: 10 },
+                { label: 'Site Area 1', value: 45 },
+                { label: 'Site Area 2', value: 20 },
+                { label: 'Site Area 3', value: 25 },
+                { label: 'Site Area 4', value: 10 },
               ]).map(d => ({ label: d.label || d.department || d.name, value: d.value || d.count || 0 })),
               colors: [
                 theme.palette.primary.main,
@@ -183,9 +183,12 @@ export default function OverviewAppView() {
           <AppGenderRatio
             title="Gender Ratio"
             chart={{
+
+              // reason api give male = female and female = male
+
               series: [
-                { label: 'Male', value: stats.maleCount || 0 },
-                { label: 'Female', value: stats.femaleCount || 0 },
+                { label: 'Male', value: stats.femaleCount || 0 },
+                { label: 'Female', value: stats.maleCount || 0 },
               ],
               colors: [
                 theme.palette.info.main,
