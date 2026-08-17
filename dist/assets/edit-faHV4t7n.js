@@ -1,0 +1,1 @@
+import{ac as t,j as a,H as s}from"./index-F2_dxpTO.js";import{E as i}from"./salary-add-view-EZ_erjDG.js";import"./employee-salary-pe1X-Zo0.js";import"./Grid-0Z8EcW9R.js";function n(){const e=t(),{id:r}=e;return a.jsxs(a.Fragment,{children:[a.jsx(s,{children:a.jsx("title",{children:" Dashboard: Edit Salary Sheet"})}),a.jsx(i,{id:r})]})}export{n as default};
