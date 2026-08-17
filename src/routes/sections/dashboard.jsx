@@ -30,6 +30,7 @@ const HolidayListPage = lazy(() => import('src/pages/dashboard/HR_Module/holiday
 const SectionListPage = lazy(() => import('src/pages/dashboard/HR_Module/section/view'));
 const DesignationListPage = lazy(() => import('src/pages/dashboard/HR_Module/designation/view'));
 const HRDepartmentListPage = lazy(() => import('src/pages/dashboard/HR_Module/department/view'));
+const LocationListPage = lazy(() => import('src/pages/dashboard/HR_Module/location/view'));
 const EmployeeDismissalListPage = lazy(
   () => import('src/pages/dashboard/HR_Module/employee-dismissal/view')
 );
@@ -232,6 +233,14 @@ export const dashboardRoutes = [
             element: (
               <Suspense fallback={<LoadingScreen />}>
                 <HRDepartmentListPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'setup/location',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <LocationListPage />
               </Suspense>
             ),
           },

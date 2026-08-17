@@ -67,6 +67,7 @@ export const paths = {
         section: `${ROOTS.DASHBOARD}/HR_Module/setup/section`,
         department: `${ROOTS.DASHBOARD}/HR_Module/setup/department`,
         designation: `${ROOTS.DASHBOARD}/HR_Module/setup/designation`,
+        location: `${ROOTS.DASHBOARD}/HR_Module/setup/location`,
         holidays: `${ROOTS.DASHBOARD}/HR_Module/setup/holidays`,
         EmployeeDismissal: {
           root: `${ROOTS.DASHBOARD}/HR_Module/setup/EmployeeDismissal`,

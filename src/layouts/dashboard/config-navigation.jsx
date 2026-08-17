@@ -195,6 +195,44 @@ export function useNavData() {
           // ============================================================
 
           canAccessHR && {
+            title: t('Setup'),
+
+            icon: ICONS.settings,
+
+            path: paths.dashboard.HR_Module.Setup.root,
+
+            children: [
+              {
+                title: t('Location'),
+
+                path:
+                  paths.dashboard.HR_Module.Setup.location,
+              },
+
+              // {
+              //   title: t('Department'),
+
+              //   path:
+              //     paths.dashboard.HR_Module.Setup.department,
+              // },
+
+              // {
+              //   title: t('Section'),
+
+              //   path:
+              //     paths.dashboard.HR_Module.Setup.section,
+              // },
+
+              // {
+              //   title: t('Designation'),
+
+              //   path:
+              //     paths.dashboard.HR_Module.Setup.designation,
+              // },
+            ],
+          },
+
+          canAccessHR && {
             title: t('Employee Management'),
 
             icon: ICONS.user,
