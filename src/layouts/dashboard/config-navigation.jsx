@@ -197,7 +197,7 @@ export function useNavData() {
           canAccessHR && {
             title: t('Setup'),
 
-            icon: ICONS.settings,
+            icon: ICONS.management,
 
             path: paths.dashboard.HR_Module.Setup.root,
 
