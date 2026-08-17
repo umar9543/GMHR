@@ -35,4 +35,14 @@ export default defineConfig({
   preview: {
     port: 3030,
   },
+  worker: {
+    format: 'es',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        format: 'es'
+      }
+    }
+  }
 });
