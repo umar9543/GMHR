@@ -65,7 +65,7 @@ export default function JwtLoginView() {
   // ────────────────────────────────────────────────────────────────────
   const onSubmit = handleSubmit(async ({ userName, password: pwd }) => {
     try {
-      const response = await fetch('https://localhost:7034/api/auth/login', {
+      const response = await fetch('https://gmsapi.scmcloud.online/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

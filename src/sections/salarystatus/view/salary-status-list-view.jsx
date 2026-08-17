@@ -38,7 +38,7 @@ export default function SalaryStatusListView() {
     const fetchSalaryStatus = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://localhost:7034/api/salarysheet?page=${page + 1}&pageSize=${rowsPerPage}`);
+        const response = await fetch(`https://gmsapi.scmcloud.online/api/salarysheet?page=${page + 1}&pageSize=${rowsPerPage}`);
         if (response.ok) {
           const data = await response.json();
           if (isMounted) {

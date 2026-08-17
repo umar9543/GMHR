@@ -44,7 +44,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
-        const response = await fetch('https://localhost:7034/api/Dropdown/job-titles');
+        const response = await fetch('https://gmsapi.scmcloud.online/api/Dropdown/job-titles');
         if (response.ok) {
           const data = await response.json();
           setJobTitles(data);
@@ -58,7 +58,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
     const fetchLocations = async () => {
       try {
-        const response = await fetch('https://localhost:7034/api/Dropdown/locations');
+        const response = await fetch('https://gmsapi.scmcloud.online/api/Dropdown/locations');
         if (response.ok) {
           const data = await response.json();
           setLocations(data);
@@ -441,7 +441,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         });
 
         const isEdit = !!currentEmployee;
-        const endpoint = isEdit ? `https://localhost:7034/api/employee/${currentEmployee.employee.ID}` : 'https://localhost:7034/api/employee';
+        const endpoint = isEdit ? `https://gmsapi.scmcloud.online/api/employee/${currentEmployee.employee.ID}` : 'https://gmsapi.scmcloud.online/api/employee';
         const method = isEdit ? 'PUT' : 'POST';
 
         const response = await fetch(endpoint, {

@@ -147,7 +147,7 @@ export default function EmployeeListView() {
   const FetchProfileData = useCallback(async () => {
     try {
       // ── SecuritySystem API: GET /api/employee ───────────────────────
-      const response = await fetch('https://localhost:7034/api/employee');
+      const response = await fetch('https://gmsapi.scmcloud.online/api/employee');
       if (!response.ok) {
         throw new Error('Failed to fetch employee list');
       }
@@ -169,7 +169,7 @@ export default function EmployeeListView() {
         NIC: item.NIC || '',
         active: item.IsActive ? 'Active' : 'In-Active',
         status: 'Registered',
-        avatarUrl: `https://localhost:7034/api/employee/${item.ID}/picture`,
+        avatarUrl: `https://gmsapi.scmcloud.online/api/employee/${item.ID}/picture`,
       }));
       setTableData(updatedData);
     } catch (error) {

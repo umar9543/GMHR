@@ -5,12 +5,14 @@ import { paths } from 'src/routes/paths';
 import { useTranslate } from 'src/locales';
 
 import SvgColor from 'src/components/svg-color';
-import { decrypt } from 'src/api/encryption';
 
 // ----------------------------------------------------------------------
 
 const icon = (name) => (
-  <SvgColor src={`/assets/icons/navbar/${name}.svg`} sx={{ width: 1, height: 1 }} />
+  <SvgColor
+    src={`/assets/icons/navbar/${name}.svg`}
+    sx={{ width: 1, height: 1 }}
+  />
 );
 
 const ICONS = {
@@ -71,179 +73,228 @@ const ICONS = {
 };
 
 // ----------------------------------------------------------------------
+
 export function useNavData() {
   const { t } = useTranslate();
-  const userData = useMemo(() => JSON.parse(localStorage.getItem('UserData')), []);
-  const userRoles = userData?.roleID ? [userData.roleID] : [];
-  console.log(userRoles)
-  const groupARoles = [70, 80];
-  const groupBRoles = [85, 70];
-  const InvRoles = [87, 88, 70];
-  const QCRoles = [89, 70];
-  const allButInvnQC = [
-    64, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 89,
-  ];
-  const HRRoles = [1, 2, 3, 4];
 
-  // const groupBRoles = [64, 65, 66, 67, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83];
-  const isTest = userData?.userDetails?.userId === 898;
+  // ----------------------------------------------------------------------
+  // Get logged-in user
+  // ----------------------------------------------------------------------
 
-  const hasRole = (rolesToCheck) => rolesToCheck.some((role) => userRoles.includes(role));
-  const hasSectionID = (sectionIDsToCheck) => {
-    const userSectionID = userData?.userDetails?.SectionID;
-    return sectionIDsToCheck.includes(userSectionID);
-  };
+  const userData = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('UserData')) || {};
+    } catch (error) {
+      console.error('Invalid UserData in localStorage:', error);
+      return {};
+    }
+  }, []);
+
+  // ----------------------------------------------------------------------
+  // User information
+  // ----------------------------------------------------------------------
+
+  const roleID = userData?.roleID;
+
+  const department =
+    userData?.department?.trim()?.toUpperCase() || '';
+
+  console.log('Logged User:', userData);
+  console.log('Role ID:', roleID);
+  console.log('Department:', department);
+
+  // ----------------------------------------------------------------------
+  // Department checks
+  // ----------------------------------------------------------------------
+
+  const isAdministrator =
+    department === 'ADMINISTRATORS';
+
+  const isHR =
+    department === 'HR ENTRY';
+
+  const isAccounts =
+    department === 'ACCOUNTS';
+
+  // ----------------------------------------------------------------------
+  // Module permissions
+  //
+  // Administrator = access to everything
+  // HR ENTRY      = HR modules
+  // Accounts      = Accounts modules
+  // ----------------------------------------------------------------------
+
+  const canAccessHR =
+    isAdministrator || isHR;
+
+  const canAccessAccounts =
+    isAdministrator || isAccounts;
+
+  const canAccessCommercial =
+    isAdministrator;
+
+  const canAccessInventory =
+    isAdministrator;
+
+  const canAccessQC =
+    isAdministrator;
+
+  const canAccessProduction =
+    isAdministrator;
+
+  const canAccessReports =
+    isAdministrator;
+
+  const canAccessApplication =
+    canAccessHR ||
+    canAccessAccounts ||
+    canAccessCommercial ||
+    canAccessInventory ||
+    canAccessQC ||
+    canAccessProduction ||
+    canAccessReports;
+
+  // ----------------------------------------------------------------------
+  // Navigation
+  // ----------------------------------------------------------------------
 
   const data = useMemo(() => {
     const navItems = [
+      // ================================================================
+      // DASHBOARD
+      // ================================================================
+
       {
         subheader: t('overview'),
+
         items: [
           {
-            title: hasRole(HRRoles) ? t('HR Dashboard') : t('Dashboard'),
+            title: canAccessHR
+              ? t('HR Dashboard')
+              : t('Dashboard'),
+
             path: paths.dashboard.root,
+
             icon: ICONS.dashboard,
           },
         ],
       },
     ];
 
-    if (
-      hasRole(groupARoles) ||
-      hasRole(groupBRoles) ||
-      hasRole(InvRoles) ||
-      hasRole(QCRoles) ||
-      hasRole(HRRoles)
-    ) {
+    // ================================================================
+    // APPLICATION
+    // ================================================================
+
+    if (canAccessApplication) {
       navItems.push({
         subheader: t('Application'),
+
         items: [
+          // ============================================================
+          // HR MODULE
+          // ============================================================
 
-          // HR start
-
-          // hasRole(HRRoles) && {
-          //   title: t('General Setup'),
-          //   icon: ICONS.settings,
-          //   path: paths.dashboard.HR_Module.Setup.root,
-          //   children: [
-          //     {
-          //       title: t('Section'),
-          //       path: paths.dashboard.HR_Module.Setup.section,
-          //       // icon: ICONS.invoice,
-          //     },
-          //     {
-          //       title: t('Department'),
-          //       path: paths.dashboard.HR_Module.Setup.department,
-          //       // icon: ICONS.invoice,
-          //     },
-          //     {
-          //       title: t('Designation'),
-          //       path: paths.dashboard.HR_Module.Setup.designation,
-          //       // icon: ICONS.invoice,
-          //     },
-          //     {
-          //       title: t('Holidays'),
-          //       path: paths.dashboard.HR_Module.Setup.holidays,
-          //       // icon: ICONS.invoice,
-          //     },
-          //     {
-          //       title: t('Employee Dismissal'),
-          //       path: paths.dashboard.HR_Module.Setup.EmployeeDismissal.view,
-          //       // icon: ICONS.invoice,
-          //     },
-          //   ],
-          // },
-
-          hasRole(HRRoles) && {
+          canAccessHR && {
             title: t('Employee Management'),
+
             icon: ICONS.user,
+
             path: paths.dashboard.HR_Module.HR_Users.root,
+
             children: [
-              // {
-              //   title: t('Export Invoice'),
-              //   path: paths.dashboard.Commercial.export.ExportInvoice.root,
-              //   // icon: ICONS.invoice,
-              // },
-              // {
-              //   title: t('HR Employee'),
-              //   path: paths.dashboard.HR_Module.HR_Users.root,
-              //   // icon: ICONS.invoice,
-              // },
               {
                 title: t('Employees'),
-                path: paths.dashboard.HR_Module.Employee.list,
+
+                path:
+                  paths.dashboard.HR_Module.Employee.list,
               },
+
               {
                 title: t('Employee Status'),
-                path: paths.dashboard.HR_Module.Employee.status,
+
+                path:
+                  paths.dashboard.HR_Module.Employee.status,
               },
             ],
           },
 
-          hasRole(HRRoles) && {
+          // ============================================================
+          // ATTENDANCE
+          // ============================================================
+
+          canAccessHR && {
             title: t('Attendance'),
+
             icon: ICONS.calendar,
-            path: paths.dashboard.HR_Module.Attendance.root,
+
+            path:
+              paths.dashboard.HR_Module.Attendance.root,
+
             children: [
-              // {
-              //   title: t('Export Invoice'),
-              //   path: paths.dashboard.Commercial.export.ExportInvoice.root,
-              //   // icon: ICONS.invoice,
-              // },
-              // {
-              //   title: t('HR Employee'),
-              //   path: paths.dashboard.HR_Module.HR_Users.root,
-              //   // icon: ICONS.invoice,
-              // },
               {
                 title: t('Attendance'),
-                path: paths.dashboard.HR_Module.Attendance.view,
+
+                path:
+                  paths.dashboard.HR_Module.Attendance.view,
               },
+
               {
                 title: t('Month-Wise Report'),
-                path: paths.dashboard.HR_Module.Attendance.monthWiseReport,
+
+                path:
+                  paths.dashboard.HR_Module.Attendance.monthWiseReport,
               },
             ],
           },
-          // hasRole(HRRoles) && {
-          //   title: t('Policy'),
-          //   icon: ICONS.assignment,
-          //   path: paths.dashboard.HR_Module.Policy.root,
-          //   children: [
-          //     {
-          //       title: t('Monthly Shift Roster'),
-          //       path: paths.dashboard.HR_Module.Policy.ShiftRoster,
-          //       // icon: ICONS.invoice,
-          //     },
-          //   ],
-          // },
-          hasRole(HRRoles) && {
-            title: t('Payroll'),
-            icon: ICONS.banking,
-            path: paths.dashboard.HR_Module.Salary.root,
-            children: [
-              // {
-              //   title: t('Salary Setup'),
-              //   path: paths.dashboard.HR_Module.Salary.Setup.list,
-              //   // icon: ICONS.invoice,
-              // },
 
+          // ============================================================
+          // PAYROLL
+          // ============================================================
+
+          canAccessAccounts && {
+            title: t('Payroll'),
+
+            icon: ICONS.banking,
+
+            path:
+              paths.dashboard.HR_Module.Salary.root,
+
+            children: [
               {
                 title: t('Salary Sheet'),
-                path: paths.dashboard.HR_Module.Salary.Sheet.list,
+
+                path:
+                  paths.dashboard.HR_Module.Salary.Sheet.list,
               },
+
               {
                 title: t('Salary Status'),
-                path: paths.dashboard.HR_Module.Salary.Status.list,
+
+                path:
+                  paths.dashboard.HR_Module.Salary.Status.list,
               },
+
               {
                 title: t('Salary Report'),
-                path: paths.dashboard.HR_Module.Salary.report,
+
+                path:
+                  paths.dashboard.HR_Module.Salary.report,
               },
             ],
           },
 
-          //  HR end
+          // ============================================================
+          // ACCOUNTS
+          // ============================================================
+
+          /*
+           * IMPORTANT:
+           *
+           * I have not invented your Accounts paths because
+           * they were not included in your original code.
+           *
+           * Add your actual Accounts paths here.
+           */
 
 
 
@@ -252,10 +303,16 @@ export function useNavData() {
       });
     }
 
-
     return navItems;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, userRoles]);
+
+  }, [
+    t,
+
+    canAccessApplication,
+    canAccessAccounts,
+    canAccessHR,
+
+  ]);
 
   return data;
 }

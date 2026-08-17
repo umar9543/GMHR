@@ -52,7 +52,7 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
-        const response = await fetch('https://localhost:7034/api/dropdown/job-titles');
+        const response = await fetch('https://gmsapi.scmcloud.online/api/dropdown/job-titles');
         if (response.ok) setJobTitles(await response.json());
       } catch (error) {
         console.error('Failed to fetch job titles', error);
@@ -97,7 +97,7 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
   const loadSingleStatus = async (id) => {
     setLoading(true);
     try {
-      const response = await fetch(`https://localhost:7034/api/salarysheet/${id}`);
+      const response = await fetch(`https://gmsapi.scmcloud.online/api/salarysheet/${id}`);
       if (response.ok) {
         const data = await response.json();
         const empId = data.fkEmployeeId;
@@ -254,7 +254,7 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
           Remarks: d.remarks,
           Eobi: 0
         };
-        const res = await fetch(`https://localhost:7034/api/salarysheet/${currentSalaryStatusId}`, {
+        const res = await fetch(`https://gmsapi.scmcloud.online/api/salarysheet/${currentSalaryStatusId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -291,7 +291,7 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
           Eobi: 0
         }));
 
-        const res = await fetch(`https://localhost:7034/api/salarysheet/bulk`, {
+        const res = await fetch(`https://gmsapi.scmcloud.online/api/salarysheet/bulk`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payloadList),

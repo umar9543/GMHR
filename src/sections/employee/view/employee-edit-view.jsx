@@ -23,7 +23,7 @@ export default function EmployeeEditView({ id }) {
     const fetchEmployee = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://localhost:7034/api/employee/${id}`);
+        const response = await fetch(`https://gmsapi.scmcloud.online/api/employee/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch employee');
         }
