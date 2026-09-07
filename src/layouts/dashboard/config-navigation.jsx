@@ -158,7 +158,81 @@ export function useNavData() {
   // Navigation
   // ----------------------------------------------------------------------
 
+  // Which system this session logged into. Finance gets its own navigation;
+  // everything below stays HR-only.
+  let loginSystem = 'HR';
+  try {
+    loginSystem = JSON.parse(localStorage.getItem('UserData'))?.system || 'HR';
+  } catch {
+    loginSystem = 'HR';
+  }
+
   const data = useMemo(() => {
+    if (loginSystem === 'Finance') {
+      // Main menu -> sub menu, one main entry per finance module.
+      return [
+        {
+          subheader: t('Finance'),
+          items: [
+            // The chart and its sub-ledgers: every voucher below posts to an
+            // account defined here, so it comes first.
+            {
+              title: t('Accounts Setup'),
+              path: paths.dashboard.Finance.coa,
+              icon: ICONS.banking,
+              children: [
+                { title: t('Chart of Accounts'), path: paths.dashboard.Finance.coa },
+                { title: t('Parties'), path: paths.dashboard.Finance.parties },
+              ],
+            },
+            // Grouped the way the work actually flows, not by what the tables
+            // happen to be called. Money in, money out, then the general
+            // adjustments that belong to neither.
+            {
+              title: t('Receivables'),
+              path: paths.dashboard.Finance.vouchers.billingList,
+              icon: ICONS.invoice,
+              children: [
+                // Creation is reached from each list page's button, not the menu.
+                { title: t('Client Invoices'), path: paths.dashboard.Finance.vouchers.billingList },
+                { title: t('Receipts'), path: paths.dashboard.Finance.vouchers.receiptList },
+              ],
+            },
+            {
+              title: t('Payables'),
+              path: paths.dashboard.Finance.vouchers.expenseList,
+              icon: ICONS.order,
+              children: [
+                { title: t('Expense Bills'), path: paths.dashboard.Finance.vouchers.expenseList },
+                { title: t('Payments'), path: paths.dashboard.Finance.vouchers.paymentList },
+              ],
+            },
+            {
+              title: t('General Ledger'),
+              path: paths.dashboard.Finance.vouchers.journalList,
+              icon: ICONS.file,
+              children: [
+                { title: t('Journal Vouchers'), path: paths.dashboard.Finance.vouchers.journalList },
+              ],
+            },
+            {
+              title: t('Reports'),
+              path: paths.dashboard.Finance.reports.trialBalance,
+              icon: ICONS.analytics,
+              children: [
+                { title: t('Receivables Aging'), path: paths.dashboard.Finance.reports.aging },
+                { title: t('Payables Aging'), path: paths.dashboard.Finance.reports.payablesAging },
+                { title: t('Trial Balance'), path: paths.dashboard.Finance.reports.trialBalance },
+                { title: t('Account Ledger'), path: paths.dashboard.Finance.reports.ledger },
+                { title: t('Bank Book'), path: paths.dashboard.Finance.reports.bankBook },
+                { title: t('Balance Sheet'), path: paths.dashboard.Finance.reports.balanceSheet },
+              ],
+            },
+          ],
+        },
+      ];
+    }
+
     const navItems = [
       // ================================================================
       // DASHBOARD
@@ -195,6 +269,14 @@ export function useNavData() {
           // ============================================================
 
           canAccessHR && {
+            title: t('Clients'),
+
+            icon: ICONS.job,
+
+            path: paths.dashboard.HR_Module.Client.list,
+          },
+
+          canAccessHR && {
             title: t('Setup'),
 
             icon: ICONS.management,
@@ -207,6 +289,13 @@ export function useNavData() {
 
                 path:
                   paths.dashboard.HR_Module.Setup.location,
+              },
+
+              {
+                title: t('Shifts'),
+
+                path:
+                  paths.dashboard.HR_Module.Setup.shift,
               },
 
               // {
@@ -282,6 +371,20 @@ export function useNavData() {
                 path:
                   paths.dashboard.HR_Module.Attendance.monthWiseReport,
               },
+
+              {
+                title: t('Daily Parade State'),
+
+                path:
+                  paths.dashboard.HR_Module.Attendance.paradeState,
+              },
+
+              {
+                title: t('Monthly Parade State'),
+
+                path:
+                  paths.dashboard.HR_Module.Attendance.paradeStateMonthly,
+              },
             ],
           },
 
@@ -346,6 +449,7 @@ export function useNavData() {
   }, [
     t,
 
+    loginSystem,
     canAccessApplication,
     canAccessAccounts,
     canAccessHR,

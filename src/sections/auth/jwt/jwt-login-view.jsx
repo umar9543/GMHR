@@ -9,8 +9,11 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 
 import { useRouter, useSearchParams } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { PATH_AFTER_LOGIN } from 'src/config-global';
 
@@ -21,6 +24,10 @@ import { Post, setAccessToken } from 'src/api/apibasemethods';
 // ----------------------------------------------------------------------
 
 export default function JwtLoginView() {
+  // Which system to sign in to. HR authenticates against GMHR, Finance against
+  // GMFIN's own user table - separate credentials, separate navigation.
+  const [system, setSystem] = useState('HR');
+
   // ────────────────────────────────────────────────────────────────────
   // STATE / HOOKS
   // ────────────────────────────────────────────────────────────────────
@@ -65,7 +72,12 @@ export default function JwtLoginView() {
   // ────────────────────────────────────────────────────────────────────
   const onSubmit = handleSubmit(async ({ userName, password: pwd }) => {
     try {
-      const response = await fetch('https://gmsapi.scmcloud.online/api/auth/login', {
+      const loginUrl =
+        system === 'Finance'
+          ? 'https://localhost:7034/api/FinanceAuth/login'
+          : 'https://localhost:7034/api/auth/login';
+
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,6 +107,7 @@ export default function JwtLoginView() {
       const userData = {
         ...authData,
         ...(token ? { token } : {}),
+        system,
       };
 
       localStorage.setItem('UserData', JSON.stringify(userData));
@@ -104,7 +117,11 @@ export default function JwtLoginView() {
         setAccessToken(token);
       }
 
-      router.push(returnTo || PATH_AFTER_LOGIN);
+      if (system === 'Finance') {
+        router.push(paths.dashboard.Finance.coa);
+      } else {
+        router.push(returnTo || PATH_AFTER_LOGIN);
+      }
     } catch (err) {
       console.error(err);
       setErrorMsg('An error occurred. Please try again.');
@@ -126,6 +143,26 @@ export default function JwtLoginView() {
 
   const renderForm = (
     <Stack spacing={2.5}>
+      <TextField
+        select
+        fullWidth
+        label="System"
+        value={system}
+        onChange={(e) => setSystem(e.target.value)}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            backgroundColor: '#f3f5f9',
+            borderRadius: 1,
+            '& fieldset': { borderColor: 'transparent' },
+            '&:hover fieldset': { borderColor: 'transparent' },
+            '&.Mui-focused fieldset': { borderColor: '#1a3a6b' },
+          },
+        }}
+      >
+        <MenuItem value="HR">HR</MenuItem>
+        <MenuItem value="Finance">Finance</MenuItem>
+      </TextField>
+
       <RHFTextField
         InputLabelProps={{ shrink: true }}
         name="userName"

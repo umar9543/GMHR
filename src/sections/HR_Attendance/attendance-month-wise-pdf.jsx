@@ -1,6 +1,8 @@
 import React from 'react';
 import { Page, View, Text, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import PropTypes from 'prop-types';
+
+import { cleanEmployeeName } from 'src/utils/employee-name';
 import { format } from 'date-fns';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -135,7 +137,7 @@ const AttendanceTableRow = ({ item, daysArray }) => {
 
       {/* Name */}
       <View style={{ ...styles.cell, width: colWidths[1], textAlign: 'left' }}>
-        <Text style={styles.cellText}>{item.name || '-'}</Text>
+        <Text style={styles.cellText}>{cleanEmployeeName(item.name) || '-'}</Text>
       </View>
 
       {/* 31 Days */}
@@ -146,9 +148,15 @@ const AttendanceTableRow = ({ item, daysArray }) => {
         else if (status.includes('WO') || status.includes('G')) color = '#00B8D9';
         else if (status.includes('L')) color = '#FFAB00';
 
+        // The shift he worked that day, printed under the mark.
+        const shift = item[`s${day}`] || '';
+
         return (
           <View key={day} style={{ ...styles.cell, width: colWidths[2 + i] }}>
             <Text style={{ ...styles.cellText, color }}>{status}</Text>
+            {!!status && !!shift && (
+              <Text style={{ ...styles.cellText, fontSize: 4.5, color: '#637381' }}>{shift}</Text>
+            )}
           </View>
         );
       })}

@@ -48,14 +48,19 @@ export default function EmployeeSalaryListView() {
   const table = useTable({ defaultRowsPerPage: 10 });
 
   const [tableData, setTableData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Paged server side - the sheet list grows by one row per location per month.
+  const { page, rowsPerPage } = table;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await getSalarySheets();
-        setTableData(res);
+        const res = await getSalarySheets({ page: page + 1, pageSize: rowsPerPage });
+        setTableData(res.records || []);
+        setTotalCount(res.pagination?.totalCount ?? (res.records || []).length);
       } catch (error) {
         console.error('Failed to load salary sheets:', error);
         enqueueSnackbar('Failed to load salary sheets', { variant: 'error' });
@@ -64,7 +69,7 @@ export default function EmployeeSalaryListView() {
       }
     };
     fetchData();
-  }, [enqueueSnackbar]);
+  }, [enqueueSnackbar, page, rowsPerPage]);
 
   const handleEditRow = (id) => {
     router(paths.dashboard.HR_Module.Salary.Sheet.edit(id));
@@ -103,17 +108,13 @@ export default function EmployeeSalaryListView() {
                 order={table.order}
                 orderBy={table.orderBy}
                 headLabel={TABLE_HEAD}
-                rowCount={tableData.length}
+                rowCount={totalCount}
                 numSelected={table.selected.length}
                 onSort={table.onSort}
               />
 
               <TableBody>
                 {tableData
-                  .slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
                   .map((row) => (
                     <TableRow hover key={row.employeeSalaryMstID}>
                       <TableCell>{row.locationName}</TableCell>
@@ -132,7 +133,7 @@ export default function EmployeeSalaryListView() {
 
                 <TableEmptyRows
                   height={68}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
+                  emptyRows={emptyRows(table.page, table.rowsPerPage, totalCount)}
                 />
 
                 <TableNoData notFound={!loading && tableData.length === 0} />
@@ -142,7 +143,7 @@ export default function EmployeeSalaryListView() {
         </TableContainer>
 
         <TablePaginationCustom
-          count={tableData.length}
+          count={totalCount}
           page={table.page}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}

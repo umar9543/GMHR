@@ -7,8 +7,28 @@ const formatDate = (date) => {
     return d.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
 };
 
+// Column styles are index based, so every column shifts by one when the optional
+// LOCATION column is present.
+function buildColumnStyles(showLocation) {
+    const offset = showLocation ? 1 : 0;
+    const styles = {
+        0: { halign: 'center', cellWidth: 8 }, // S.no
+        [0 + offset + 1]: { halign: 'left', cellWidth: 28 },  // Name
+        [0 + offset + 2]: { halign: 'center', cellWidth: 25 }, // CNIC
+    };
+    if (showLocation) {
+        styles[1] = { halign: 'left', cellWidth: 22 }; // Location
+    }
+    // Everything after CNIC is centered; Total Salary is bold.
+    for (let i = offset + 3; i <= offset + 15; i += 1) {
+        styles[i] = { halign: 'center' };
+    }
+    styles[offset + 13] = { halign: 'center', fontStyle: 'bold' }; // Total Salary
+    return styles;
+}
+
 self.onmessage = async (e) => {
-    const { reportData, currentMonth, type } = e.data;
+    const { reportData, currentMonth, type, showLocation } = e.data;
 
     if (type === 'init') {
         self.postMessage({ type: 'ready' });
@@ -99,6 +119,7 @@ self.onmessage = async (e) => {
         // Prepare headers (excluding FSL-Code)
         const headers = [
             'S.no',
+            ...(showLocation ? ['LOCATION'] : []),
             'NAME',
             'CNIC',
             'Monthly\nSALARY',
@@ -126,8 +147,9 @@ self.onmessage = async (e) => {
             chunk.forEach((item, index) => {
                 const row = [
                     String(i + index + 1), // S.no
+                    ...(showLocation ? [item.locationName || '-'] : []),
                     item.name || '-',
-                    item.cnic || '-',
+                    item.nic || '-',
                     item.salary !== undefined ? item.salary.toLocaleString() : '-',
                     item.daysMonth || '-',
                     item.p !== undefined ? String(item.p) : '-', // Absent days mapped to P
@@ -155,6 +177,7 @@ self.onmessage = async (e) => {
             const firstRow = reportData[0];
             const grandTotalRow = [
                 '',
+                ...(showLocation ? [''] : []),
                 'GRAND TOTAL',
                 '',
                 '',
@@ -199,25 +222,7 @@ self.onmessage = async (e) => {
                 halign: 'center',
                 valign: 'middle',
             },
-            columnStyles: {
-                0: { halign: 'center', cellWidth: 8 }, // S.no
-                1: { halign: 'left', cellWidth: 28 }, // Name
-                2: { halign: 'center', cellWidth: 25 }, // CNIC
-                // The rest center aligned
-                3: { halign: 'center' },
-                4: { halign: 'center' },
-                5: { halign: 'center' },
-                6: { halign: 'center' },
-                7: { halign: 'center' },
-                8: { halign: 'center' },
-                9: { halign: 'center' },
-                10: { halign: 'center' },
-                11: { halign: 'center' },
-                12: { halign: 'center' },
-                13: { halign: 'center', fontStyle: 'bold' }, // Total Salary
-                14: { halign: 'center' },
-                15: { halign: 'center' }
-            },
+            columnStyles: buildColumnStyles(showLocation),
             // eslint-disable-next-line func-names
             willDrawCell(data) {
                 // Bold the GRAND TOTAL row

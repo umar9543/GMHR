@@ -44,7 +44,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
-        const response = await fetch('https://gmsapi.scmcloud.online/api/Dropdown/job-titles');
+        const response = await fetch('https://localhost:7034/api/Dropdown/job-titles');
         if (response.ok) {
           const data = await response.json();
           setJobTitles(data);
@@ -58,7 +58,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
     const fetchLocations = async () => {
       try {
-        const response = await fetch('https://gmsapi.scmcloud.online/api/Dropdown/locations');
+        const response = await fetch('https://localhost:7034/api/Dropdown/locations');
         if (response.ok) {
           const data = await response.json();
           setLocations(data);
@@ -96,7 +96,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
     city: Yup.string().required('City is required'),
     homeTown: Yup.string(),
     cellPhone: Yup.string().required('Cell Phone is required'),
-    jazzCash: Yup.string().required('Jazz Cash is required'),
+    // jazzCash: Yup.string().required('Jazz Cash is required'),
     ptcl: Yup.string().required('PTCL is required'),
     sect: Yup.string().required('SECT is required'),
     fatherCnic: Yup.string().required('Father CNIC is required'),
@@ -169,6 +169,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
       city: '',
       homeTown: '',
       cellPhone: '',
+      OT_Rate: '',
+      Payment_Mode: '',
+      BankAccount: '',
       jazzCash: '',
       ptcl: '',
       sect: '',
@@ -229,8 +232,22 @@ export default function GeneralInformationForm({ currentEmployee }) {
     setValue,
     control,
     reset,
+    watch,
     formState: { isSubmitting },
   } = methods;
+
+  const paymentMode = watch('Payment_Mode');
+
+  useEffect(() => {
+    if (paymentMode === 'Bank') {
+      setValue('jazzCash', '');
+    } else if (paymentMode === 'JazzCash') {
+      setValue('BankAccount', '');
+    } else {
+      setValue('BankAccount', '');
+      setValue('jazzCash', '');
+    }
+  }, [paymentMode, setValue]);
 
   useEffect(() => {
     if (currentEmployee && currentEmployee.employee) {
@@ -267,6 +284,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
         city: emp.CITY || '',
         homeTown: '',
         cellPhone: emp.CELLPHONE || '',
+        OT_Rate: emp.OT_Rate || '',
+        Payment_Mode: emp.Payment_Mode || '',
+        BankAccount: emp.BankAccount || '',
         jazzCash: (emp.JC1 || '') + (emp.JC2 || ''),
         ptcl: emp.HOME || '',
         sect: emp.SECT || '',
@@ -322,7 +342,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
     if (activeStep === 0) {
       fieldsToValidate = ['guardsImage', 'location', 'companyNo', 'firstName', 'fatherName', 'dob', 'age', 'gender', 'maritalStatus', 'jobTitle'];
     } else if (activeStep === 1) {
-      fieldsToValidate = ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'jazzCash', 'ptcl', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'];
+      fieldsToValidate = ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'];
     } else if (activeStep === 2) {
       fieldsToValidate = ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'apsaaCourse', 'locationPrev', 'documentDeposited'];
     } else if (activeStep === 3) {
@@ -357,7 +377,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           PostalCode: '',
           State: data.state || '',
           FkBankId: 0,
-          BankAccount: '',
+          BankAccount: data.Payment_Mode === 'Bank' ? data.BankAccount || '' : '',
           Home: data.ptcl || '',
           Office: '',
           CellPhone: data.cellPhone || '',
@@ -415,8 +435,10 @@ export default function GeneralInformationForm({ currentEmployee }) {
           FamilyNo: data.familyNo || '',
           Eobi: Number(data.eobi) || 0,
           FCnic: data.fatherCnic || '',
-          Jc1: data.jazzCash ? data.jazzCash.substring(0, 4) : '',
-          Jc2: data.jazzCash ? data.jazzCash.substring(4) : '',
+          OT_Rate: data.OT_Rate || '',
+          PaymentMode: data.Payment_Mode || '',
+          Jc1: data.Payment_Mode === 'JazzCash' && data.jazzCash ? data.jazzCash.substring(0, 4) : '',
+          Jc2: data.Payment_Mode === 'JazzCash' && data.jazzCash ? data.jazzCash.substring(4) : '',
           Sect: data.sect || '',
           IsActive: true,
           GName1: data.GNAME1 || '',
@@ -441,7 +463,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         });
 
         const isEdit = !!currentEmployee;
-        const endpoint = isEdit ? `https://gmsapi.scmcloud.online/api/employee/${currentEmployee.employee.ID}` : 'https://gmsapi.scmcloud.online/api/employee';
+        const endpoint = isEdit ? `https://localhost:7034/api/employee/${currentEmployee.employee.ID}` : 'https://localhost:7034/api/employee';
         const method = isEdit ? 'PUT' : 'POST';
 
         const response = await fetch(endpoint, {
@@ -578,7 +600,14 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="city" label="City" />
         <RHFTextField name="homeTown" label="Home Town" />
         <RHFTextField name="cellPhone" label="Cell Phone" />
-        <RHFTextField name="jazzCash" label="Jazz Cash" />
+        <RHFTextField name="OT_Rate" label="OT Rate" />
+        <RHFSelect name="Payment_Mode" label="Payment Mode">
+          <MenuItem value="JazzCash">JazzCash</MenuItem>
+          <MenuItem value="Bank">Bank</MenuItem>
+          <MenuItem value="Cash">Cash</MenuItem>
+        </RHFSelect>
+        {paymentMode === 'Bank' && <RHFTextField name="BankAccount" label="Bank Account" />}
+        {paymentMode === 'JazzCash' && <RHFTextField name="jazzCash" label="Jazz Cash" />}
         <RHFTextField name="ptcl" label="PTCL" />
         <RHFTextField name="sect" label="SECT" />
         <RHFTextField name="fatherCnic" label="Father CNIC" />

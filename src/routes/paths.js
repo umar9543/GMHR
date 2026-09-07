@@ -40,8 +40,39 @@ export const paths = {
     },
   
 // HR
+    Finance: {
+      root: `${ROOTS.DASHBOARD}/finance`,
+      coa: `${ROOTS.DASHBOARD}/finance/chart-of-accounts`,
+      parties: `${ROOTS.DASHBOARD}/finance/parties`,
+      reports: {
+        trialBalance: `${ROOTS.DASHBOARD}/finance/reports/trial-balance`,
+        ledger: `${ROOTS.DASHBOARD}/finance/reports/ledger`,
+        balanceSheet: `${ROOTS.DASHBOARD}/finance/reports/balance-sheet`,
+        bankBook: `${ROOTS.DASHBOARD}/finance/reports/bank-book`,
+        aging: `${ROOTS.DASHBOARD}/finance/reports/aging`,
+        payablesAging: `${ROOTS.DASHBOARD}/finance/reports/payables-aging`,
+      },
+      vouchers: {
+        journalList: `${ROOTS.DASHBOARD}/finance/vouchers/journal`,
+        journalNew: `${ROOTS.DASHBOARD}/finance/vouchers/journal/new`,
+        paymentList: `${ROOTS.DASHBOARD}/finance/vouchers/payment`,
+        paymentNew: `${ROOTS.DASHBOARD}/finance/vouchers/payment/new`,
+        receiptList: `${ROOTS.DASHBOARD}/finance/vouchers/receipt`,
+        receiptNew: `${ROOTS.DASHBOARD}/finance/vouchers/receipt/new`,
+        expenseList: `${ROOTS.DASHBOARD}/finance/vouchers/expense`,
+        expenseNew: `${ROOTS.DASHBOARD}/finance/vouchers/expense/new`,
+        billingList: `${ROOTS.DASHBOARD}/finance/vouchers/billing`,
+        billingNew: `${ROOTS.DASHBOARD}/finance/vouchers/billing/new`,
+      },
+    },
     HR_Module: {
       root: `${ROOTS.DASHBOARD}/HR_Module`,
+      Client: {
+        root: `${ROOTS.DASHBOARD}/HR_Module/client`,
+        list: `${ROOTS.DASHBOARD}/HR_Module/client/list`,
+        new: `${ROOTS.DASHBOARD}/HR_Module/client/new`,
+        edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/client/${id}/edit`,
+      },
       Employee: {
         root: `${ROOTS.DASHBOARD}/HR_Module/employee`,
         list: `${ROOTS.DASHBOARD}/HR_Module/employee/list`,
@@ -68,6 +99,7 @@ export const paths = {
         department: `${ROOTS.DASHBOARD}/HR_Module/setup/department`,
         designation: `${ROOTS.DASHBOARD}/HR_Module/setup/designation`,
         location: `${ROOTS.DASHBOARD}/HR_Module/setup/location`,
+        shift: `${ROOTS.DASHBOARD}/HR_Module/setup/shift`,
         holidays: `${ROOTS.DASHBOARD}/HR_Module/setup/holidays`,
         EmployeeDismissal: {
           root: `${ROOTS.DASHBOARD}/HR_Module/setup/EmployeeDismissal`,
@@ -107,6 +139,8 @@ export const paths = {
         root: `${ROOTS.DASHBOARD}/HR_Module/Attendance`,
         view: `${ROOTS.DASHBOARD}/HR_Module/Attendance/view`,
         monthWiseReport: `${ROOTS.DASHBOARD}/HR_Module/Attendance/month-wise-report`,
+        paradeState: `${ROOTS.DASHBOARD}/HR_Module/Attendance/parade-state`,
+        paradeStateMonthly: `${ROOTS.DASHBOARD}/HR_Module/Attendance/parade-state-monthly`,
       },
     },
 

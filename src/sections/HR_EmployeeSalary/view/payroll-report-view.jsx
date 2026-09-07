@@ -12,6 +12,8 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { paths } from 'src/routes/paths';
 import { useSettingsContext } from 'src/components/settings';
@@ -19,6 +21,11 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import Iconify from 'src/components/iconify';
 
 import { getPayRollReport } from 'src/api/employee-salary';
+import { getEmployeeOptions } from 'src/api/attendance';
+import {
+  buildSalarySlipPdf,
+  fetchSlipByEmployee,
+} from 'src/sections/salarystatus/salary-slip-pdf';
 import { useAuthFetch } from 'src/api/apibasemethods';
 import { APP_API } from 'src/config-global';
 
@@ -44,10 +51,17 @@ export default function PayrollReportView() {
   const { enqueueSnackbar } = useSnackbar();
   const authFetch = useAuthFetch();
 
-  const [locationId, setLocationId] = useState('');
+  // 0 means every location - the API treats a missing/zero locationId that way.
+  const [locationId, setLocationId] = useState(0);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(currentYear);
   const [locations, setLocations] = useState([]);
+
+  // Optional employee filter. Picking one switches the page from the payroll
+  // report to that employee's individual salary voucher.
+  const [employee, setEmployee] = useState(null);
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [employeeSearch, setEmployeeSearch] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
@@ -74,6 +88,23 @@ export default function PayrollReportView() {
     };
     fetchLocations();
   }, [authFetch]);
+
+  // Server-side search, so the picker copes with 7k+ employees.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const rows = await getEmployeeOptions(employeeSearch);
+        if (!cancelled) setEmployeeOptions(rows);
+      } catch (err) {
+        console.error('Failed to load employees', err);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [employeeSearch]);
 
   useEffect(() => {
     workerRef.current = new Worker(new URL('./payroll-report-pdf.worker.js', import.meta.url), {
@@ -128,13 +159,14 @@ export default function PayrollReportView() {
       worker.postMessage({
         reportData,
         currentMonth: currentMonthStr,
+        showLocation: !locationId,
       });
     }
-  }, [showPdf, reportData, pdfPreviewUrl, isGeneratingPdf, year, month, enqueueSnackbar]);
+  }, [showPdf, reportData, pdfPreviewUrl, isGeneratingPdf, year, month, locationId, enqueueSnackbar]);
 
   const handleFetchReport = async () => {
-    if (!locationId || !month || !year) {
-      enqueueSnackbar('Please select Location, Month and Year', { variant: 'warning' });
+    if (!month || !year) {
+      enqueueSnackbar('Please select Month and Year', { variant: 'warning' });
       return;
     }
 
@@ -144,6 +176,30 @@ export default function PayrollReportView() {
     setPdfPreviewUrl(null);
 
     try {
+      // One employee selected: render that person's salary voucher instead of
+      // the whole payroll report. The slip is built here rather than in the
+      // worker, so the worker effect stays idle (reportData is left empty).
+      if (employee?.id) {
+        let token = '';
+        try {
+          token = JSON.parse(localStorage.getItem('UserData'))?.token || '';
+        } catch {
+          token = '';
+        }
+
+        const slip = await fetchSlipByEmployee(employee.id, month, year, token);
+        const blob = await buildSalarySlipPdf(slip);
+
+        setReportData([]);
+        setHasSearched(true);
+        setPdfPreviewUrl(URL.createObjectURL(blob));
+        enqueueSnackbar(`Salary slip loaded for ${slip.employeeName || employee.name}`, {
+          variant: 'success',
+        });
+        setLoading(false);
+        return;
+      }
+
       const dataToProcess = await getPayRollReport(locationId, month, year);
 
       if (dataToProcess.length === 0) {
@@ -170,7 +226,12 @@ export default function PayrollReportView() {
     if (pdfPreviewUrl) {
       const link = document.createElement('a');
       link.href = pdfPreviewUrl;
-      link.download = `Payroll_Report_${year}_${month}.pdf`;
+      if (employee?.id) {
+        link.download = `Salary_Slip_${employee.id}_${year}_${month}.pdf`;
+      } else {
+        const scope = locationId ? `Location${locationId}` : 'AllLocations';
+        link.download = `Payroll_Report_${scope}_${year}_${month}.pdf`;
+      }
       link.click();
     }
   };
@@ -196,8 +257,8 @@ export default function PayrollReportView() {
               label="Location"
               onChange={(e) => setLocationId(e.target.value)}
             >
-              <MenuItem value="">
-                <em>None</em>
+              <MenuItem value={0}>
+                <em>All Locations</em>
               </MenuItem>
               {(locations || []).map((loc) => (
                 <MenuItem key={loc.id || loc.ID} value={loc.id || loc.ID}>
@@ -236,6 +297,20 @@ export default function PayrollReportView() {
               ))}
             </Select>
           </FormControl>
+
+          <Autocomplete
+            fullWidth
+            options={employeeOptions}
+            value={employee}
+            onChange={(event, value) => setEmployee(value)}
+            onInputChange={(event, value) => setEmployeeSearch(value)}
+            getOptionLabel={(option) => (option ? `${option.name} (${option.id})` : '')}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            filterOptions={(x) => x}
+            renderInput={(params) => (
+              <TextField {...params} label="Employee (optional - salary slip)" />
+            )}
+          />
 
           <Button
             variant="contained"

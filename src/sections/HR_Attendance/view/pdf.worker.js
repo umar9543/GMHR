@@ -111,7 +111,14 @@ self.onmessage = async (e) => {
                 ];
 
                 for (let j = 1; j <= 31; j += 1) {
-                    row.push(item[j] !== undefined ? String(item[j]) : '-');
+                    const status = item[j] !== undefined && item[j] !== null ? String(item[j]) : '';
+                    // The shift he worked that day goes on a second line under
+                    // the mark, so the cell reads e.g. "P" over "D".
+                    const shift = item[`s${j}`] ? String(item[`s${j}`]) : '';
+                    let cell = '-';
+                    if (status && shift) cell = `${status}\n${shift}`;
+                    else if (status) cell = status;
+                    row.push(cell);
                 }
 
                 row.push(

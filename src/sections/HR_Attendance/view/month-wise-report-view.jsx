@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSnackbar } from 'notistack';
 
+import { cleanEmployeeName } from 'src/utils/employee-name';
+
 import Card from '@mui/material/Card';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
@@ -31,7 +35,7 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import { getAttendanceMonthWise } from 'src/api/attendance';
+import { getEmployeeOptions, getAttendanceMonthWise } from 'src/api/attendance';
 import UserTableToolbar from '../../employee/user-table-toolbar';
 import AttendanceMonthWiseTableRow from '../attendance-month-wise-table-row';
 
@@ -81,6 +85,11 @@ export default function MonthWiseReportView() {
   const { enqueueSnackbar } = useSnackbar();
 
   const [dateStr, setDateStr] = useState(new Date().toISOString().split('T')[0]);
+
+  // Optional employee filter. null means every employee.
+  const [employee, setEmployee] = useState(null);
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [employeeSearch, setEmployeeSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -150,6 +159,24 @@ export default function MonthWiseReportView() {
     }
   }, [showPdf, reportData, pdfPreviewUrl, isGeneratingPdf, currentMonthDate, enqueueSnackbar]);
 
+  // Options come from the server, so the picker works against 7k+ employees
+  // without pulling them all into the browser.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const rows = await getEmployeeOptions(employeeSearch);
+        if (!cancelled) setEmployeeOptions(rows);
+      } catch (err) {
+        console.error('Failed to load employees', err);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [employeeSearch]);
+
   const handleFetchReport = async () => {
     if (!dateStr) {
       enqueueSnackbar('Please select a Date', { variant: 'warning' });
@@ -165,7 +192,7 @@ export default function MonthWiseReportView() {
       const year = currentMonthDate.getFullYear();
       const month = currentMonthDate.getMonth() + 1;
 
-      const res = await getAttendanceMonthWise(year, month);
+      const res = await getAttendanceMonthWise(year, month, employee?.id);
       const dataToProcess = Array.isArray(res) ? res : res?.data || [];
 
       if (dataToProcess.length === 0) {
@@ -180,6 +207,9 @@ export default function MonthWiseReportView() {
           const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
           newRow[camelKey] = row[key];
         });
+        // Done here rather than in a renderer, so the PDF, its preview and the
+        // Data Table all show the same cleaned name.
+        newRow.name = cleanEmployeeName(newRow.name);
         return newRow;
       });
 
@@ -253,6 +283,20 @@ export default function MonthWiseReportView() {
               }
             }}
             slotProps={{ textField: { fullWidth: true } }}
+          />
+
+          <Autocomplete
+            fullWidth
+            options={employeeOptions}
+            value={employee}
+            onChange={(event, value) => setEmployee(value)}
+            onInputChange={(event, value) => setEmployeeSearch(value)}
+            getOptionLabel={(option) => (option ? `${option.name} (${option.id})` : '')}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            filterOptions={(x) => x}
+            renderInput={(params) => (
+              <TextField {...params} label="Employee (optional - all if blank)" />
+            )}
           />
 
           <Button
