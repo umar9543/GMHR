@@ -13,7 +13,9 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
+import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -44,11 +46,27 @@ export default function ParadeStateView() {
   const [loading, setLoading] = useState(false);
   const [building, setBuilding] = useState(false);
   const [result, setResult] = useState(null);
+  const [search, setSearch] = useState('');
 
-  const view = useMemo(
-    () => (result ? groupRows(result.records) : null),
+  // Day totals for the summary chips always come from the whole sheet; the
+  // search only narrows what the table shows.
+  const dayTotals = useMemo(
+    () => (result ? groupRows(result.records).grandTotals : null),
     [result]
   );
+
+  const view = useMemo(() => {
+    if (!result) return null;
+    const q = search.trim().toLowerCase();
+    const records = q
+      ? result.records.filter(
+          (r) =>
+            (r.clientName || '').toLowerCase().includes(q) ||
+            (r.groupName || '').toLowerCase().includes(q)
+        )
+      : result.records;
+    return groupRows(records);
+  }, [result, search]);
 
   const handleGenerate = async () => {
     if (!date || Number.isNaN(date.getTime())) {
@@ -157,7 +175,9 @@ export default function ParadeStateView() {
           >
             <Box>
               <Typography variant="subtitle1">
-                {view.rowCount} client sites &middot; {view.groups.length} groups
+                {view.rowCount}
+                {search.trim() ? ` of ${result.records.length}` : ''} client sites &middot;{' '}
+                {view.groups.length} groups
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 DEF is strength not on post. SH is what is still uncovered after overtime.
@@ -167,17 +187,17 @@ export default function ParadeStateView() {
               <Chip
                 size="small"
                 color="info"
-                label={`Required ${view.grandTotals.reqTotal}`}
+                label={`Required ${dayTotals.reqTotal}`}
               />
               <Chip
                 size="small"
                 color="success"
-                label={`On post ${view.grandTotals.preDay + view.grandTotals.preNight}`}
+                label={`On post ${dayTotals.preDay + dayTotals.preNight}`}
               />
               <Chip
                 size="small"
-                color={view.grandTotals.shDay + view.grandTotals.shNight > 0 ? 'error' : 'default'}
-                label={`Short ${view.grandTotals.shDay + view.grandTotals.shNight}`}
+                color={dayTotals.shDay + dayTotals.shNight > 0 ? 'error' : 'default'}
+                label={`Short ${dayTotals.shDay + dayTotals.shNight}`}
               />
             </Stack>
           </Stack>
@@ -190,6 +210,23 @@ export default function ParadeStateView() {
           )}
 
           <Divider />
+
+          <Stack sx={{ p: 2.5 }}>
+            <TextField
+              fullWidth
+              size="small"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search client site or group..."
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Stack>
 
           <TableContainer sx={{ maxHeight: 640 }}>
             <Table stickyHeader size="small">
@@ -238,6 +275,16 @@ export default function ParadeStateView() {
                     </TableRow>,
                   ]);
                 })()}
+
+                {!view.rowCount && (
+                  <TableRow>
+                    <TableCell colSpan={3 + PARADE_COLUMNS.length} align="center" sx={{ py: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No client site matches &quot;{search.trim()}&quot;
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
 
                 <TableRow sx={{ bgcolor: 'background.neutral' }}>
                   <TableCell />
