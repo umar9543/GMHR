@@ -60,7 +60,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
   const fetchEmployeeData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://localhost:7034/api/employee/${employeeId}`);
+      const response = await fetch(`https://gmsapi.scmcloud.online/api/employee/${employeeId}`);
       if (response.ok) {
         const data = await response.json();
         const emp = data.employee;
@@ -83,8 +83,8 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
         });
 
         // Check images (prevent caching with timestamp)
-        setFrontPreview(`https://localhost:7034/api/employee/${employeeId}/nic-front?t=${new Date().getTime()}`);
-        setBackPreview(`https://localhost:7034/api/employee/${employeeId}/nic-back?t=${new Date().getTime()}`);
+        setFrontPreview(`https://gmsapi.scmcloud.online/api/employee/${employeeId}/nic-front?t=${new Date().getTime()}`);
+        setBackPreview(`https://gmsapi.scmcloud.online/api/employee/${employeeId}/nic-back?t=${new Date().getTime()}`);
       }
     } catch (error) {
       console.error(error);
@@ -130,7 +130,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
       if (nicFrontImage) payload.append('NicFrontImage', nicFrontImage);
       if (nicBackImage) payload.append('NicBackImage', nicBackImage);
 
-      const response = await fetch(`https://localhost:7034/api/employee/${employeeId}/verification-documents`, {
+      const response = await fetch(`https://gmsapi.scmcloud.online/api/employee/${employeeId}/verification-documents`, {
         method: 'PUT',
         body: payload,
       });

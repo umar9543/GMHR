@@ -74,8 +74,8 @@ export default function JwtLoginView() {
     try {
       const loginUrl =
         system === 'Finance'
-          ? 'https://localhost:7034/api/FinanceAuth/login'
-          : 'https://localhost:7034/api/auth/login';
+          ? 'https://gmsapi.scmcloud.online/api/FinanceAuth/login'
+          : 'https://gmsapi.scmcloud.online/api/auth/login';
 
       const response = await fetch(loginUrl, {
         method: 'POST',

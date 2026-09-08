@@ -91,7 +91,7 @@ export default function LocationListView() {
 
   const fetchLocations = useCallback(async () => {
     try {
-      const response = await Get('https://localhost:7034/api/Location');
+      const response = await Get('https://gmsapi.scmcloud.online/api/Location');
       const data = response.data;
       setTableData(Array.isArray(data) ? data : data?.Data || []);
     } catch (error) {
@@ -352,8 +352,8 @@ function LocationDialog({ edit = false, open, onClose, row, tableData }) {
 
     try {
       const response = edit
-        ? await Put(`https://localhost:7034/api/Location/${getLocationId(row)}`, payload)
-        : await Post('https://localhost:7034/api/Location', payload);
+        ? await Put(`https://gmsapi.scmcloud.online/api/Location/${getLocationId(row)}`, payload)
+        : await Post('https://gmsapi.scmcloud.online/api/Location', payload);
 
       enqueueSnackbar(
         response.data?.Message || `Location ${edit ? 'updated' : 'added'} successfully`,
