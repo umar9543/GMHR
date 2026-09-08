@@ -319,16 +319,34 @@ function applyFilter({ inputData, comparator, filters }) {
   inputData = stabilizedThis.map((el) => el[0]);
 
   if (name) {
-    inputData = inputData.filter((user) => {
-      const n = name.toLowerCase();
-      return (
-        String(user.FIRSTNAME ?? '').toLowerCase().includes(n) ||
-        String(user.LASTNAME ?? '').toLowerCase().includes(n) ||
-        String(user.FATHERNAME ?? '').toLowerCase().includes(n) ||
-        String(user.CNIC ?? '').toLowerCase().includes(n) ||
-        String(user.CELLNO ?? '').toLowerCase().includes(n)
-      );
-    });
+    const n = name.trim().toLowerCase();
+    // NIC and phone are typed with or without dashes; compare digits only.
+    const digits = n.replace(/\D/g, '');
+    const has = (v) => String(v ?? '').toLowerCase().includes(n);
+    const hasDigits = (v) => !!digits && String(v ?? '').replace(/\D/g, '').includes(digits);
+
+    inputData = inputData.filter(
+      (user) =>
+        // employee code
+        String(user.ID ?? user.id ?? '') === n ||
+        String(user.ID ?? user.id ?? '').includes(n) ||
+        // name
+        has(user.name) ||
+        has(user.FIRSTNAME) ||
+        has(user.LASTNAME) ||
+        has(`${user.FIRSTNAME ?? ''} ${user.LASTNAME ?? ''}`) ||
+        // father name (the API sends it as MIDDLENAME)
+        has(user.MIDDLENAME) ||
+        has(user.FATHERNAME) ||
+        // NIC
+        has(user.NIC) ||
+        has(user.CNIC) ||
+        hasDigits(user.NIC) ||
+        hasDigits(user.CNIC) ||
+        // phone
+        has(user.CELLPHONE) ||
+        hasDigits(user.CELLPHONE)
+    );
   }
 
   return inputData;
