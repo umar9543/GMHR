@@ -37,6 +37,17 @@ export default defineConfig({
   },
   worker: {
     format: 'es',
+    rollupOptions: {
+      output: {
+        // jspdf pulls dompurify/html2canvas in as dynamic chunks. The workers and
+        // the main bundle each emit them; with the same file name the worker copy
+        // overwrites the main one and vite's import analysis crashes
+        // ("Cannot read properties of undefined (reading 'forEach') at addDeps").
+        entryFileNames: 'assets/worker/[name]-[hash].js',
+        chunkFileNames: 'assets/worker/[name]-[hash].js',
+        assetFileNames: 'assets/worker/[name]-[hash][extname]',
+      },
+    },
   },
   build: {
     rollupOptions: {

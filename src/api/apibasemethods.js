@@ -50,7 +50,7 @@ async function refreshToken() {
   try {
     console.debug('Attempting token refresh with cookies:', document.cookie);
 
-    const res = await fetch('https://192.168.100.37:8080/api/account/refresh-token', {
+    const res = await fetch(`${APP_API}/api/account/refresh-token`, {
       method: 'POST',
       credentials: 'include',
       headers: {
