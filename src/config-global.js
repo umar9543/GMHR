@@ -2,8 +2,8 @@ import { paths } from 'src/routes/paths';
 
 // API
 // ----------------------------------------------------------------------
-export const APP_API = import.meta.env.VITE_APP_API;
-export const APP_API_STORAGE = import.meta.env.VITE_APP_API_STORAGE;
+export const APP_API = import.meta.env.VITE_APP_API || 'https://gmsapi.scmcloud.online';
+export const APP_API_STORAGE = import.meta.env.VITE_APP_API_STORAGE || 'https://gmsapi.scmcloud.online';
 export const APP_URL = import.meta.env.VITE_APP_URL;
 
 export const MAP_API = import.meta.env.VITE_MAPS_API_KEY;
