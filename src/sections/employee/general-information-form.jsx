@@ -13,7 +13,6 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import FormProvider, {
@@ -27,6 +26,37 @@ import FormProvider, {
 import { enqueueSnackbar } from 'notistack';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
+import { APP_API } from 'src/config-global';
+
+const DATE_FORMAT = 'dd/MM/yyyy';
+
+/**
+ * The upload boxes hold a File when the user picks one, but only
+ * { preview: 'data:image/jpeg;base64,...' } when the picture came back from the
+ * API. FormData would post that object as "[object Object]", so the server sees
+ * no file at all. Convert the preview back into a File before sending.
+ */
+const toUploadFile = async (value, fallbackName) => {
+  if (!value) return null;
+  if (value instanceof File || value instanceof Blob) return value;
+
+  const preview = typeof value === 'string' ? value : value.preview;
+  if (typeof preview !== 'string' || !preview.startsWith('data:')) return null;
+
+  const blob = await (await fetch(preview)).blob();
+  return new File([blob], value.name || fallbackName, { type: blob.type || 'image/jpeg' });
+};
+
+const ageFromDob = (dob) => {
+  if (!dob) return '';
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return '';
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age -= 1;
+  return age >= 0 ? age : '';
+};
 
 const STEPS = [
   'General',
@@ -40,7 +70,29 @@ export default function GeneralInformationForm({ currentEmployee }) {
   const [activeStep, setActiveStep] = useState(0);
   const [jobTitles, setJobTitles] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [nextId, setNextId] = useState(null);
   const router = useRouter();
+
+  // The ID a new record will receive. CreateEmployee assigns MAX(ID)+1, and the
+  // dropdown is ordered by ID descending, so its first row carries that MAX.
+  // Shown as Company No. for a new employee and for a re-enrolment. It is a
+  // preview, not a reservation: two people starting a form at the same moment
+  // both see the same number and the second save lands on the one after it.
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch(`${APP_API}/api/employee/dropdown?page=1&pageSize=1&search=`);
+        if (!response.ok) throw new Error(`Employee lookup failed (${response.status})`);
+
+        const data = await response.json();
+        const rows = data.records ?? data.Records ?? [];
+        const highest = rows.length ? Number(rows[0].Id ?? rows[0].id) : null;
+        if (highest) setNextId(highest + 1);
+      } catch (error) {
+        console.error('Could not work out the next employee id:', error);
+      }
+    })();
+  }, []);
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
@@ -114,32 +166,20 @@ export default function GeneralInformationForm({ currentEmployee }) {
     exSecurityCompany: Yup.string().required('Ex-Security Company is required'),
     serviceDuration2: Yup.string().required('Service Duration (Security Co.) is required'),
     education: Yup.string(),
-    apsaaCourse: Yup.string().required('APSAA Course is required'),
-    locationPrev: Yup.string(),
-    documentDeposited: Yup.string().required('Document Deposited is required'),
+    apsaaCourse: Yup.string(),
+    exSecurityCompanyName: Yup.string(),
+    documentDeposited: Yup.string(),
 
     // Page 4
     dateOfEnrolment: Yup.date().nullable().required('Date of Enrolment is required'),
     dateOfReEnroll: Yup.date().nullable().required('Date of ReEnroll is required'),
-    dischargeDate: Yup.date().nullable().required('Discharge Date is required'),
+    dischargeDate: Yup.date().nullable(),
     careOf: Yup.string(),
 
     // Page 5
     emergencyName: Yup.string().required('Name is required'),
     nextOfKin: Yup.string().required('Next of Kin is required'),
     emergencyCellPhone: Yup.string().required('Cell Phone is required'),
-    GNAME1: Yup.string().required('Guarantor 1 Name is required'),
-    SONOF1: Yup.string().required('Guarantor 1 S/O is required'),
-    ADDRESS1: Yup.string().required('Guarantor 1 Address is required'),
-    CNIC1: Yup.string().required('Guarantor 1 CNIC is required'),
-    CNIC_EXP1: Yup.date().nullable().required('Guarantor 1 CNIC Expiry is required'),
-    CELL1: Yup.string().required('Guarantor 1 Cell Phone is required'),
-    GNAME2: Yup.string().required('Guarantor 2 Name is required'),
-    SONOF2: Yup.string().required('Guarantor 2 S/O is required'),
-    ADDRESS2: Yup.string().required('Guarantor 2 Address is required'),
-    CNIC2: Yup.string().required('Guarantor 2 CNIC is required'),
-    CNIC_EXP2: Yup.date().nullable().required('Guarantor 2 CNIC Expiry is required'),
-    CELL2: Yup.string().required('Guarantor 2 Cell Phone is required'),
   });
 
   const defaultValues = useMemo(
@@ -190,7 +230,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
       serviceDuration2: '',
       education: '',
       apsaaCourse: '',
-      locationPrev: '',
+      exSecurityCompanyName: '',
       documentDeposited: '',
 
       // Joining Date
@@ -237,6 +277,25 @@ export default function GeneralInformationForm({ currentEmployee }) {
   } = methods;
 
   const paymentMode = watch('Payment_Mode');
+  const dob = watch('dob');
+  const reEnroll = watch('reEnroll');
+
+  useEffect(() => {
+    setValue('age', ageFromDob(dob), { shouldValidate: !!dob });
+  }, [dob, setValue]);
+
+  // Company No. is the employee's ID: the existing one while editing, or the
+  // next free ID for a new record and for a re-enrolment (which creates a new
+  // record linked back to the old ID).
+  const existingId = currentEmployee?.employee?.ID ?? null;
+  const isReEnrolment = !!existingId && !!reEnroll;
+  useEffect(() => {
+    if (existingId && !reEnroll) {
+      setValue('companyNo', String(existingId));
+    } else if (nextId) {
+      setValue('companyNo', String(nextId));
+    }
+  }, [existingId, reEnroll, nextId, setValue]);
 
   useEffect(() => {
     if (paymentMode === 'Bank') {
@@ -261,13 +320,13 @@ export default function GeneralInformationForm({ currentEmployee }) {
       reset({
         // General
         location: emp.FKLOCATIONID || '',
-        companyNo: emp.REENROLLID || '',
+        companyNo: String(emp.ID || ''),
         reEnroll: emp.REENROLLCHK === 'true',
         companyCardIssued: emp.CARDISSUE === 1,
         firstName: emp.FIRSTNAME || '',
         fatherName: emp.MIDDLENAME || '',
         dob: emp.DOB ? new Date(emp.DOB) : null,
-        age: emp.AGE || '',
+        age: emp.DOB ? ageFromDob(emp.DOB) : emp.AGE || '',
         gender: emp.GENDER === 0 ? 'Male' : 'Female',
         maritalStatus: emp.MARITALSTATUS === 0 ? 'Single' : 'Married',
         jobTitle: emp.FKDEPARTMENTID || '',
@@ -305,7 +364,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         serviceDuration2: emp.EXSECURITYSERVICE || '',
         education: '',
         apsaaCourse: emp.APSAA || '',
-        locationPrev: '',
+        exSecurityCompanyName: emp.EXSECURITY || '',
         documentDeposited: emp.DOCUMENTS || '',
 
         // Joining Date
@@ -344,7 +403,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
     } else if (activeStep === 1) {
       fieldsToValidate = ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'];
     } else if (activeStep === 2) {
-      fieldsToValidate = ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'apsaaCourse', 'locationPrev', 'documentDeposited'];
+      fieldsToValidate = ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'apsaaCourse', 'exSecurityCompanyName', 'documentDeposited'];
     } else if (activeStep === 3) {
       fieldsToValidate = ['dateOfEnrolment', 'dateOfReEnroll', 'dischargeDate'];
     }
@@ -404,7 +463,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           ExArmedRank: data.rank || '',
           ExArmedService: data.serviceDuration1 || '',
           Medical: data.medicalCategory || '',
-          ExSecurity: data.exSecurityCompany === 'Civil',
+          ExSecurity: data.exSecurityCompanyName || '',
           ExSecurityService: data.serviceDuration2 || '',
           Apsaa: data.apsaaCourse || '',
           Documents: data.documentDeposited || '',
@@ -423,7 +482,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           MarkId: data.markOfIdentity || '',
           ReEnrollDate: data.dateOfReEnroll ? new Date(data.dateOfReEnroll).toISOString() : null,
           ReEnrollChk: !!data.reEnroll,
-          ReEnrollId: Number(data.companyNo) || 0,
+          ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
           Kin: data.nextOfKin || '',
           Civil: 1,
           ApsaaVer: false,
@@ -457,13 +516,23 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
         const formData = new FormData();
         Object.keys(payload).forEach(key => {
+          if (key === 'EmployeePicture' || key === 'NicPicture') return;
           if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
             formData.append(key, payload[key]);
           }
         });
 
-        const isEdit = !!currentEmployee;
-        const endpoint = isEdit ? `https://gmsapi.scmcloud.online/api/employee/${currentEmployee.employee.ID}` : 'https://gmsapi.scmcloud.online/api/employee';
+        const [employeePicture, nicPicture] = await Promise.all([
+          toUploadFile(data.guardsImage, 'profile.jpg'),
+          toUploadFile(data.nicImage, 'nic.jpg'),
+        ]);
+        if (employeePicture) formData.append('EmployeePicture', employeePicture);
+        if (nicPicture) formData.append('NicPicture', nicPicture);
+
+        // Editing with "Re Enroll" ticked creates a new employee record (new
+        // ID) that points back to the old one, instead of updating in place.
+        const isEdit = !!currentEmployee && !isReEnrolment;
+        const endpoint = isEdit ? `${APP_API}/api/employee/${currentEmployee.employee.ID}` : `${APP_API}/api/employee`;
         const method = isEdit ? 'PUT' : 'POST';
 
         const response = await fetch(endpoint, {
@@ -471,7 +540,18 @@ export default function GeneralInformationForm({ currentEmployee }) {
           body: formData
         });
         if (response.ok) {
-          enqueueSnackbar(isEdit ? 'Employee updated successfully' : 'Employee added successfully');
+          let savedId = null;
+          try {
+            const body = await response.json();
+            savedId = body?.EmployeeId ?? body?.employeeId ?? null;
+          } catch (e) {
+            /* no body */
+          }
+          if (isReEnrolment) {
+            enqueueSnackbar(`Employee re-enrolled with new ID ${savedId ?? ''}`.trim());
+          } else {
+            enqueueSnackbar(isEdit ? 'Employee updated successfully' : 'Employee added successfully');
+          }
           router.push(paths.dashboard.HR_Module.Employee.list);
         } else {
           enqueueSnackbar(isEdit ? 'Failed to update employee' : 'Failed to add employee', {
@@ -530,7 +610,12 @@ export default function GeneralInformationForm({ currentEmployee }) {
             </MenuItem>
           ))}
         </RHFSelect>
-        <RHFTextField name="companyNo" label="Company No." />
+        <RHFTextField
+          name="companyNo"
+          label="Company No."
+          InputProps={{ readOnly: true }}
+          helperText={isReEnrolment ? `Re-enrolment: a new record will be created (previous ID ${existingId})` : ' '}
+        />
         <Stack direction="row" spacing={2} alignItems="center">
           <RHFCheckbox name="reEnroll" label="Re Enroll" />
           <RHFCheckbox name="companyCardIssued" label="Company Card Issued" />
@@ -545,11 +630,11 @@ export default function GeneralInformationForm({ currentEmployee }) {
               label="Date of Birth"
               value={field.value}
               onChange={field.onChange}
-              renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />}
+              format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }}
             />
           )}
         />
-        <RHFTextField name="age" label="Age" type="number" />
+        <RHFTextField name="age" label="Age" type="number" InputProps={{ readOnly: true }} helperText="Calculated from date of birth" />
         <RHFSelect name="gender" label="Gender">
           <MenuItem value="Male">Male</MenuItem>
           <MenuItem value="Female">Female</MenuItem>
@@ -621,7 +706,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
               label="CNIC Validity"
               value={field.value}
               onChange={field.onChange}
-              renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />}
+              format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }}
             />
           )}
         />
@@ -678,15 +763,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
         />
         <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
         <RHFTextField name="education" label="Education" />
-        <RHFSelect name="apsaaCourse" label="APSAA Course">
-          <MenuItem value="Yes">Yes</MenuItem>
-          <MenuItem value="No">No</MenuItem>
-        </RHFSelect>
-        <RHFTextField name="locationPrev" label="Location" />
-        <RHFSelect name="documentDeposited" label="Document Deposited in Company">
-          <MenuItem value="Yes">Yes</MenuItem>
-          <MenuItem value="No">No</MenuItem>
-        </RHFSelect>
+        <RHFTextField name="apsaaCourse" label="APSAA Course" />
+        <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
+        <RHFTextField name="documentDeposited" label="Document Deposited in Company" />
       </Box>
     </Stack>
   );
@@ -708,21 +787,21 @@ export default function GeneralInformationForm({ currentEmployee }) {
           name="dateOfEnrolment"
           control={control}
           render={({ field, fieldState: { error } }) => (
-            <DatePicker label="Date of Enrolment" value={field.value} onChange={field.onChange} renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />} />
+            <DatePicker label="Date of Enrolment" value={field.value} onChange={field.onChange} format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }} />
           )}
         />
         <Controller
           name="dateOfReEnroll"
           control={control}
           render={({ field, fieldState: { error } }) => (
-            <DatePicker label="Date of ReEnroll" value={field.value} onChange={field.onChange} renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />} />
+            <DatePicker label="Date of ReEnroll" value={field.value} onChange={field.onChange} format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }} />
           )}
         />
         <Controller
           name="dischargeDate"
           control={control}
           render={({ field, fieldState: { error } }) => (
-            <DatePicker label="Discharge Date" value={field.value} onChange={field.onChange} renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />} />
+            <DatePicker label="Discharge Date" value={field.value} onChange={field.onChange} format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }} />
           )}
         />
         <RHFTextField name="careOf" label="Care of" />
@@ -748,65 +827,6 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="emergencyCellPhone" label="Cell Phone" />
       </Box>
 
-      <Typography variant="h6" sx={{ mt: 2 }}>Guarantor 1 Information</Typography>
-      <Box
-        rowGap={3}
-        columnGap={2}
-        display="grid"
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(2, 1fr)',
-          md: 'repeat(3, 1fr)',
-        }}
-      >
-        <RHFTextField name="GNAME1" label="Name" />
-        <RHFTextField name="SONOF1" label="S/O" />
-        <RHFTextField name="ADDRESS1" label="Address" />
-        <RHFTextField name="CNIC1" label="CNIC" />
-        <Controller
-          name="CNIC_EXP1"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <DatePicker
-              label="CNIC Expiry"
-              value={field.value}
-              onChange={field.onChange}
-              renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />}
-            />
-          )}
-        />
-        <RHFTextField name="CELL1" label="Cell Phone" />
-      </Box>
-
-      <Typography variant="h6" sx={{ mt: 2 }}>Guarantor 2 Information</Typography>
-      <Box
-        rowGap={3}
-        columnGap={2}
-        display="grid"
-        gridTemplateColumns={{
-          xs: 'repeat(1, 1fr)',
-          sm: 'repeat(2, 1fr)',
-          md: 'repeat(3, 1fr)',
-        }}
-      >
-        <RHFTextField name="GNAME2" label="Name" />
-        <RHFTextField name="SONOF2" label="S/O" />
-        <RHFTextField name="ADDRESS2" label="Address" />
-        <RHFTextField name="CNIC2" label="CNIC" />
-        <Controller
-          name="CNIC_EXP2"
-          control={control}
-          render={({ field, fieldState: { error } }) => (
-            <DatePicker
-              label="CNIC Expiry"
-              value={field.value}
-              onChange={field.onChange}
-              renderInput={(params) => <TextField {...params} fullWidth error={!!error} helperText={error?.message} />}
-            />
-          )}
-        />
-        <RHFTextField name="CELL2" label="Cell Phone" />
-      </Box>
     </Stack>
   );
 

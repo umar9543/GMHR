@@ -38,6 +38,7 @@ export default function UserTableRow({
   updatePrivilege,
   onViewIdCard,
   onViewVerification,
+  onViewGuarantor,
 }) {
   const {
     EmployeeName,
@@ -143,9 +144,16 @@ export default function UserTableRow({
           </IconButton>
         </TableCell> */}
         <TableCell align="center" sx={{ px: 1, whiteSpace: 'nowrap' }}>
-          <IconButton onClick={onViewVerification}>
-            <Iconify icon="solar:document-bold-duotone" />
-          </IconButton>
+          <Tooltip title="Verification documents">
+            <IconButton onClick={onViewVerification}>
+              <Iconify icon="solar:document-bold-duotone" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Guarantors">
+            <IconButton onClick={onViewGuarantor}>
+              <Iconify icon="solar:users-group-rounded-bold-duotone" />
+            </IconButton>
+          </Tooltip>
         </TableCell>
         <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
 
@@ -309,4 +317,5 @@ UserTableRow.propTypes = {
   updatePrivilege: PropTypes.func,
   onViewIdCard: PropTypes.func,
   onViewVerification: PropTypes.func,
+  onViewGuarantor: PropTypes.func,
 };

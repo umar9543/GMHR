@@ -47,6 +47,7 @@ import UserTableFiltersResult from '../user-table-filters-result';
 import UserTableRow from '../user-table-row';
 import EmployeeIdCardDialog from '../employee-id-card-dialog';
 import EmployeeVerificationDialog from '../employee-verification-dialog';
+import EmployeeGuarantorDialog from '../employee-guarantor-dialog';
 
 
 
@@ -71,7 +72,7 @@ const TABLE_HEAD = [
   { id: 'APSAA', label: 'APSAA', width: 180 },
   { id: 'active', label: 'Status', width: 100 },
   // { id: 'policy', label: 'Policy', width: 100 },
-  { id: 'Documents', label: 'Documents', width: 120 },
+  { id: 'Documents', label: 'Documents', width: 160 },
   { id: 'Action', label: 'Action', width: 88 },
 ];
 
@@ -110,6 +111,19 @@ export default function EmployeeListView() {
   const handleCloseIdCard = useCallback(() => {
     setIdCardOpen(false);
     setSelectedEmployeeForCard(null);
+  }, []);
+
+  const [guarantorOpen, setGuarantorOpen] = useState(false);
+  const [selectedGuarantorEmployeeId, setSelectedGuarantorEmployeeId] = useState(null);
+
+  const handleOpenGuarantor = useCallback((id) => {
+    setSelectedGuarantorEmployeeId(id);
+    setGuarantorOpen(true);
+  }, []);
+
+  const handleCloseGuarantor = useCallback(() => {
+    setGuarantorOpen(false);
+    setSelectedGuarantorEmployeeId(null);
   }, []);
 
   const [verificationOpen, setVerificationOpen] = useState(false);
@@ -445,6 +459,7 @@ export default function EmployeeListView() {
                           onEditRow={() => handleEditRow(row.HRID)}
                           onViewIdCard={() => handleOpenIdCard(row)}
                           onViewVerification={() => handleOpenVerification(row.HRID)}
+                          onViewGuarantor={() => handleOpenGuarantor(row.HRID)}
                           // onViewProfile={() => handleViewProfile(row.HRID)}
                           // onEditPolicy={() => handleEditPolicy(row.HRID)}
                           updatePrivilege={updatePrivilege}
@@ -509,6 +524,12 @@ export default function EmployeeListView() {
         open={verificationOpen}
         onClose={handleCloseVerification}
         employeeId={selectedVerificationEmployeeId}
+      />
+
+      <EmployeeGuarantorDialog
+        open={guarantorOpen}
+        onClose={handleCloseGuarantor}
+        employeeId={selectedGuarantorEmployeeId}
       />
     </>
   );
