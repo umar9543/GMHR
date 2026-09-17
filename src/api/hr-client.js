@@ -81,6 +81,29 @@ export async function getClientRankMap() {
   return map;
 }
 
+/**
+ * A client's dated guard history, newest date first. Each entry holds the
+ * guards per rank for its Daily Date.
+ */
+export function getClientHistory(id, { page = 1, pageSize = 50 } = {}) {
+  return apiFetch(`/api/HrClient/${id}/history${buildQuery({ page, pageSize })}`);
+}
+
+/** Deletes one dated entry. The client itself is never deleted. */
+export function deleteClientHistoryVersion(id, historyId) {
+  return apiFetch(`/api/HrClient/${id}/history/${historyId}`, { method: 'DELETE' });
+}
+
+/** The client's company allowance, one row per date it changed. */
+export function getClientAllowances(id) {
+  return apiFetch(`/api/HrClient/${id}/allowances`);
+}
+
+/** Adds a group name, or returns the existing group of that name. */
+export function createGroup(name) {
+  return apiFetch('/api/HrClient/groups', { method: 'POST', body: JSON.stringify({ name }) });
+}
+
 export function getClientRanks() {
   return apiFetch('/api/HrClient/ranks');
 }

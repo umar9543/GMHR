@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable';
 
 import { cleanEmployeeName } from 'src/utils/employee-name';
 
+import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
+
 const COMPANY = 'Guards Mark Security';
 const ADDRESS =
   'Plot# C-1-C, Mezzanine Floor, Lane-1, Sehar Commercial, Phase-7, D.H.A, Karachi, Pakistan.';
@@ -111,11 +113,46 @@ export async function buildMonthlyParadeStatePdf(data) {
     },
     didParseCell: (data2) => {
       if (data2.section !== 'body') return;
+      // Only the day cells carry marks; a guard named "Aslam" is not an absence.
+      const firstDayColumn = 3;
+      const column = data2.column.index;
+      if (column < firstDayColumn || column >= firstDayColumn + days.length) return;
       const raw = String(data2.cell.raw || '');
       if (raw.startsWith('A')) data2.cell.styles.textColor = [183, 29, 24];
       else if (raw.startsWith('L')) data2.cell.styles.textColor = [255, 171, 0];
     },
     margin: { left: 6, right: 6, bottom: 12 },
+  });
+
+  // The monthly sheet counts guard-days, so the summary is measured the same
+  // way: contracted strength over the days actually marked this month.
+  const duty = { standard: { day: 0, night: 0 }, overtime: { day: 0, night: 0 } };
+  const markedDays = new Set();
+
+  records.forEach((row) => {
+    days.forEach((d) => {
+      const status = row.days[String(d)];
+      if (!status) return;
+      markedDays.add(d);
+      const shift = row.days[`s${d}`] === 'N' ? 'night' : 'day';
+      if (String(status).startsWith('P')) duty.standard[shift] += 1;
+      if (status === 'P/OT' || status === 'OT') duty.overtime[shift] += 1;
+    });
+  });
+
+  const dutyDays = markedDays.size;
+  drawParadeSummary(doc, {
+    startY: doc.lastAutoTable.finalY + 6,
+    margin: 6,
+    caption: `Guard-days over the ${dutyDays} day(s) marked in ${MONTHS[month - 1]} ${year}.`,
+    rows: paradeSummaryRows({
+      contract: {
+        day: (client?.reqDay || 0) * dutyDays,
+        night: (client?.reqNight || 0) * dutyDays,
+      },
+      standard: duty.standard,
+      overtime: duty.overtime,
+    }),
   });
 
   const pageCount = doc.internal.getNumberOfPages();

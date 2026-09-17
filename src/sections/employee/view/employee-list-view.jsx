@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -12,12 +12,14 @@ import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import TableContainer from '@mui/material/TableContainer';
+import LinearProgress from '@mui/material/LinearProgress';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useDebounce } from 'src/hooks/use-debounce';
 
 import { _roles, _userList, USER_STATUS_OPTIONS } from 'src/_mock';
 
@@ -32,22 +34,23 @@ import {
   useTable,
   emptyRows,
   TableNoData,
-  getComparator,
   TableEmptyRows,
   TableHeadCustom,
   TableSelectedAction,
   TablePaginationCustom,
 } from 'src/components/table';
-import { Get, Put } from 'src/api/apibasemethods';
-import { APP_API_STORAGE } from 'src/config-global';
+import { Put } from 'src/api/apibasemethods';
+import { APP_API } from 'src/config-global';
 import { LoadingScreen } from 'src/components/loading-screen';
-import { fetchHrEmployees } from 'src/api/hr-employee';
 import UserTableToolbar from '../user-table-toolbar';
 import UserTableFiltersResult from '../user-table-filters-result';
 import UserTableRow from '../user-table-row';
 import EmployeeIdCardDialog from '../employee-id-card-dialog';
 import EmployeeVerificationDialog from '../employee-verification-dialog';
 import EmployeeGuarantorDialog from '../employee-guarantor-dialog';
+import EmployeeSoldierBookDialog from '../employee-soldier-book-dialog';
+import { stickyCellSx, ACTION_COL_WIDTH, DOCUMENTS_COL_WIDTH } from '../sticky-columns';
+import { buildEmployeeInformationFormPdf } from '../employee-information-form-pdf';
 
 
 
@@ -72,8 +75,22 @@ const TABLE_HEAD = [
   { id: 'APSAA', label: 'APSAA', width: 180 },
   { id: 'active', label: 'Status', width: 100 },
   // { id: 'policy', label: 'Policy', width: 100 },
-  { id: 'Documents', label: 'Documents', width: 160 },
-  { id: 'Action', label: 'Action', width: 88 },
+  {
+    id: 'Documents',
+    label: 'Documents',
+    align: 'center',
+    width: DOCUMENTS_COL_WIDTH,
+    minWidth: DOCUMENTS_COL_WIDTH,
+    sx: stickyCellSx({ right: ACTION_COL_WIDTH, edge: true, head: true }),
+  },
+  {
+    id: 'Action',
+    label: 'Action',
+    align: 'right',
+    width: ACTION_COL_WIDTH,
+    minWidth: ACTION_COL_WIDTH,
+    sx: stickyCellSx({ right: 0, head: true }),
+  },
 ];
 
 const defaultFilters = {
@@ -81,6 +98,27 @@ const defaultFilters = {
   role: [],
   status: 'all',
 };
+
+// The list asks the server for one page at a time, already searched, filtered
+// and sorted, instead of downloading every employee and doing it in the browser.
+const toRow = (item) => ({
+  ...item,
+  id: item.id,
+  HRID: item.id,
+  EmployeeName: item.firstName || '',
+  FatherName: item.fatherName || '',
+  CNIC: item.nic || '',
+  NIC: item.nic || '',
+  CellNo: item.cellPhone || '',
+  Age: item.age ?? '',
+  Address: item.address || '',
+  DepartmentName: item.departmentName || '',
+  Education: '',
+  APSAA: item.apsaa || '',
+  active: item.isActive ? 'Active' : 'In-Active',
+  status: 'Registered',
+  avatarUrl: `${APP_API}/api/employee/${item.id}/picture`,
+});
 
 // ----------------------------------------------------------------------
 
@@ -98,7 +136,13 @@ export default function EmployeeListView() {
   const confirm = useBoolean();
 
   const [tableData, setTableData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [counts, setCounts] = useState({ all: 0, active: 0, inactive: 0 });
+  // loading covers the first load only. Later pages show a thin progress bar,
+  // so the table stays on screen while it refreshes.
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
+  const requestRef = useRef(0);
 
   const [idCardOpen, setIdCardOpen] = useState(false);
   const [selectedEmployeeForCard, setSelectedEmployeeForCard] = useState(null);
@@ -111,6 +155,40 @@ export default function EmployeeListView() {
   const handleCloseIdCard = useCallback(() => {
     setIdCardOpen(false);
     setSelectedEmployeeForCard(null);
+  }, []);
+
+  const [printingForm, setPrintingForm] = useState(false);
+
+  const handlePrintForm = useCallback(
+    async (id) => {
+      if (printingForm) return;
+      setPrintingForm(true);
+      try {
+        const url = await buildEmployeeInformationFormPdf(id);
+        window.open(url, '_blank');
+      } catch (error) {
+        console.error(error);
+        enqueueSnackbar(error.message || 'Could not build the information form', {
+          variant: 'error',
+        });
+      } finally {
+        setPrintingForm(false);
+      }
+    },
+    [printingForm, enqueueSnackbar]
+  );
+
+  const [soldierBookOpen, setSoldierBookOpen] = useState(false);
+  const [selectedSoldierBookEmployeeId, setSelectedSoldierBookEmployeeId] = useState(null);
+
+  const handleOpenSoldierBook = useCallback((id) => {
+    setSelectedSoldierBookEmployeeId(id);
+    setSoldierBookOpen(true);
+  }, []);
+
+  const handleCloseSoldierBook = useCallback(() => {
+    setSoldierBookOpen(false);
+    setSelectedSoldierBookEmployeeId(null);
   }, []);
 
   const [guarantorOpen, setGuarantorOpen] = useState(false);
@@ -141,78 +219,69 @@ export default function EmployeeListView() {
 
   const [filters, setFilters] = useState(defaultFilters);
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters,
-  });
+  // Search waits for a pause in typing, so the server is not asked on every key.
+  const searchTerm = useDebounce(filters.name, 400);
 
-  const dataInPage = dataFiltered.slice(
-    table.page * table.rowsPerPage,
-    table.page * table.rowsPerPage + table.rowsPerPage
-  );
+  // The server already returns just the current page.
+  const dataFiltered = tableData;
+
+  const dataInPage = tableData;
 
   const denseHeight = table.dense ? 56 : 56 + 20;
 
   const canReset = !isEqual(defaultFilters, filters);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = !fetching && !tableData.length;
 
   const FetchProfileData = useCallback(async () => {
+    requestRef.current += 1;
+    const requestId = requestRef.current;
+    setFetching(true);
+
     try {
-      // ── SecuritySystem API: GET /api/employee ───────────────────────
-      const response = await fetch('https://gmsapi.scmcloud.online/api/employee');
+      const params = new URLSearchParams({
+        page: String(table.page + 1),
+        pageSize: String(table.rowsPerPage),
+        search: searchTerm.trim(),
+        status: filters.status,
+        sortBy: table.orderBy || '',
+        sortDir: table.order || 'asc',
+      });
+
+      const response = await fetch(`${APP_API}/api/employee/paged?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch employee list');
       }
-      const apiData = await response.json();
+      const data = await response.json();
 
-      const updatedData = (apiData || []).map((item) => ({
-        ...item,
-        // Normalise field names to match UserTableRow expectations
-        id: item.ID,
-        HRID: item.ID,
-        EmployeeName: item.FIRSTNAME || "",
-        FatherName: item.MIDDLENAME || "",
-        CellNo: item.CELLPHONE || '',
-        Age: item.AGE || '',
-        Address: item.ADDRESS || '',
-        DepartmentName: item.FKDEPARTMENTID || '',
-        Education: item.Education || '',
-        APSAA: item.APSAA || '',
-        NIC: item.NIC || '',
-        active: item.IsActive ? 'Active' : 'In-Active',
-        status: 'Registered',
-        avatarUrl: `https://gmsapi.scmcloud.online/api/employee/${item.ID}/picture`,
-      }));
-      setTableData(updatedData);
+      // A slower, older request must not overwrite a newer page.
+      if (requestId !== requestRef.current) return;
+
+      setTableData((data.records || []).map(toRow));
+      setTotalCount(data.totalCount ?? 0);
+      setCounts(data.counts ?? { all: 0, active: 0, inactive: 0 });
     } catch (error) {
+      if (requestId !== requestRef.current) return;
       console.error('FetchProfileData error:', error);
-      // Fallback to old HRModule endpoint if SecuritySystem API is unreachable
-      try {
-        const response = await Get(
-          `HRModule/GetEmployeeList?Org_ID=${userData?.userDetails?.orgId}&Branch_ID=${userData?.userDetails?.branchID}&UserId=${userData?.userDetails?.userId}&RoleId=1`
-        );
-        const fallback = (response.data?.Data || []).map((item) => ({
-          ...item,
-          status: item?.isRegisterd === 'Y' ? 'Registered' : 'NotRegistered',
-          active: item?.EmployeeStatus === 'Active' ? 'Active' : 'In-Active',
-          avatarUrl: item?.PhotoURL,
-        }));
-        setTableData(fallback);
-      } catch (fallbackErr) {
-        console.error('Fallback fetch error:', fallbackErr);
+      enqueueSnackbar(error.message || 'Could not load the employee list', { variant: 'error' });
+    } finally {
+      if (requestId === requestRef.current) {
+        setFetching(false);
+        setLoading(false);
       }
     }
-  }, [userData?.userDetails?.orgId, userData?.userDetails?.branchID, userData?.userDetails?.userId]);
+  }, [
+    table.page,
+    table.rowsPerPage,
+    table.orderBy,
+    table.order,
+    searchTerm,
+    filters.status,
+    enqueueSnackbar,
+  ]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      // setLoading(true);
-      await Promise.all([FetchProfileData()]);
-      setLoading(false);
-    };
-    fetchData();
+    FetchProfileData();
   }, [FetchProfileData]);
 
   const handleFilters = useCallback(
@@ -378,9 +447,10 @@ export default function EmployeeListView() {
                         'default'
                       }
                     >
-                      {['Active', 'In-Active'].includes(tab.value)
-                        ? tableData.filter((user) => user.active === tab.value).length
-                        : tableData.length}
+                      {(tab.value === 'Active' && counts.active) ||
+                        (tab.value === 'In-Active' && counts.inactive) ||
+                        (tab.value === 'all' && counts.all) ||
+                        0}
                     </Label>
                   }
                 />
@@ -401,10 +471,12 @@ export default function EmployeeListView() {
                 //
                 onResetFilters={handleResetFilters}
                 //
-                results={dataFiltered.length}
+                results={totalCount}
                 sx={{ p: 2.5, pt: 0 }}
               />
             )}
+
+            <div style={{ height: 2 }}>{fetching && <LinearProgress sx={{ height: 2 }} />}</div>
 
             <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
               <TableSelectedAction
@@ -444,12 +516,7 @@ export default function EmployeeListView() {
                   />
 
                   <TableBody>
-                    {dataFiltered
-                      .slice(
-                        table.page * table.rowsPerPage,
-                        table.page * table.rowsPerPage + table.rowsPerPage
-                      )
-                      .map((row, index) => (
+                    {tableData.map((row, index) => (
                         <UserTableRow
                           key={row.id || row.HRID || row.UserId || index}
                           row={row}
@@ -460,6 +527,8 @@ export default function EmployeeListView() {
                           onViewIdCard={() => handleOpenIdCard(row)}
                           onViewVerification={() => handleOpenVerification(row.HRID)}
                           onViewGuarantor={() => handleOpenGuarantor(row.HRID)}
+                          onViewSoldierBook={() => handleOpenSoldierBook(row.HRID)}
+                          onPrintForm={() => handlePrintForm(row.HRID)}
                           // onViewProfile={() => handleViewProfile(row.HRID)}
                           // onEditPolicy={() => handleEditPolicy(row.HRID)}
                           updatePrivilege={updatePrivilege}
@@ -468,7 +537,7 @@ export default function EmployeeListView() {
 
                     <TableEmptyRows
                       height={denseHeight}
-                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+                      emptyRows={emptyRows(table.page, table.rowsPerPage, totalCount)}
                     />
 
                     <TableNoData notFound={notFound} />
@@ -478,7 +547,7 @@ export default function EmployeeListView() {
             </TableContainer>
 
             <TablePaginationCustom
-              count={dataFiltered.length}
+              count={totalCount}
               page={table.page}
               rowsPerPage={table.rowsPerPage}
               onPageChange={table.onChangePage}
@@ -531,51 +600,13 @@ export default function EmployeeListView() {
         onClose={handleCloseGuarantor}
         employeeId={selectedGuarantorEmployeeId}
       />
+
+      <EmployeeSoldierBookDialog
+        open={soldierBookOpen}
+        onClose={handleCloseSoldierBook}
+        employeeId={selectedSoldierBookEmployeeId}
+      />
     </>
   );
 }
 
-// ----------------------------------------------------------------------
-
-function applyFilter({ inputData, comparator, filters }) {
-  const { name, status, role } = filters;
-
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-
-  inputData = stabilizedThis.map((el) => el[0]);
-
-  if (name) {
-    inputData = inputData.filter((user) => {
-      const n = name.toLowerCase();
-      return (
-        String(user.EmployeeName ?? '').toLowerCase().includes(n) ||
-        String(user.FatherName ?? '').toLowerCase().includes(n) ||
-        String(user.NIC ?? '').toLowerCase().includes(n) ||
-        String(user.CellNo ?? '').toLowerCase().includes(n) ||
-        String(user.Address ?? '').toLowerCase().includes(n) ||
-        String(user.DepartmentName ?? '').toLowerCase().includes(n) ||
-        String(user.status ?? '').toLowerCase().includes(n) ||
-        String(user.active ?? '').toLowerCase().includes(n)
-      );
-    });
-  }
-
-  if (status !== 'all') {
-    inputData = inputData.filter(
-      (user) =>
-        user.active?.toLowerCase().replace(/\s/g, '') ===
-        status.toLowerCase().replace(/\s/g, '')
-    );
-  }
-
-  if (role.length) {
-    inputData = inputData.filter((user) => role.includes(user.DepartmentName));
-  }
-
-  return inputData;
-}

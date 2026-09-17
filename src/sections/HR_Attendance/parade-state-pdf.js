@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import { groupRows, PARADE_COLUMNS } from './parade-state-utils';
+import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
 
 const COMPANY = 'Guards Mark Security';
 const ADDRESS =
@@ -124,6 +125,15 @@ export async function buildParadeStatePdf(records, dateStr) {
       }
     },
     margin: { left: 8, right: 8, bottom: 12 },
+  });
+
+  drawParadeSummary(doc, {
+    startY: doc.lastAutoTable.finalY + 6,
+    rows: paradeSummaryRows({
+      contract: { day: grandTotals.reqDay, night: grandTotals.reqNight },
+      standard: { day: grandTotals.preDay, night: grandTotals.preNight },
+      overtime: { day: grandTotals.otDay, night: grandTotals.otNight },
+    }),
   });
 
   const pageCount = doc.internal.getNumberOfPages();

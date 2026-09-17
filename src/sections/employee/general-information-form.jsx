@@ -13,6 +13,14 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import MenuItem from '@mui/material/MenuItem';
+import Dialog from '@mui/material/Dialog';
+import Tooltip from '@mui/material/Tooltip';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import FormProvider, {
@@ -27,6 +35,7 @@ import { enqueueSnackbar } from 'notistack';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 import { APP_API } from 'src/config-global';
+import Iconify from 'src/components/iconify';
 
 const DATE_FORMAT = 'dd/MM/yyyy';
 
@@ -63,7 +72,7 @@ const STEPS = [
   'Address',
   'Previous Information',
   'Joining Date',
-  'Emergency Contact',
+  'Contact Information',
 ];
 
 export default function GeneralInformationForm({ currentEmployee }) {
@@ -71,6 +80,27 @@ export default function GeneralInformationForm({ currentEmployee }) {
   const [jobTitles, setJobTitles] = useState([]);
   const [locations, setLocations] = useState([]);
   const [nextId, setNextId] = useState(null);
+
+  // Ex-Armed Forces Group choices, from dbo.ExArmedForcesGroup. The employee
+  // still stores the chosen name in EXARMED, so a legacy value that is not in
+  // the list is kept and shown as typed.
+  const [forcesGroups, setForcesGroups] = useState([]);
+  const [addGroupOpen, setAddGroupOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [savingGroup, setSavingGroup] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await fetch(`${APP_API}/api/ExArmedForcesGroup`);
+        if (!response.ok) throw new Error(`Forces groups failed (${response.status})`);
+        const rows = await response.json();
+        setForcesGroups(rows.map((g) => g.name ?? g.Name).filter(Boolean));
+      } catch (error) {
+        console.error('Could not load the forces groups:', error);
+      }
+    })();
+  }, []);
   const router = useRouter();
 
   // The ID a new record will receive. CreateEmployee assigns MAX(ID)+1, and the
@@ -96,7 +126,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
-        const response = await fetch('https://gmsapi.scmcloud.online/api/Dropdown/job-titles');
+        const response = await fetch('https://localhost:7034/api/Dropdown/job-titles');
         if (response.ok) {
           const data = await response.json();
           setJobTitles(data);
@@ -110,7 +140,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
     const fetchLocations = async () => {
       try {
-        const response = await fetch('https://gmsapi.scmcloud.online/api/Dropdown/locations');
+        const response = await fetch('https://localhost:7034/api/Dropdown/locations');
         if (response.ok) {
           const data = await response.json();
           setLocations(data);
@@ -150,8 +180,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
     cellPhone: Yup.string().required('Cell Phone is required'),
     // jazzCash: Yup.string().required('Jazz Cash is required'),
     ptcl: Yup.string().required('PTCL is required'),
+    caste: Yup.string(),
     sect: Yup.string().required('SECT is required'),
-    fatherCnic: Yup.string().required('Father CNIC is required'),
+    fatherCnic: Yup.string(),
     nic: Yup.string().required('NIC is required'),
     cnicValidity: Yup.date().nullable().required('CNIC Validity is required'),
     nicImage: Yup.mixed().required('NIC Image is required'),
@@ -159,13 +190,14 @@ export default function GeneralInformationForm({ currentEmployee }) {
     eobi: Yup.string(),
 
     // Page 3
-    exArmedForcesGroup: Yup.string().required('Ex-Armed Forces Group is required'),
-    rank: Yup.string().required('Rank is required'),
-    serviceDuration1: Yup.string().required('Service Duration is required'),
-    medicalCategory: Yup.string().required('Medical Category is required'),
-    exSecurityCompany: Yup.string().required('Ex-Security Company is required'),
-    serviceDuration2: Yup.string().required('Service Duration (Security Co.) is required'),
+    exArmedForcesGroup: Yup.string(),
+    rank: Yup.string(),
+    serviceDuration1: Yup.string(),
+    medicalCategory: Yup.string(),
+    exSecurityCompany: Yup.string(),
+    serviceDuration2: Yup.string(),
     education: Yup.string(),
+    schoolCollege: Yup.string(),
     apsaaCourse: Yup.string(),
     exSecurityCompanyName: Yup.string(),
     documentDeposited: Yup.string(),
@@ -177,9 +209,12 @@ export default function GeneralInformationForm({ currentEmployee }) {
     careOf: Yup.string(),
 
     // Page 5
-    emergencyName: Yup.string().required('Name is required'),
-    nextOfKin: Yup.string().required('Next of Kin is required'),
-    emergencyCellPhone: Yup.string().required('Cell Phone is required'),
+    emergencyName: Yup.string(),
+    emergencyRelation: Yup.string(),
+    emergencyCellPhone: Yup.string(),
+    nokName: Yup.string(),
+    nokRelation: Yup.string(),
+    nokPhone: Yup.string(),
   });
 
   const defaultValues = useMemo(
@@ -214,6 +249,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
       BankAccount: '',
       jazzCash: '',
       ptcl: '',
+      caste: '',
       sect: '',
       fatherCnic: '',
       nic: '',
@@ -229,6 +265,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
       exSecurityCompany: '',
       serviceDuration2: '',
       education: '',
+      schoolCollege: '',
       apsaaCourse: '',
       exSecurityCompanyName: '',
       documentDeposited: '',
@@ -241,8 +278,11 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
       // Emergency Contact
       emergencyName: '',
-      nextOfKin: '',
+      emergencyRelation: '',
       emergencyCellPhone: '',
+      nokName: '',
+      nokRelation: '',
+      nokPhone: '',
 
       GNAME1: '',
       SONOF1: '',
@@ -312,6 +352,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
     if (currentEmployee && currentEmployee.employee) {
       console.log("Current Employee API Response:", currentEmployee);
       const emp = currentEmployee.employee;
+      // School/College and next of kin come from EMPLOYEE_ADDITIONAL_INFO.
+      const extra = currentEmployee.additionalInfo || currentEmployee.AdditionalInfo || {};
       let guar = currentEmployee.guarantor || {};
       if (Array.isArray(guar)) {
         guar = guar[0] || {};
@@ -348,6 +390,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         BankAccount: emp.BankAccount || '',
         jazzCash: (emp.JC1 || '') + (emp.JC2 || ''),
         ptcl: emp.HOME || '',
+        caste: extra.caste || '',
         sect: emp.SECT || '',
         fatherCnic: emp.FCNIC || '',
         nic: emp.NIC || '',
@@ -356,13 +399,15 @@ export default function GeneralInformationForm({ currentEmployee }) {
         eobi: emp.EOBI ? String(emp.EOBI) : '',
 
         // Previous Info
-        exArmedForcesGroup: emp.EXARMED === 'true' ? 'Army' : '',
+        exArmedForcesGroup: emp.EXARMED || '',
         rank: emp.EXARMEDRANK || '',
         serviceDuration1: emp.EXARMEDSERVICE || '',
         medicalCategory: emp.MEDICAL || '',
         exSecurityCompany: emp.EXSECURITY === 'true' ? 'Civil' : 'Ex-Armed',
         serviceDuration2: emp.EXSECURITYSERVICE || '',
-        education: '',
+        // Education is kept in the NTN column, which the legacy app repurposed for it.
+        education: emp.NTN || '',
+        schoolCollege: extra.schoolCollege || '',
         apsaaCourse: emp.APSAA || '',
         exSecurityCompanyName: emp.EXSECURITY || '',
         documentDeposited: emp.DOCUMENTS || '',
@@ -373,10 +418,13 @@ export default function GeneralInformationForm({ currentEmployee }) {
         dischargeDate: null,
         careOf: emp.REFERENCE || '',
 
-        // Emergency Contact
+        // Contact Information. KIN holds the emergency contact's relation.
         emergencyName: emp.EMERGENCYNAME || '',
-        nextOfKin: emp.KIN || '',
+        emergencyRelation: emp.KIN || '',
         emergencyCellPhone: emp.EMERGENCYPHONE || '',
+        nokName: extra.nokName || '',
+        nokRelation: extra.nokRelation || '',
+        nokPhone: extra.nokPhone || '',
 
         GNAME1: guar.GNAME1 || '',
         SONOF1: guar.SONOF1 || '',
@@ -401,9 +449,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
     if (activeStep === 0) {
       fieldsToValidate = ['guardsImage', 'location', 'companyNo', 'firstName', 'fatherName', 'dob', 'age', 'gender', 'maritalStatus', 'jobTitle'];
     } else if (activeStep === 1) {
-      fieldsToValidate = ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'];
+      fieldsToValidate = ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'caste', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'];
     } else if (activeStep === 2) {
-      fieldsToValidate = ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'apsaaCourse', 'exSecurityCompanyName', 'documentDeposited'];
+      fieldsToValidate = ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'schoolCollege', 'apsaaCourse', 'exSecurityCompanyName', 'documentDeposited'];
     } else if (activeStep === 3) {
       fieldsToValidate = ['dateOfEnrolment', 'dateOfReEnroll', 'dischargeDate'];
     }
@@ -442,7 +490,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           CellPhone: data.cellPhone || '',
           Email: '',
           IncomeTax: Number(data.iTax) || 0,
-          Ntn: '',
+          Ntn: data.education || '',
           Nic: data.nic || '',
           ProbDate: new Date().toISOString(),
           ProbPeriod: 90,
@@ -459,7 +507,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           NicValid: data.cnicValidity ? new Date(data.cnicValidity).toISOString() : null,
           NicPicture: data.nicImage || '',
           NicPicPath: data.nicImage?.name ? `/paths/${data.nicImage.name}` : '',
-          ExArmed: data.exSecurityCompany === 'Ex-Armed' || !!data.exArmedForcesGroup,
+          ExArmed: data.exArmedForcesGroup || '',
           ExArmedRank: data.rank || '',
           ExArmedService: data.serviceDuration1 || '',
           Medical: data.medicalCategory || '',
@@ -469,6 +517,12 @@ export default function GeneralInformationForm({ currentEmployee }) {
           Documents: data.documentDeposited || '',
           EmergencyName: data.emergencyName || '',
           EmergencyPhone: data.emergencyCellPhone || '',
+          SchoolCollege: data.schoolCollege || '',
+          NokName: data.nokName || '',
+          NokRelation: data.nokRelation || '',
+          NokPhone: data.nokPhone || '',
+          // Tells the server these fields came from this form, so it may save them.
+          AdditionalInfoIncluded: true,
           NadraVerify: false,
           NadraPicPath: '',
           HomeDispatch: false,
@@ -483,7 +537,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           ReEnrollDate: data.dateOfReEnroll ? new Date(data.dateOfReEnroll).toISOString() : null,
           ReEnrollChk: !!data.reEnroll,
           ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
-          Kin: data.nextOfKin || '',
+          Kin: data.emergencyRelation || '',
           Civil: 1,
           ApsaaVer: false,
           OrigCnic: data.originalCnicReleased ? 1 : 0,
@@ -498,6 +552,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           PaymentMode: data.Payment_Mode || '',
           Jc1: data.Payment_Mode === 'JazzCash' && data.jazzCash ? data.jazzCash.substring(0, 4) : '',
           Jc2: data.Payment_Mode === 'JazzCash' && data.jazzCash ? data.jazzCash.substring(4) : '',
+          Caste: data.caste || '',
           Sect: data.sect || '',
           IsActive: true,
           GName1: data.GNAME1 || '',
@@ -694,6 +749,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         {paymentMode === 'Bank' && <RHFTextField name="BankAccount" label="Bank Account" />}
         {paymentMode === 'JazzCash' && <RHFTextField name="jazzCash" label="Jazz Cash" />}
         <RHFTextField name="ptcl" label="PTCL" />
+        <RHFTextField name="caste" label="Caste" />
         <RHFTextField name="sect" label="SECT" />
         <RHFTextField name="fatherCnic" label="Father CNIC" />
         <RHFTextField name="nic" label="NIC" />
@@ -731,6 +787,38 @@ export default function GeneralInformationForm({ currentEmployee }) {
     </Stack>
   );
 
+  const handleAddForcesGroup = async () => {
+    const name = newGroupName.replace(/\s+/g, ' ').trim();
+    if (!name || savingGroup) return;
+
+    setSavingGroup(true);
+    try {
+      const response = await fetch(`${APP_API}/api/ExArmedForcesGroup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.message || body.Message || 'Could not add the forces group');
+
+      const saved = body.group?.name ?? body.group?.Name ?? name;
+      setForcesGroups((prev) =>
+        prev.some((g) => g.toLowerCase() === saved.toLowerCase())
+          ? prev
+          : [...prev, saved].sort((a, b) => a.localeCompare(b))
+      );
+      setValue('exArmedForcesGroup', saved, { shouldValidate: true });
+      setAddGroupOpen(false);
+      enqueueSnackbar(
+        body.created === false ? `"${saved}" already exists and is now selected` : `"${saved}" added`
+      );
+    } catch (error) {
+      enqueueSnackbar(error.message || 'Could not add the forces group', { variant: 'error' });
+    } finally {
+      setSavingGroup(false);
+    }
+  };
+
   const renderPreviousInfo = (
     <Stack spacing={3}>
       <Typography variant="h6">Previous Information</Typography>
@@ -744,12 +832,45 @@ export default function GeneralInformationForm({ currentEmployee }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        <RHFSelect name="exArmedForcesGroup" label="Ex-Armed Forces Group">
-          <MenuItem value="Army">Army</MenuItem>
-          <MenuItem value="Navy">Navy</MenuItem>
-          <MenuItem value="Air Force">Air Force</MenuItem>
-          <MenuItem value="Civil">Civil</MenuItem>
-        </RHFSelect>
+        <Stack direction="row" spacing={1} alignItems="flex-start">
+          <Controller
+            name="exArmedForcesGroup"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <Autocomplete
+                fullWidth
+                freeSolo
+                forcePopupIcon
+                options={forcesGroups}
+                value={field.value || ''}
+                onChange={(event, value) => field.onChange(value ?? '')}
+                onInputChange={(event, value, reason) => {
+                  if (reason === 'input') field.onChange(value);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Ex-Armed Forces Group"
+                    error={!!error}
+                    helperText={error?.message}
+                  />
+                )}
+              />
+            )}
+          />
+          <Tooltip title="Add forces group">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                setNewGroupName('');
+                setAddGroupOpen(true);
+              }}
+              sx={{ mt: 1 }}
+            >
+              <Iconify icon="mingcute:add-line" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
         <RHFTextField name="rank" label="Rank" />
         <RHFTextField name="serviceDuration1" label="Service Duration" />
         <RHFTextField name="medicalCategory" label="Medical Category" />
@@ -763,6 +884,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         />
         <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
         <RHFTextField name="education" label="Education" />
+        <RHFTextField name="schoolCollege" label="School / College" />
         <RHFTextField name="apsaaCourse" label="APSAA Course" />
         <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
         <RHFTextField name="documentDeposited" label="Document Deposited in Company" />
@@ -811,7 +933,11 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
   const renderEmergencyContact = (
     <Stack spacing={3}>
-      <Typography variant="h6">Emergency Contact</Typography>
+      <Typography variant="h6">Contact Information</Typography>
+
+      <Typography variant="subtitle2" color="text.secondary">
+        Emergency Contact
+      </Typography>
       <Box
         rowGap={3}
         columnGap={2}
@@ -822,11 +948,28 @@ export default function GeneralInformationForm({ currentEmployee }) {
           md: 'repeat(3, 1fr)',
         }}
       >
-        <RHFTextField name="emergencyName" label="Name" />
-        <RHFTextField name="nextOfKin" label="Next of Kin" />
-        <RHFTextField name="emergencyCellPhone" label="Cell Phone" />
+        <RHFTextField name="emergencyName" label="Emergency Contact Name" />
+        <RHFTextField name="emergencyRelation" label="Relation" />
+        <RHFTextField name="emergencyCellPhone" label="Number" />
       </Box>
 
+      <Typography variant="subtitle2" color="text.secondary">
+        Next of Kin
+      </Typography>
+      <Box
+        rowGap={3}
+        columnGap={2}
+        display="grid"
+        gridTemplateColumns={{
+          xs: 'repeat(1, 1fr)',
+          sm: 'repeat(2, 1fr)',
+          md: 'repeat(3, 1fr)',
+        }}
+      >
+        <RHFTextField name="nokName" label="Next of Kin Name" />
+        <RHFTextField name="nokRelation" label="Relation" />
+        <RHFTextField name="nokPhone" label="Number" />
+      </Box>
     </Stack>
   );
 
@@ -844,6 +987,45 @@ export default function GeneralInformationForm({ currentEmployee }) {
         {activeStep === 0 && renderGeneral}
         {activeStep === 1 && renderAddress}
         {activeStep === 2 && renderPreviousInfo}
+
+        <Dialog
+          open={addGroupOpen}
+          onClose={() => !savingGroup && setAddGroupOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Add Forces Group</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              margin="dense"
+              label="Forces group name"
+              value={newGroupName}
+              inputProps={{ maxLength: 150 }}
+              onChange={(event) => setNewGroupName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleAddForcesGroup();
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button color="inherit" onClick={() => setAddGroupOpen(false)} disabled={savingGroup}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="contained"
+              onClick={handleAddForcesGroup}
+              disabled={savingGroup || !newGroupName.trim()}
+            >
+              {savingGroup ? 'Saving...' : 'Save'}
+            </Button>
+          </DialogActions>
+        </Dialog>
         {activeStep === 3 && renderJoiningDate}
         {activeStep === 4 && renderEmergencyContact}
 

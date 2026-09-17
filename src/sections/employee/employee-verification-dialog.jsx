@@ -15,6 +15,15 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useSnackbar } from 'notistack';
 import Grid from '@mui/material/Grid';
 
+// EVS dates travel as yyyy-MM-dd and are handled as local calendar dates;
+// toISOString would shift them back a day in Pakistan time.
+const pad = (n) => String(n).padStart(2, '0');
+const toLocalIsoDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromIsoDate = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+};
+
 export default function EmployeeVerificationDialog({ open, onClose, employeeId }) {
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(false);
@@ -35,6 +44,9 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
     HomeDispatch: 'No',
     HomeVerify: 'No',
     HomePolice: '',
+    EvsCertificateNo: '',
+    EvsDate: null,
+    EvsVerified: 'No',
   });
 
   const [nicFrontImage, setNicFrontImage] = useState(null);
@@ -60,10 +72,12 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
   const fetchEmployeeData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://gmsapi.scmcloud.online/api/employee/${employeeId}`);
+      const response = await fetch(`https://localhost:7034/api/employee/${employeeId}`);
       if (response.ok) {
         const data = await response.json();
         const emp = data.employee;
+        // EVS verification is kept in EMPLOYEE_ADDITIONAL_INFO.
+        const extra = data.additionalInfo || {};
 
         setFormData({
           Nic: emp.NIC || '',
@@ -80,11 +94,14 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
           HomeDispatch: emp.HOMEDISPATCH || 'No',
           HomeVerify: emp.HOMEVERIFY || 'No',
           HomePolice: emp.HOMEPOLICE || '',
+          EvsCertificateNo: extra.evsCertificateNo || '',
+          EvsDate: fromIsoDate(extra.evsDate),
+          EvsVerified: extra.evsVerified || 'No',
         });
 
         // Check images (prevent caching with timestamp)
-        setFrontPreview(`https://gmsapi.scmcloud.online/api/employee/${employeeId}/nic-front?t=${new Date().getTime()}`);
-        setBackPreview(`https://gmsapi.scmcloud.online/api/employee/${employeeId}/nic-back?t=${new Date().getTime()}`);
+        setFrontPreview(`https://localhost:7034/api/employee/${employeeId}/nic-front?t=${new Date().getTime()}`);
+        setBackPreview(`https://localhost:7034/api/employee/${employeeId}/nic-back?t=${new Date().getTime()}`);
       }
     } catch (error) {
       console.error(error);
@@ -119,7 +136,9 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
       const payload = new FormData();
       Object.keys(formData).forEach((key) => {
         if (formData[key] !== null) {
-          if (formData[key] instanceof Date) {
+          if (key === 'EvsDate') {
+            payload.append(key, toLocalIsoDate(formData[key]));
+          } else if (formData[key] instanceof Date) {
             payload.append(key, formData[key].toISOString());
           } else {
             payload.append(key, formData[key]);
@@ -130,7 +149,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
       if (nicFrontImage) payload.append('NicFrontImage', nicFrontImage);
       if (nicBackImage) payload.append('NicBackImage', nicBackImage);
 
-      const response = await fetch(`https://gmsapi.scmcloud.online/api/employee/${employeeId}/verification-documents`, {
+      const response = await fetch(`https://localhost:7034/api/employee/${employeeId}/verification-documents`, {
         method: 'PUT',
         body: payload,
       });
@@ -208,6 +227,19 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
                       <TextField label="NIC" value={formData.Nic} onChange={handleChange('Nic')} fullWidth />
                       <DatePicker label="NIC Validity" value={formData.NicValid} onChange={handleDateChange('NicValid')} slotProps={{ textField: { fullWidth: true } }} />
                       <TextField select label="Verified" value={formData.NadraVerify} onChange={handleChange('NadraVerify')} fullWidth>
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </TextField>
+                    </Stack>
+                  </Box>
+
+                  {/* EVS section */}
+                  <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 2, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)' }}>
+                    <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600 }}>EVS Verification</Typography>
+                    <Stack spacing={2.5}>
+                      <TextField label="Certificate No." value={formData.EvsCertificateNo} onChange={handleChange('EvsCertificateNo')} inputProps={{ maxLength: 100 }} fullWidth />
+                      <DatePicker label="Date" value={formData.EvsDate} onChange={handleDateChange('EvsDate')} format="dd/MM/yyyy" slotProps={{ textField: { fullWidth: true } }} />
+                      <TextField select label="Verified" value={formData.EvsVerified} onChange={handleChange('EvsVerified')} fullWidth>
                         <MenuItem value="Yes">Yes</MenuItem>
                         <MenuItem value="No">No</MenuItem>
                       </TextField>

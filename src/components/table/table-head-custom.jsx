@@ -51,7 +51,7 @@ export default function TableHeadCustom({
             key={headCell.id}
             align={headCell.align || 'left'}
             sortDirection={orderBy === headCell.id ? order : false}
-            sx={{ width: headCell.width, minWidth: headCell.minWidth, maxWidth: headCell.maxWidth, minHeight: headCell.minHeight, paddingY: headCell.padding, borderRight: headCell.borderRight, borderLeft: headCell.borderLeft, border: headCell.border }}
+            sx={{ width: headCell.width, minWidth: headCell.minWidth, maxWidth: headCell.maxWidth, minHeight: headCell.minHeight, paddingY: headCell.padding, borderRight: headCell.borderRight, borderLeft: headCell.borderLeft, border: headCell.border, ...headCell.sx }}
           >
             {onSort ? (
               <TableSortLabel

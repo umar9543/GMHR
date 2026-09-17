@@ -22,6 +22,8 @@ import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
 
+import { stickyCellSx, ACTION_COL_WIDTH, DOCUMENTS_COL_WIDTH } from './sticky-columns';
+
 
 
 
@@ -39,6 +41,8 @@ export default function UserTableRow({
   onViewIdCard,
   onViewVerification,
   onViewGuarantor,
+  onViewSoldierBook,
+  onPrintForm,
 }) {
   const {
     EmployeeName,
@@ -143,7 +147,16 @@ export default function UserTableRow({
             <Iconify icon="hugeicons:policy" />
           </IconButton>
         </TableCell> */}
-        <TableCell align="center" sx={{ px: 1, whiteSpace: 'nowrap' }}>
+        <TableCell
+          align="center"
+          sx={{
+            px: 1,
+            whiteSpace: 'nowrap',
+            width: DOCUMENTS_COL_WIDTH,
+            minWidth: DOCUMENTS_COL_WIDTH,
+            ...stickyCellSx({ right: ACTION_COL_WIDTH, edge: true }),
+          }}
+        >
           <Tooltip title="Verification documents">
             <IconButton onClick={onViewVerification}>
               <Iconify icon="solar:document-bold-duotone" />
@@ -154,8 +167,27 @@ export default function UserTableRow({
               <Iconify icon="solar:users-group-rounded-bold-duotone" />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Soldier book">
+            <IconButton onClick={onViewSoldierBook}>
+              <Iconify icon="solar:notebook-bold-duotone" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Employee information form">
+            <IconButton onClick={onPrintForm}>
+              <Iconify icon="solar:printer-minimalistic-bold-duotone" />
+            </IconButton>
+          </Tooltip>
         </TableCell>
-        <TableCell align="right" sx={{ px: 1, whiteSpace: 'nowrap' }}>
+        <TableCell
+          align="right"
+          sx={{
+            px: 1,
+            whiteSpace: 'nowrap',
+            width: ACTION_COL_WIDTH,
+            minWidth: ACTION_COL_WIDTH,
+            ...stickyCellSx({ right: 0 }),
+          }}
+        >
 
 
           <IconButton onClick={onViewIdCard}>
@@ -318,4 +350,6 @@ UserTableRow.propTypes = {
   onViewIdCard: PropTypes.func,
   onViewVerification: PropTypes.func,
   onViewGuarantor: PropTypes.func,
+  onViewSoldierBook: PropTypes.func,
+  onPrintForm: PropTypes.func,
 };
