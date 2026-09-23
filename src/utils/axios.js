@@ -1,10 +1,12 @@
 import axios from 'axios';
 
-import { HOST_API } from 'src/config-global';
+import { APP_API, HOST_API } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 
-const axiosInstance = axios.create({ baseURL: HOST_API });
+// Falls back to the one API address in .env, so no call can end up pointing
+// somewhere else when VITE_HOST_API is not set.
+const axiosInstance = axios.create({ baseURL: HOST_API || APP_API });
 
 axiosInstance.interceptors.response.use(
   (res) => res,

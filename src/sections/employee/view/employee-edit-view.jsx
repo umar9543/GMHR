@@ -8,6 +8,8 @@ import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
 import { useSnackbar } from 'src/components/snackbar';
 
+import { APP_API } from 'src/config-global';
+
 import GeneralInformationForm from '../general-information-form';
 
 // ----------------------------------------------------------------------
@@ -23,7 +25,7 @@ export default function EmployeeEditView({ id }) {
     const fetchEmployee = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://localhost:7034/api/employee/${id}`);
+        const response = await fetch(`${APP_API}/api/employee/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch employee');
         }

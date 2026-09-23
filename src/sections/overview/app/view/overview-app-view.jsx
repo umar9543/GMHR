@@ -133,8 +133,8 @@ export default function OverviewAppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AnalyticsWidgetSummary
-            title="Total Departments"
-            total={stats.totalDepartments || 0}
+            title="Active Clients"
+            total={stats.activeClients || 0}
             color="warning"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_bag.png" />}
           />
@@ -161,20 +161,18 @@ export default function OverviewAppView() {
 
         <Grid xs={12} md={4}>
           <AppGenderRatio
-            title="Location Distribution"
+            title="Guards on Duty by Client"
+            subheader={`${stats.guardsOnDuty || 0} guards marked in the last 30 days`}
             chart={{
-              series: (stats.departmentCounts || [
-                { label: 'Site Area 1', value: 45 },
-                { label: 'Site Area 2', value: 20 },
-                { label: 'Site Area 3', value: 25 },
-                { label: 'Site Area 4', value: 10 },
-              ]).map(d => ({ label: d.label || d.department || d.name, value: d.value || d.count || 0 })),
+              series: (stats.clientDistribution || []).map((d) => ({ label: d.label, value: d.count })),
               colors: [
                 theme.palette.primary.main,
                 theme.palette.info.main,
                 theme.palette.warning.main,
                 theme.palette.success.main,
-              ]
+                theme.palette.error.main,
+                theme.palette.grey[500],
+              ],
             }}
           />
         </Grid>
@@ -183,12 +181,9 @@ export default function OverviewAppView() {
           <AppGenderRatio
             title="Gender Ratio"
             chart={{
-
-              // reason api give male = female and female = male
-
               series: [
-                { label: 'Male', value: stats.femaleCount || 0 },
-                { label: 'Female', value: stats.maleCount || 0 },
+                { label: 'Male', value: stats.maleCount || 0 },
+                { label: 'Female', value: stats.femaleCount || 0 },
               ],
               colors: [
                 theme.palette.info.main,

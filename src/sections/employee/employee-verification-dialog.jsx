@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useSnackbar } from 'notistack';
 import Grid from '@mui/material/Grid';
+import { APP_API } from 'src/config-global';
 
 // EVS dates travel as yyyy-MM-dd and are handled as local calendar dates;
 // toISOString would shift them back a day in Pakistan time.
@@ -72,7 +73,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
   const fetchEmployeeData = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://localhost:7034/api/employee/${employeeId}`);
+      const response = await fetch(`${APP_API}/api/employee/${employeeId}`);
       if (response.ok) {
         const data = await response.json();
         const emp = data.employee;
@@ -100,8 +101,8 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
         });
 
         // Check images (prevent caching with timestamp)
-        setFrontPreview(`https://localhost:7034/api/employee/${employeeId}/nic-front?t=${new Date().getTime()}`);
-        setBackPreview(`https://localhost:7034/api/employee/${employeeId}/nic-back?t=${new Date().getTime()}`);
+        setFrontPreview(`${APP_API}/api/employee/${employeeId}/nic-front?t=${new Date().getTime()}`);
+        setBackPreview(`${APP_API}/api/employee/${employeeId}/nic-back?t=${new Date().getTime()}`);
       }
     } catch (error) {
       console.error(error);
@@ -149,7 +150,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
       if (nicFrontImage) payload.append('NicFrontImage', nicFrontImage);
       if (nicBackImage) payload.append('NicBackImage', nicBackImage);
 
-      const response = await fetch(`https://localhost:7034/api/employee/${employeeId}/verification-documents`, {
+      const response = await fetch(`${APP_API}/api/employee/${employeeId}/verification-documents`, {
         method: 'PUT',
         body: payload,
       });

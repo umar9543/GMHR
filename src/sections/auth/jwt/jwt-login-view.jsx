@@ -15,7 +15,7 @@ import MenuItem from '@mui/material/MenuItem';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 import { useBoolean } from 'src/hooks/use-boolean';
-import { PATH_AFTER_LOGIN } from 'src/config-global';
+import { APP_API, PATH_AFTER_LOGIN } from 'src/config-global';
 
 import Iconify from 'src/components/iconify';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
@@ -74,8 +74,8 @@ export default function JwtLoginView() {
     try {
       const loginUrl =
         system === 'Finance'
-          ? 'https://localhost:7034/api/FinanceAuth/login'
-          : 'https://localhost:7034/api/auth/login';
+          ? `${APP_API}/api/FinanceAuth/login`
+          : `${APP_API}/api/auth/login`;
 
       const response = await fetch(loginUrl, {
         method: 'POST',

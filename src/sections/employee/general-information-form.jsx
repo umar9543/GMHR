@@ -126,7 +126,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
   useEffect(() => {
     const fetchJobTitles = async () => {
       try {
-        const response = await fetch('https://localhost:7034/api/Dropdown/job-titles');
+        const response = await fetch(`${APP_API}/api/Dropdown/job-titles`);
         if (response.ok) {
           const data = await response.json();
           setJobTitles(data);
@@ -140,7 +140,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
     const fetchLocations = async () => {
       try {
-        const response = await fetch('https://localhost:7034/api/Dropdown/locations');
+        const response = await fetch(`${APP_API}/api/Dropdown/locations`);
         if (response.ok) {
           const data = await response.json();
           setLocations(data);

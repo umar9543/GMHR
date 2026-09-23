@@ -42,6 +42,7 @@ import {
   TableHeadCustom,
   TablePaginationCustom,
 } from 'src/components/table';
+import { APP_API } from 'src/config-global';
 
 const TABLE_HEAD = [
   { id: 'location', label: 'Location', minWidth: 180 },
@@ -91,7 +92,7 @@ export default function LocationListView() {
 
   const fetchLocations = useCallback(async () => {
     try {
-      const response = await Get('https://localhost:7034/api/Location');
+      const response = await Get(`${APP_API}/api/Location`);
       const data = response.data;
       setTableData(Array.isArray(data) ? data : data?.Data || []);
     } catch (error) {
@@ -352,8 +353,8 @@ function LocationDialog({ edit = false, open, onClose, row, tableData }) {
 
     try {
       const response = edit
-        ? await Put(`https://localhost:7034/api/Location/${getLocationId(row)}`, payload)
-        : await Post('https://localhost:7034/api/Location', payload);
+        ? await Put(`${APP_API}/api/Location/${getLocationId(row)}`, payload)
+        : await Post(`${APP_API}/api/Location`, payload);
 
       enqueueSnackbar(
         response.data?.Message || `Location ${edit ? 'updated' : 'added'} successfully`,
