@@ -85,6 +85,13 @@ const flagsForMark = (mark) => ({
 // listbox only while open, and the limit keeps that render small.
 const clientFilter = createFilterOptions({ limit: 50, stringify: (o) => o.label });
 
+// The code column is what is picked from; the name column shows what was
+// picked. Searching still matches the name, so a site is found either way.
+const clientCodeFilter = createFilterOptions({
+  limit: 50,
+  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
+});
+
 export default function AttendanceView() {
   const settings = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
@@ -343,7 +350,7 @@ export default function AttendanceView() {
     return Array.from(set).sort();
   }, [rankList, ranksByClient]);
 
-  const isLocked = !!sheetData?.payRollMstId;
+  const isSaved = !!sheetData?.payRollMstId;
 
   // The OT rate on the employee record drives salary on its own. The column is
   // only worth showing while somebody on overtime has no rate to work from.
@@ -351,11 +358,16 @@ export default function AttendanceView() {
 
   const showOtAmountColumn = (sheetData?.details || []).some(needsOtAmount);
 
-  const filteredDetails = (sheetData?.details || []).filter(
-    (row) =>
-      !filters.name ||
-      (row.employeeName || `Employee ${row.empId}`).toLowerCase().includes(filters.name.toLowerCase())
-  );
+  // Searched by name or by employee code, since the code is what the guards
+  // and the paper sheets are known by.
+  const filteredDetails = (sheetData?.details || []).filter((row) => {
+    const q = filters.name.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (row.employeeName || `Employee ${row.empId}`).toLowerCase().includes(q) ||
+      String(row.empId ?? '').toLowerCase().includes(q)
+    );
+  });
 
   const paginatedDetails = filteredDetails.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -377,9 +389,10 @@ export default function AttendanceView() {
 
       <Card sx={{ p: 3, mb: 3 }}>
         <Stack>
-          {isLocked && (
-            <Typography variant="body2" color="error.main">
-              Attendance for this date is already marked and cannot be edited.
+          {isSaved && (
+            <Typography variant="body2" color="info.main">
+              Attendance for this date is already saved. Change what you need and save
+              again - the sheet is replaced with what is on screen.
             </Typography>
           )}
         </Stack>
@@ -476,7 +489,6 @@ export default function AttendanceView() {
                       <TableCell>
                         <Select
                           size="small"
-                          disabled={isLocked}
                           value={mark}
                           onChange={handleMarkChange(row.empId)}
                           sx={{ minWidth: 100 }}
@@ -492,8 +504,7 @@ export default function AttendanceView() {
                       <TableCell>
                         <Select
                           size="small"
-                          disabled={isLocked}
-                          error={!isLocked && !row.shiftId}
+                          error={!row.shiftId}
                           value={row.shiftId || ''}
                           onChange={handleShiftChange(row.empId)}
                           displayEmpty
@@ -510,17 +521,14 @@ export default function AttendanceView() {
                         </Select>
                       </TableCell>
 
-                      <TableCell align="center">{row.clientId ?? '-'}</TableCell>
-
-                      <TableCell>
+                      <TableCell align="center">
                         <Autocomplete
                           size="small"
-                          disabled={isLocked}
                           options={clientChoices}
-                          filterOptions={clientFilter}
+                          filterOptions={clientCodeFilter}
                           value={clientById.get(row.clientId) || null}
                           onChange={handleClientChange(row.empId)}
-                          getOptionLabel={(o) => o?.label || ''}
+                          getOptionLabel={(o) => (o?.clientId != null ? String(o.clientId) : '')}
                           isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
                           renderOption={(props, option) => (
                             <li {...props} key={option.clientId}>
@@ -528,23 +536,23 @@ export default function AttendanceView() {
                             </li>
                           )}
                           renderInput={(params) => (
-                            <TextField {...params} placeholder="Client..." error={!isLocked && !row.clientId} />
+                            <TextField {...params} placeholder="Code" error={!row.clientId} />
                           )}
-                          sx={{ minWidth: 230 }}
+                          sx={{ minWidth: 118 }}
                         />
                       </TableCell>
 
-                      <TableCell align="center">{row.otClientId ?? '-'}</TableCell>
+                      <TableCell>{clientById.get(row.clientId)?.name || '-'}</TableCell>
 
-                      <TableCell>
+                      <TableCell align="center">
                         <Autocomplete
                           size="small"
-                          disabled={isLocked || !isOvertime}
+                          disabled={!isOvertime}
                           options={clientChoices}
-                          filterOptions={clientFilter}
+                          filterOptions={clientCodeFilter}
                           value={clientById.get(row.otClientId) || null}
                           onChange={handleOtClientChange(row.empId)}
-                          getOptionLabel={(o) => o?.label || ''}
+                          getOptionLabel={(o) => (o?.clientId != null ? String(o.clientId) : '')}
                           isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
                           renderOption={(props, option) => (
                             <li {...props} key={option.clientId}>
@@ -554,18 +562,19 @@ export default function AttendanceView() {
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              placeholder={isOvertime ? 'OT client...' : ''}
-                              error={!isLocked && isOvertime && !row.otClientId}
+                              placeholder={isOvertime ? 'Code' : ''}
+                              error={isOvertime && !row.otClientId}
                             />
                           )}
-                          sx={{ minWidth: 230 }}
+                          sx={{ minWidth: 118 }}
                         />
                       </TableCell>
+
+                      <TableCell>{clientById.get(row.otClientId)?.name || '-'}</TableCell>
 
                       <TableCell>
                         <Autocomplete
                           size="small"
-                          disabled={isLocked}
                           freeSolo
                           forcePopupIcon
                           openOnFocus
@@ -590,7 +599,6 @@ export default function AttendanceView() {
                               placeholder="Amount"
                               value={row.overtimeAmount || ''}
                               onChange={handleOvertimeAmountChange(row.empId)}
-                              disabled={isLocked}
                               sx={{ minWidth: 90 }}
                             />
                           )}
@@ -629,7 +637,7 @@ export default function AttendanceView() {
           />
 
           <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ p: 3 }}>
-            {!isLocked && incompleteCount > 0 && (
+            {incompleteCount > 0 && (
               <Typography variant="body2" color="warning.main">
                 {incompleteCount} row(s) still need a client, a shift or an OT client
               </Typography>
@@ -639,9 +647,9 @@ export default function AttendanceView() {
               variant="contained"
               color="primary"
               onClick={handleSave}
-              disabled={loading || isLocked}
+              disabled={loading}
             >
-              {isLocked ? 'Already Submitted' : 'Save Attendance'}
+              {isSaved ? 'Update Attendance' : 'Save Attendance'}
             </Button>
           </Stack>
         </Card>

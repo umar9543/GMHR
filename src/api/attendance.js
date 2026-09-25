@@ -148,3 +148,28 @@ export async function getParadeStateMonthly(clientId, year, month) {
     })),
   };
 }
+
+/**
+ * One employee's month, day by day, from both attendance sources: what this app
+ * marked and what came from the legacy HR system. Each day says which source it
+ * came from, so the screen can show where a mark originates.
+ */
+export async function getEmployeeMonth(employeeId, year, month) {
+  const params = new URLSearchParams({
+    employeeId: String(employeeId),
+    year: String(year),
+    month: String(month),
+  });
+  return apiFetch(`/api/payroll/employee-month?${params.toString()}`);
+}
+
+/**
+ * Saves the edited days of one employee. A day sent with an empty mark is
+ * cleared; the legacy mark for that day, if any, then applies again.
+ */
+export async function saveEmployeeMonth(empId, days) {
+  return apiFetch(`/api/payroll/employee-month`, {
+    method: 'PUT',
+    body: JSON.stringify({ empId, days }),
+  });
+}

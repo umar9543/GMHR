@@ -31,7 +31,11 @@ import { getAllClientOptions } from 'src/api/hr-client';
 
 import { buildMonthlyParadeStatePdf } from '../parade-state-monthly-pdf';
 
-const clientFilter = createFilterOptions({ limit: 50, stringify: (o) => o.label });
+// Typing a client code finds the client, not just its name.
+const clientFilter = createFilterOptions({
+  limit: 50,
+  stringify: (o) => `${o.clientId ?? ''} ${o.label}`,
+});
 
 export default function ParadeStateMonthlyView() {
   const settings = useSettingsContext();

@@ -1,8 +1,12 @@
 import PropTypes from 'prop-types';
 import TableRow from '@mui/material/TableRow';
+import Tooltip from '@mui/material/Tooltip';
 import TableCell from '@mui/material/TableCell';
+import IconButton from '@mui/material/IconButton';
 
-export default function AttendanceMonthWiseTableRow({ row }) {
+import Iconify from 'src/components/iconify';
+
+export default function AttendanceMonthWiseTableRow({ row, onOpen }) {
   const formatCell = (val) => {
     if (val === undefined || val === null || val === '') return '-';
     return String(val);
@@ -10,7 +14,14 @@ export default function AttendanceMonthWiseTableRow({ row }) {
 
   return (
     <TableRow hover>
-      <TableCell>{row.empCode || '-'}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+        <Tooltip title="Open this employee's attendance for the month">
+          <IconButton size="small" color="primary" onClick={() => onOpen?.(row)}>
+            <Iconify icon="solar:pen-bold" width={16} />
+          </IconButton>
+        </Tooltip>
+        {row.empCode || '-'}
+      </TableCell>
       <TableCell>{row.name || '-'}</TableCell>
       {Array.from({ length: 31 }, (_, i) => (
         <TableCell key={i + 1} align="center" sx={{ p: 0.5 }}>
@@ -30,5 +41,6 @@ export default function AttendanceMonthWiseTableRow({ row }) {
 }
 
 AttendanceMonthWiseTableRow.propTypes = {
+  onOpen: PropTypes.func,
   row: PropTypes.object,
 };

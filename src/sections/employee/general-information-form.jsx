@@ -415,7 +415,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         // Joining Date
         dateOfEnrolment: emp.HIREDATE ? new Date(emp.HIREDATE) : null,
         dateOfReEnroll: emp.REENROLDATE ? new Date(emp.REENROLDATE) : null,
-        dischargeDate: null,
+        dischargeDate: currentEmployee?.dischargeDate ? new Date(currentEmployee.dischargeDate) : null,
         careOf: emp.REFERENCE || '',
 
         // Contact Information. KIN holds the emergency contact's relation.
@@ -535,6 +535,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
           LocalPicPath: '',
           MarkId: data.markOfIdentity || '',
           ReEnrollDate: data.dateOfReEnroll ? new Date(data.dateOfReEnroll).toISOString() : null,
+          // A discharge date makes the employee in-active; empty puts him back in service.
+          DischargeDate: data.dischargeDate ? new Date(data.dischargeDate).toISOString() : null,
           ReEnrollChk: !!data.reEnroll,
           ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
           Kin: data.emergencyRelation || '',

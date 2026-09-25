@@ -37,6 +37,7 @@ import {
 
 import { getEmployeeOptions, getAttendanceMonthWise } from 'src/api/attendance';
 import UserTableToolbar from '../../employee/user-table-toolbar';
+import EmployeeMonthDialog from '../employee-month-dialog';
 import AttendanceMonthWiseTableRow from '../attendance-month-wise-table-row';
 
 const TABLE_HEAD = [
@@ -94,6 +95,9 @@ export default function MonthWiseReportView() {
   const [reportData, setReportData] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [showPdf, setShowPdf] = useState(false);
+
+  // The employee whose month is open for editing, from the row's edit button.
+  const [openEmployee, setOpenEmployee] = useState(null);
   
   const [viewMode, setViewMode] = useState('pdf');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -395,6 +399,7 @@ export default function MonthWiseReportView() {
                           <AttendanceMonthWiseTableRow
                             key={row.empCode || index}
                             row={row}
+                            onOpen={setOpenEmployee}
                           />
                         ))}
 
@@ -452,6 +457,17 @@ export default function MonthWiseReportView() {
             </Box>
           )}
         </Card>
+      )}
+
+      {openEmployee && (
+        <EmployeeMonthDialog
+          open={!!openEmployee}
+          onClose={() => setOpenEmployee(null)}
+          employee={openEmployee}
+          year={currentMonthDate.getFullYear()}
+          month={currentMonthDate.getMonth() + 1}
+          onSaved={handleFetchReport}
+        />
       )}
     </Container>
   );

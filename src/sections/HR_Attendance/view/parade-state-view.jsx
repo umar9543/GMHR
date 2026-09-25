@@ -62,7 +62,8 @@ export default function ParadeStateView() {
       ? result.records.filter(
           (r) =>
             (r.clientName || '').toLowerCase().includes(q) ||
-            (r.groupName || '').toLowerCase().includes(q)
+            (r.groupName || '').toLowerCase().includes(q) ||
+            String(r.clientId ?? '').toLowerCase().includes(q)
         )
       : result.records;
     return groupRows(records);
