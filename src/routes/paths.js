@@ -1,4 +1,3 @@
-import { paramCase } from 'src/utils/change-case';
 
 import { _id, _postTitles } from 'src/_mock/assets';
 
@@ -130,6 +129,15 @@ export const paths = {
           edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/Salary/Sheet/edit/${id}`,
         },
         report: `${ROOTS.DASHBOARD}/HR_Module/Salary/report`,
+      },
+      // Benefits and Deduction: the two tabs the legacy screen keeps.
+      Benefits: {
+        root: `${ROOTS.DASHBOARD}/HR_Module/benefits`,
+        allowance: `${ROOTS.DASHBOARD}/HR_Module/benefits/allowance`,
+        deduction: `${ROOTS.DASHBOARD}/HR_Module/benefits/deduction`,
+        // One guard's history, the way the legacy screen works it.
+        allowanceEmployee: (id) => `${ROOTS.DASHBOARD}/HR_Module/benefits/allowance/${id}`,
+        deductionEmployee: (id) => `${ROOTS.DASHBOARD}/HR_Module/benefits/deduction/${id}`,
       },
       Policy: {
         root: `${ROOTS.DASHBOARD}/HR_Module/Policy`,

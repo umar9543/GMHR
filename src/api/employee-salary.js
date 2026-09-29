@@ -280,3 +280,82 @@ export async function fetchAllPayRollReportRows(opts, { pageSize = 1000, onProgr
 
   return { records: collected, totals };
 }
+
+// ---------------------------------------------------------------------------
+// The salary sheet as the company keeps it: SALARYSHEET, one row per employee
+// per month, which is also what the salary slip and the reports read. The rows
+// are addressed by (id, slNo) - id alone is the sheet number and covers
+// hundreds of employees.
+// ---------------------------------------------------------------------------
+
+/** One month of the salary sheet, filtered the way the screen filters it. */
+export async function getSalarySheetMonth({
+  month,
+  year,
+  locationId,
+  clientId,
+  paid,
+  search,
+  page = 1,
+  pageSize = 100,
+} = {}) {
+  return apiFetch(
+    `/api/salarysheet${buildQuery({
+      month,
+      year,
+      locationId,
+      clientId,
+      paid,
+      search,
+      page,
+      pageSize,
+    })}`
+  );
+}
+
+/** Every page of the month, for saving and printing the whole sheet. */
+export async function getSalarySheetMonthAll(opts = {}, pageSize = 500) {
+  const rows = [];
+  let page = 1;
+  for (;;) {
+    // eslint-disable-next-line no-await-in-loop
+    const res = await getSalarySheetMonth({ ...opts, page, pageSize });
+    const batch = res.records || res.Records || [];
+    rows.push(...batch);
+    const total = res.totalCount ?? res.TotalCount ?? rows.length;
+    if (!batch.length || rows.length >= total) return rows;
+    page += 1;
+  }
+}
+
+/**
+ * Saves rows into SALARYSHEET. The server matches on employee + month, so a row
+ * already there is updated and a new one is inserted.
+ */
+export async function saveSalarySheetRows(rows) {
+  return apiFetch(`/api/salarysheet/bulk`, {
+    method: 'POST',
+    body: JSON.stringify(rows),
+  });
+}
+
+/** What an employee has been paid before, newest month first. */
+export async function getSalaryHistory(employeeId, take = 24) {
+  return apiFetch(`/api/salarysheet/history/${employeeId}${buildQuery({ take })}`);
+}
+
+/**
+ * A whole month of salary rows for the printed reports - every row for the
+ * chosen clients, with the CNIC and mobile number the Mobilink list needs.
+ */
+export async function getSalaryReport({ month, year, clientIds = [], employeeId } = {}) {
+  const res = await apiFetch(
+    `/api/salarysheet/report${buildQuery({
+      month,
+      year,
+      clientIds: clientIds.length ? clientIds.join(',') : undefined,
+      employeeId,
+    })}`
+  );
+  return res.records || res.Records || [];
+}

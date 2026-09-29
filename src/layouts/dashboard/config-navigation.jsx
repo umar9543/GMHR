@@ -408,18 +408,32 @@ export function useNavData() {
                   paths.dashboard.HR_Module.Salary.Sheet.list,
               },
 
-              {
-                title: t('Salary Status'),
+              // {
+              //   title: t('Salary Status'),
 
-                path:
-                  paths.dashboard.HR_Module.Salary.Status.list,
-              },
+              //   path:
+              //     paths.dashboard.HR_Module.Salary.Status.list,
+              // },
 
               {
                 title: t('Salary Report'),
 
                 path:
                   paths.dashboard.HR_Module.Salary.report,
+              },
+
+              {
+                title: t('Employee Allowance'),
+
+                path:
+                  paths.dashboard.HR_Module.Benefits.allowance,
+              },
+
+              {
+                title: t('Employee Deduction'),
+
+                path:
+                  paths.dashboard.HR_Module.Benefits.deduction,
               },
             ],
           },

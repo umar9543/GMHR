@@ -1,34 +1,15 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { loadLogo, drawReportHeader } from './report-header';
 import { groupRows, PARADE_COLUMNS } from './parade-state-utils';
 import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
-
-const COMPANY = 'Guards Mark Security';
-const ADDRESS =
-  'Plot# C-1-C, Mezzanine Floor, Lane-1, Sehar Commercial, Phase-7, D.H.A, Karachi, Pakistan.';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}/${mm}/${d.getFullYear()}`;
-}
-
-async function loadLogo() {
-  try {
-    const res = await fetch('/assets/images/gms.png');
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -45,22 +26,11 @@ export async function buildParadeStatePdf(records, dateStr) {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   const logo = await loadLogo();
-  if (logo) {
-    try {
-      doc.addImage(logo, 'PNG', 12, 8, 22, 22);
-    } catch {
-      /* a missing logo must not stop the report */
-    }
-  }
-
-  doc.setFont('helvetica', 'bold').setFontSize(15);
-  doc.text(COMPANY, pageWidth / 2, 15, { align: 'center' });
-  doc.setFont('helvetica', 'normal').setFontSize(7.5);
-  doc.text(ADDRESS, pageWidth / 2, 20, { align: 'center' });
-  doc.setFont('helvetica', 'bold').setFontSize(11);
-  doc.text('DAILY PARADE STATE', pageWidth / 2, 27, { align: 'center' });
-  doc.setFontSize(9);
-  doc.text(`AS OF ${formatDate(dateStr)}`, pageWidth / 2, 32, { align: 'center' });
+  drawReportHeader(doc, {
+    logo,
+    title: 'DAILY PARADE STATE',
+    subtitle: `AS OF ${formatDate(dateStr)}`,
+  });
 
   const head = [['Sno #', 'LOCATIONS', 'GROUP NAME', ...PARADE_COLUMNS.map((c) => c.label)]];
 

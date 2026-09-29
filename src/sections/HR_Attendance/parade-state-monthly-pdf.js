@@ -2,33 +2,15 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import { cleanEmployeeName } from 'src/utils/employee-name';
+import { loadLogo, drawReportHeader } from './report-header';
+
 
 import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
-
-const COMPANY = 'Guards Mark Security';
-const ADDRESS =
-  'Plot# C-1-C, Mezzanine Floor, Lane-1, Sehar Commercial, Phase-7, D.H.A, Karachi, Pakistan.';
 
 const MONTHS = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
   'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
 ];
-
-async function loadLogo() {
-  try {
-    const res = await fetch('/assets/images/gms.png');
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch {
-    return null;
-  }
-}
 
 /**
  * One client, one month, guard by guard - the shape the legacy report printed.
@@ -43,27 +25,11 @@ export async function buildMonthlyParadeStatePdf(data) {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   const logo = await loadLogo();
-  if (logo) {
-    try {
-      doc.addImage(logo, 'PNG', 12, 8, 22, 22);
-    } catch {
-      /* a missing logo must not stop the report */
-    }
-  }
-
-  doc.setFont('helvetica', 'bold').setFontSize(15);
-  doc.text(COMPANY, pageWidth / 2, 15, { align: 'center' });
-  doc.setFont('helvetica', 'normal').setFontSize(7.5);
-  doc.text(ADDRESS, pageWidth / 2, 20, { align: 'center' });
-  doc.setFont('helvetica', 'bold').setFontSize(11);
-  doc.text(
-    `MONTHLY PARADE STATE - ${MONTHS[month - 1]} ${year}`,
-    pageWidth / 2,
-    27,
-    { align: 'center' }
-  );
-  doc.setFontSize(9);
-  doc.text(`${client?.clientName || ''}`, pageWidth / 2, 32, { align: 'center' });
+  drawReportHeader(doc, {
+    logo,
+    title: `MONTHLY PARADE STATE - ${MONTHS[month - 1]} ${year}`,
+    subtitle: client?.clientName || '',
+  });
   doc.setFont('helvetica', 'normal').setFontSize(7.5);
   doc.text(
     `Group: ${client?.groupName || '-'}    Required: ${client?.reqDay || 0} day / ${client?.reqNight || 0} night`,

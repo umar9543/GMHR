@@ -21,7 +21,9 @@ export default function AttendanceTableFiltersResult({
   const handleRemoveKeyword = useCallback(() => {
     onFilters('name', '');
   }, [onFilters]);
-
+  const handleRemoveClient = useCallback(() => {
+    onFilters('client', '');
+  }, [onFilters]);
   return (
     <Stack spacing={1.5} {...other}>
       <Box sx={{ typography: 'body2' }}>
@@ -37,7 +39,11 @@ export default function AttendanceTableFiltersResult({
             <Chip label={filters.name} size="small" onDelete={handleRemoveKeyword} />
           </Block>
         )}
-
+        {!!filters.client && (
+          <Block label="Client:">
+            <Chip label={filters.client} size="small" onDelete={handleRemoveClient} />
+          </Block>
+        )}
         <Button
           color="error"
           onClick={onResetFilters}

@@ -24,7 +24,7 @@ import TablePagination from '@mui/material/TablePagination';
 import { styled } from '@mui/material/styles';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import { useRouter, useSearchParams } from 'src/routes/hooks';
 import { APP_API } from 'src/config-global';
 import FormProvider, { RHFAutocomplete } from 'src/components/hook-form';
 import {
@@ -214,6 +214,9 @@ const StatusRow = memo(StatusRowBase);
 
 export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
   const router = useRouter();
+  // Which row of the sheet is being edited; see the list screen.
+  const slNo = useSearchParams().get('slNo');
+  const rowQuery = slNo != null && slNo !== '' ? `?slNo=${encodeURIComponent(slNo)}` : '';
   const { enqueueSnackbar } = useSnackbar();
 
   const [loading, setLoading] = useState(false);
@@ -263,7 +266,9 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
     (async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${APP_API}/api/salarysheet/${currentSalaryStatusId}`);
+        const response = await fetch(
+          `${APP_API}/api/salarysheet/${currentSalaryStatusId}${rowQuery}`
+        );
         if (!response.ok) throw new Error('Failed to load status');
         const data = await response.json();
         setRows([
@@ -470,7 +475,7 @@ export default function SalaryStatusNewEditForm({ currentSalaryStatusId }) {
 
     setSaving(true);
     try {
-      const res = await fetch(`${APP_API}/api/salarysheet/${currentSalaryStatusId}`, {
+      const res = await fetch(`${APP_API}/api/salarysheet/${currentSalaryStatusId}${rowQuery}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...toSavePayload(d, 0), Id: d.id, SlNo: d.id }),

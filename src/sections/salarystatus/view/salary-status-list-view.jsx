@@ -15,14 +15,23 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { useSnackbar } from 'notistack';
 
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { APP_API } from 'src/config-global';
 import Iconify from 'src/components/iconify';
+import { getAllClientOptions } from 'src/api/hr-client';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { downloadSalarySlip } from '../salary-slip-pdf';
+
+// A client is found by its code or by its name, as everywhere else.
+const clientFilter = createFilterOptions({
+  limit: 50,
+  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
+});
 
 const fDateOnly = (value) => {
   if (!value) return '-';
@@ -46,6 +55,26 @@ export default function SalaryStatusListView() {
   const [search, setSearch] = useState('');
   const [slipBusyId, setSlipBusyId] = useState(null);
 
+  // Narrows the list to the site the salary was earned at.
+  const [client, setClient] = useState(null);
+  const [clientOptions, setClientOptions] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAllClientOptions()
+      .then((rows) => {
+        if (!cancelled) {
+          setClientOptions(
+            (rows || []).map((c) => ({ ...c, label: `${c.clientId} - ${c.name}` }))
+          );
+        }
+      })
+      .catch((err) => console.error('Could not load the clients', err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Debounced, so typing does not fire a request per keystroke.
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,6 +96,7 @@ export default function SalaryStatusListView() {
           pageSize: String(rowsPerPage),
         });
         if (search) params.append('search', search);
+        if (client?.clientId) params.append('clientId', String(client.clientId));
 
         const response = await fetch(`${APP_API}/api/salarysheet?${params.toString()}`);
         if (!response.ok) throw new Error(await response.text());
@@ -86,7 +116,7 @@ export default function SalaryStatusListView() {
     return () => {
       isMounted = false;
     };
-  }, [page, rowsPerPage, search, enqueueSnackbar]);
+  }, [page, rowsPerPage, search, client, enqueueSnackbar]);
 
   const handleChangePage = (event, newPage) => setPage(newPage);
 
@@ -95,11 +125,14 @@ export default function SalaryStatusListView() {
     setPage(0);
   };
 
-  const handleEditRow = (id) => {
-    router.push(paths.dashboard.HR_Module.Salary.Status.edit(id));
+  const handleEditRow = (row) => {
+    // The sheet id alone does not identify the row; SL_NO travels with it.
+    const target = paths.dashboard.HR_Module.Salary.Status.edit(row.id);
+    router.push(row.slNo != null ? `${target}?slNo=${row.slNo}` : target);
   };
 
-  const handlePrintSlip = async (id) => {
+  const handlePrintSlip = async (row) => {
+    const id = `${row.id}-${row.slNo}`;
     setSlipBusyId(id);
     try {
       let token = '';
@@ -108,7 +141,7 @@ export default function SalaryStatusListView() {
       } catch {
         token = '';
       }
-      await downloadSalarySlip(id, token);
+      await downloadSalarySlip(row.id, token, row.slNo);
     } catch (error) {
       console.error(error);
       enqueueSnackbar('Failed to build the salary slip', { variant: 'error' });
@@ -117,7 +150,7 @@ export default function SalaryStatusListView() {
     }
   };
 
-  const colSpan = 7;
+  const colSpan = 8;
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -143,12 +176,31 @@ export default function SalaryStatusListView() {
             fullWidth
             value={filterName}
             onChange={(e) => setFilterName(e.target.value)}
-            placeholder="Search by employee, location, rank or status..."
+            placeholder="Search by employee, client, location, rank or status..."
             InputProps={{
               startAdornment: (
                 <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled', mr: 1 }} />
               ),
             }}
+          />
+
+          <Autocomplete
+            options={clientOptions}
+            filterOptions={clientFilter}
+            value={client}
+            onChange={(event, value) => {
+              setClient(value);
+              setPage(0);
+            }}
+            getOptionLabel={(o) => o?.label || ''}
+            isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
+            renderOption={(props, option) => (
+              <li {...props} key={option.clientId}>
+                {option.label}
+              </li>
+            )}
+            renderInput={(params) => <TextField {...params} placeholder="All clients" />}
+            sx={{ minWidth: 280 }}
           />
         </Box>
 
@@ -157,6 +209,7 @@ export default function SalaryStatusListView() {
             <TableHead>
               <TableRow>
                 <TableCell>Employee Name</TableCell>
+                <TableCell>Client</TableCell>
                 <TableCell>Location</TableCell>
                 <TableCell>Rank</TableCell>
                 <TableCell>Basic Salary</TableCell>
@@ -185,8 +238,11 @@ export default function SalaryStatusListView() {
 
               {!loading &&
                 tableData.map((row) => (
-                  <TableRow key={row.id} hover>
+                  <TableRow key={`${row.id}-${row.slNo}`} hover>
                     <TableCell>{row.employeeName || row.firstName || '-'}</TableCell>
+                    <TableCell>
+                      {row.clientName || (row.clientId ? `Client ${row.clientId}` : '-')}
+                    </TableCell>
                     <TableCell>{row.locationName || '-'}</TableCell>
                     <TableCell>{row.rank || '-'}</TableCell>
                     <TableCell>{row.basicSalary}</TableCell>
@@ -196,15 +252,15 @@ export default function SalaryStatusListView() {
                       <Tooltip title="Salary slip (PDF)">
                         <span>
                           <IconButton
-                            onClick={() => handlePrintSlip(row.id)}
-                            disabled={slipBusyId === row.id}
+                            onClick={() => handlePrintSlip(row)}
+                            disabled={slipBusyId === `${row.id}-${row.slNo}`}
                           >
                             <Iconify icon="solar:printer-minimalistic-bold" />
                           </IconButton>
                         </span>
                       </Tooltip>
                       <Tooltip title="Edit">
-                        <IconButton onClick={() => handleEditRow(row.id)}>
+                        <IconButton onClick={() => handleEditRow(row)}>
                           <Iconify icon="solar:pen-bold" />
                         </IconButton>
                       </Tooltip>

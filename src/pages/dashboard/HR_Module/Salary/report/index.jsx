@@ -1,16 +1,17 @@
 import { Helmet } from 'react-helmet-async';
-import PayrollReportView from 'src/sections/HR_EmployeeSalary/view/payroll-report-view';
+
+import SalaryReportView from 'src/sections/HR_EmployeeSalary/view/salary-report-view';
 
 // ----------------------------------------------------------------------
 
-export default function PayrollReportPage() {
+export default function SalaryReportPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Payroll Report</title>
+        <title> Dashboard: Salary Report</title>
       </Helmet>
 
-      <PayrollReportView />
+      <SalaryReportView />
     </>
   );
 }

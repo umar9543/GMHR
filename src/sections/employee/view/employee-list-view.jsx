@@ -96,7 +96,8 @@ const TABLE_HEAD = [
 const defaultFilters = {
   name: '',
   role: [],
-  status: 'all',
+  // Opens on the people in service; the tabs still reach everybody.
+  status: 'Active',
 };
 
 // The list asks the server for one page at a time, already searched, filtered

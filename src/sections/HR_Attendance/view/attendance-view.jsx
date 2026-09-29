@@ -1,5 +1,6 @@
+import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -34,6 +35,181 @@ import { getAttendanceSheet, saveAttendanceSheet, updateAttendanceSheet } from '
 
 import AttendanceTableToolbar from '../attendance-table-toolbar';
 import AttendanceTableFiltersResult from '../attendance-filters-result';
+
+// One guard's line. Memoised: the sheet shows fifty of these, each holding
+// five MUI pickers, and only the row that was touched should repaint.
+const AttendanceRow = memo(({
+  row,
+  shifts,
+  clientById,
+  clientChoices,
+  clientCodeFilter,
+  rankChoices,
+  showOtAmountColumn,
+  onMark,
+  onShift,
+  onClient,
+  onOtClient,
+  onRank,
+  onOvertimeAmount,
+}) => {
+  const mark = markOf(row);
+  const isOvertime = mark === OVERTIME_MARK;
+  // The OT rate on the employee record drives salary on its own; the column is
+  // only worth filling when a guard on overtime has no rate to work from.
+  const needsAmount = isOvertime && !(Number(row.otRate) > 0);
+
+  return (
+    <TableRow hover>
+      <TableCell>{row.empId}</TableCell>
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+        {row.employeeName || `Employee ${row.empId}`}
+      </TableCell>
+
+      <TableCell>
+        <Select
+          size="small"
+          value={mark}
+          onChange={(event) => onMark(row.empId, event.target.value)}
+          sx={{ minWidth: 100 }}
+        >
+          {marksFor(mark).map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </TableCell>
+
+      <TableCell>
+        <Select
+          size="small"
+          error={!row.shiftId}
+          value={row.shiftId || ''}
+          onChange={(event) => onShift(row.empId, event.target.value)}
+          displayEmpty
+          sx={{ minWidth: 110 }}
+        >
+          <MenuItem value="">
+            <em>None</em>
+          </MenuItem>
+          {shifts.map((sh) => (
+            <MenuItem key={sh.shiftId} value={sh.shiftId}>
+              {sh.code} - {sh.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </TableCell>
+
+      <TableCell align="center">
+        <Autocomplete
+          size="small"
+          options={clientChoices}
+          filterOptions={clientCodeFilter}
+          value={clientById.get(row.clientId) || null}
+          onChange={(event, value) => onClient(row.empId, value)}
+          getOptionLabel={(o) => (o?.clientId != null ? String(o.clientId) : '')}
+          isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
+          renderOption={(props, option) => (
+            <li {...props} key={option.clientId}>
+              {option.label}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField {...params} placeholder="Code" error={!row.clientId} />
+          )}
+          sx={{ minWidth: 118 }}
+        />
+      </TableCell>
+
+      <TableCell>{clientById.get(row.clientId)?.name || '-'}</TableCell>
+
+      <TableCell align="center">
+        <Autocomplete
+          size="small"
+          disabled={!isOvertime}
+          options={clientChoices}
+          filterOptions={clientCodeFilter}
+          value={clientById.get(row.otClientId) || null}
+          onChange={(event, value) => onOtClient(row.empId, value)}
+          getOptionLabel={(o) => (o?.clientId != null ? String(o.clientId) : '')}
+          isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
+          renderOption={(props, option) => (
+            <li {...props} key={option.clientId}>
+              {option.label}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder={isOvertime ? 'Code' : ''}
+              error={isOvertime && !row.otClientId}
+            />
+          )}
+          sx={{ minWidth: 118 }}
+        />
+      </TableCell>
+
+      <TableCell>{clientById.get(row.otClientId)?.name || '-'}</TableCell>
+
+      <TableCell>
+        <Autocomplete
+          size="small"
+          freeSolo
+          forcePopupIcon
+          openOnFocus
+          options={rankChoices}
+          value={row.rank || null}
+          onChange={(event, value) => onRank(row.empId, value)}
+          onInputChange={(event, value, reason) => {
+            if (reason === 'input') onRank(row.empId, value);
+          }}
+          getOptionLabel={(o) => o || ''}
+          renderInput={(params) => <TextField {...params} placeholder="Category..." />}
+          sx={{ minWidth: 170 }}
+        />
+      </TableCell>
+
+      {showOtAmountColumn && (
+        <TableCell align="center">
+          {needsAmount && (
+            <TextField
+              size="small"
+              type="number"
+              placeholder="Amount"
+              value={row.overtimeAmount || ''}
+              onChange={(event) => onOvertimeAmount(row.empId, event.target.value)}
+              sx={{ minWidth: 90 }}
+            />
+          )}
+          {isOvertime && Number(row.otRate) > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              {row.otRate}/shift
+            </Typography>
+          )}
+        </TableCell>
+      )}
+    </TableRow>
+  );
+});
+
+AttendanceRow.displayName = 'AttendanceRow';
+
+AttendanceRow.propTypes = {
+  row: PropTypes.object,
+  shifts: PropTypes.array,
+  clientById: PropTypes.object,
+  clientChoices: PropTypes.array,
+  clientCodeFilter: PropTypes.func,
+  rankChoices: PropTypes.array,
+  showOtAmountColumn: PropTypes.bool,
+  onMark: PropTypes.func,
+  onShift: PropTypes.func,
+  onClient: PropTypes.func,
+  onOtClient: PropTypes.func,
+  onRank: PropTypes.func,
+  onOvertimeAmount: PropTypes.func,
+};
 
 // ----------------------------------------------------------------------
 // The attendance sheet, laid out like the legacy one: employee, his mark for
@@ -122,7 +298,7 @@ export default function AttendanceView() {
     setPage(0);
   };
 
-  const [filters, setFilters] = useState({ name: '' });
+  const [filters, setFilters] = useState({ name: '', client: '' });
 
   const handleFilters = useCallback((name, value) => {
     setFilters((prevState) => ({
@@ -133,11 +309,11 @@ export default function AttendanceView() {
   }, []);
 
   const handleResetFilters = useCallback(() => {
-    setFilters({ name: '' });
+    setFilters({ name: '', client: '' });
     setPage(0);
   }, []);
 
-  const canReset = !!filters.name;
+  const canReset = !!filters.name || !!filters.client;
 
   const authFetch = useAuthFetch();
   const [locations, setLocations] = useState([]);
@@ -234,13 +410,14 @@ export default function AttendanceView() {
     }
   };
 
-  const updateRow = (empId, patch) =>
+  // Stable, so a memoised row is not re-rendered by a new function each time.
+  const updateRow = useCallback((empId, patch) =>
     setSheetData((prev) => {
       const details = [...prev.details];
       const index = details.findIndex((d) => d.empId === empId);
       if (index !== -1) details[index] = { ...details[index], ...patch };
       return { ...prev, details };
-    });
+    }), []);
 
   /** Rows that cannot be saved yet, and what each one is missing. */
   const rowProblem = (row) => {
@@ -271,7 +448,7 @@ export default function AttendanceView() {
 
       // Jump to the first row that needs attention, since the sheet is paged.
       const first = problems[0];
-      setFilters({ name: '' });
+      setFilters({ name: '', client: '' });
       setPage(Math.floor(first.index / rowsPerPage));
       return;
     }
@@ -301,8 +478,7 @@ export default function AttendanceView() {
     }
   };
 
-  const handleMarkChange = (empId) => (event) => {
-    const mark = event.target.value;
+  const handleMarkChange = useCallback((empId, mark) => {
     const patch = flagsForMark(mark);
     // Overtime details belong to the P/P mark alone.
     if (mark !== OVERTIME_MARK) {
@@ -310,13 +486,17 @@ export default function AttendanceView() {
       patch.overtimeAmount = null;
     }
     updateRow(empId, patch);
-  };
+  }, [updateRow]);
 
-  const handleShiftChange = (empId) => (event) =>
-    updateRow(empId, { shiftId: event.target.value === '' ? null : event.target.value });
+  const handleShiftChange = useCallback(
+    (empId, value) => updateRow(empId, { shiftId: value === '' ? null : value }),
+    [updateRow]
+  );
 
-  const handleOvertimeAmountChange = (empId) => (event) =>
-    updateRow(empId, { overtimeAmount: event.target.value });
+  const handleOvertimeAmountChange = useCallback(
+    (empId, value) => updateRow(empId, { overtimeAmount: value }),
+    [updateRow]
+  );
 
   // Every client, so a row already pointing at a closed site still shows it.
   const clientById = useMemo(() => {
@@ -331,13 +511,20 @@ export default function AttendanceView() {
     [clientById]
   );
 
-  const handleClientChange = (empId) => (event, value) =>
-    updateRow(empId, { clientId: value?.clientId ?? null });
+  const handleClientChange = useCallback(
+    (empId, value) => updateRow(empId, { clientId: value?.clientId ?? null }),
+    [updateRow]
+  );
 
-  const handleOtClientChange = (empId) => (event, value) =>
-    updateRow(empId, { otClientId: value?.clientId ?? null });
+  const handleOtClientChange = useCallback(
+    (empId, value) => updateRow(empId, { otClientId: value?.clientId ?? null }),
+    [updateRow]
+  );
 
-  const handleRankChange = (empId) => (event, value) => updateRow(empId, { rank: value || null });
+  const handleRankChange = useCallback(
+    (empId, value) => updateRow(empId, { rank: value || null }),
+    [updateRow]
+  );
 
   // Every category in use, the same list the rank pickers elsewhere offer. A
   // guard can be marked under any of them, not only the ones his site
@@ -354,20 +541,38 @@ export default function AttendanceView() {
 
   // The OT rate on the employee record drives salary on its own. The column is
   // only worth showing while somebody on overtime has no rate to work from.
-  const needsOtAmount = (row) => markOf(row) === OVERTIME_MARK && !(Number(row.otRate) > 0);
-
-  const showOtAmountColumn = (sheetData?.details || []).some(needsOtAmount);
+  const showOtAmountColumn = (sheetData?.details || []).some(
+    (row) => markOf(row) === OVERTIME_MARK && !(Number(row.otRate) > 0)
+  );
 
   // Searched by name or by employee code, since the code is what the guards
-  // and the paper sheets are known by.
-  const filteredDetails = (sheetData?.details || []).filter((row) => {
-    const q = filters.name.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      (row.employeeName || `Employee ${row.empId}`).toLowerCase().includes(q) ||
-      String(row.empId ?? '').toLowerCase().includes(q)
-    );
-  });
+  // and the paper sheets are known by; and by the client, on either the worked
+  // site or the overtime one.
+  const filteredDetails = useMemo(() => {
+    const who = (filters.name || '').trim().toLowerCase();
+    const where = (filters.client || '').trim().toLowerCase();
+    if (!who && !where) return sheetData?.details || [];
+
+    const clientText = (clientId) => {
+      if (clientId == null) return '';
+      const client = clientById.get(clientId);
+      return `${clientId} ${client?.name ?? ''}`.toLowerCase();
+    };
+
+    return (sheetData?.details || []).filter((row) => {
+      if (who) {
+        const name = (row.employeeName || `Employee ${row.empId}`).toLowerCase();
+        const code = String(row.empId ?? '');
+        if (!name.includes(who) && !code.includes(who)) return false;
+      }
+      if (where) {
+        const hit =
+          clientText(row.clientId).includes(where) || clientText(row.otClientId).includes(where);
+        if (!hit) return false;
+      }
+      return true;
+    });
+  }, [sheetData, filters.name, filters.client, clientById]);
 
   const paginatedDetails = filteredDetails.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
@@ -476,142 +681,24 @@ export default function AttendanceView() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedDetails.map((row) => {
-                  const mark = markOf(row);
-                  const isOvertime = mark === OVERTIME_MARK;
-                  return (
-                    <TableRow key={row.empId} hover>
-                      <TableCell>{row.empId}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {row.employeeName || `Employee ${row.empId}`}
-                      </TableCell>
-
-                      <TableCell>
-                        <Select
-                          size="small"
-                          value={mark}
-                          onChange={handleMarkChange(row.empId)}
-                          sx={{ minWidth: 100 }}
-                        >
-                          {marksFor(mark).map((option) => (
-                            <MenuItem key={option.value} value={option.value}>
-                              {option.label}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </TableCell>
-
-                      <TableCell>
-                        <Select
-                          size="small"
-                          error={!row.shiftId}
-                          value={row.shiftId || ''}
-                          onChange={handleShiftChange(row.empId)}
-                          displayEmpty
-                          sx={{ minWidth: 110 }}
-                        >
-                          <MenuItem value="">
-                            <em>None</em>
-                          </MenuItem>
-                          {shifts.map((sh) => (
-                            <MenuItem key={sh.shiftId} value={sh.shiftId}>
-                              {sh.code} - {sh.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </TableCell>
-
-                      <TableCell align="center">
-                        <Autocomplete
-                          size="small"
-                          options={clientChoices}
-                          filterOptions={clientCodeFilter}
-                          value={clientById.get(row.clientId) || null}
-                          onChange={handleClientChange(row.empId)}
-                          getOptionLabel={(o) => (o?.clientId != null ? String(o.clientId) : '')}
-                          isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
-                          renderOption={(props, option) => (
-                            <li {...props} key={option.clientId}>
-                              {option.label}
-                            </li>
-                          )}
-                          renderInput={(params) => (
-                            <TextField {...params} placeholder="Code" error={!row.clientId} />
-                          )}
-                          sx={{ minWidth: 118 }}
-                        />
-                      </TableCell>
-
-                      <TableCell>{clientById.get(row.clientId)?.name || '-'}</TableCell>
-
-                      <TableCell align="center">
-                        <Autocomplete
-                          size="small"
-                          disabled={!isOvertime}
-                          options={clientChoices}
-                          filterOptions={clientCodeFilter}
-                          value={clientById.get(row.otClientId) || null}
-                          onChange={handleOtClientChange(row.empId)}
-                          getOptionLabel={(o) => (o?.clientId != null ? String(o.clientId) : '')}
-                          isOptionEqualToValue={(o, v) => o.clientId === v.clientId}
-                          renderOption={(props, option) => (
-                            <li {...props} key={option.clientId}>
-                              {option.label}
-                            </li>
-                          )}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              placeholder={isOvertime ? 'Code' : ''}
-                              error={isOvertime && !row.otClientId}
-                            />
-                          )}
-                          sx={{ minWidth: 118 }}
-                        />
-                      </TableCell>
-
-                      <TableCell>{clientById.get(row.otClientId)?.name || '-'}</TableCell>
-
-                      <TableCell>
-                        <Autocomplete
-                          size="small"
-                          freeSolo
-                          forcePopupIcon
-                          openOnFocus
-                          options={rankChoices}
-                          value={row.rank || null}
-                          onChange={handleRankChange(row.empId)}
-                          onInputChange={(event, value, reason) => {
-                            if (reason === 'input') handleRankChange(row.empId)(event, value);
-                          }}
-                          getOptionLabel={(o) => o || ''}
-                          renderInput={(params) => <TextField {...params} placeholder="Category..." />}
-                          sx={{ minWidth: 170 }}
-                        />
-                      </TableCell>
-
-                      {showOtAmountColumn && (
-                        <TableCell align="center">
-                          {needsOtAmount(row) && (
-                            <TextField
-                              size="small"
-                              type="number"
-                              placeholder="Amount"
-                              value={row.overtimeAmount || ''}
-                              onChange={handleOvertimeAmountChange(row.empId)}
-                              sx={{ minWidth: 90 }}
-                            />
-                          )}
-                          {isOvertime && Number(row.otRate) > 0 && (
-                            <Typography variant="caption" color="text.secondary">
-                              {row.otRate}/shift
-                            </Typography>
-                          )}
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
+                {paginatedDetails.map((row) => (
+                  <AttendanceRow
+                    key={row.empId}
+                    row={row}
+                    shifts={shifts}
+                    clientById={clientById}
+                    clientChoices={clientChoices}
+                    clientCodeFilter={clientCodeFilter}
+                    rankChoices={rankChoices}
+                    showOtAmountColumn={showOtAmountColumn}
+                    onMark={handleMarkChange}
+                    onShift={handleShiftChange}
+                    onClient={handleClientChange}
+                    onOtClient={handleOtClientChange}
+                    onRank={handleRankChange}
+                    onOvertimeAmount={handleOvertimeAmountChange}
+                  />
+                ))}
 
                 {sheetData.details.length === 0 && (
                   <TableRow>

@@ -312,8 +312,11 @@ export async function fetchSlipByEmployee(empId, month, year, token) {
 }
 
 /** Fetches the slip data and downloads the voucher. */
-export async function downloadSalarySlip(id, token) {
-  const res = await fetch(`${APP_API}/api/salarysheet/${id}/slip`, {
+export async function downloadSalarySlip(id, token, slNo) {
+  // SALARYSHEET has no primary key: ID is the sheet number and one sheet holds
+  // hundreds of employees, so SL_NO is what names the row to print.
+  const query = slNo != null ? `?slNo=${encodeURIComponent(slNo)}` : '';
+  const res = await fetch(`${APP_API}/api/salarysheet/${id}/slip${query}`, {
     headers: { Authorization: `Bearer ${token || ''}` },
   });
   if (!res.ok) throw new Error(await res.text());

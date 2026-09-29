@@ -35,7 +35,11 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import { getEmployeeOptions, getAttendanceMonthWise } from 'src/api/attendance';
+import {
+  getEmployeeOptions,
+  getActiveEmployeeIds,
+  getAttendanceMonthWise,
+} from 'src/api/attendance';
 import UserTableToolbar from '../../employee/user-table-toolbar';
 import EmployeeMonthDialog from '../employee-month-dialog';
 import AttendanceMonthWiseTableRow from '../attendance-month-wise-table-row';
@@ -56,7 +60,7 @@ const defaultFilters = {
   name: '',
 };
 
-function applyFilter({ inputData, comparator, filters }) {
+function applyFilter({ inputData, comparator, filters, activeIds }) {
   const { name } = filters;
 
   const stabilizedThis = inputData.map((el, index) => [el, index]);
@@ -76,6 +80,12 @@ function applyFilter({ inputData, comparator, filters }) {
         String(user.name ?? '').toLowerCase().includes(n)
       );
     });
+  }
+
+  // The report covers every employee the month touched; only those still in
+  // service are listed, unless the ids could not be read.
+  if (activeIds && activeIds.size) {
+    inputData = inputData.filter((user) => activeIds.has(Number(user.empCode)));
   }
 
   return inputData;
@@ -98,6 +108,21 @@ export default function MonthWiseReportView() {
 
   // The employee whose month is open for editing, from the row's edit button.
   const [openEmployee, setOpenEmployee] = useState(null);
+
+  // Ids of the employees in service, so the report lists only them.
+  const [activeIds, setActiveIds] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getActiveEmployeeIds()
+      .then((ids) => {
+        if (!cancelled) setActiveIds(ids);
+      })
+      .catch((err) => console.error('Could not read the active employees', err));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   
   const [viewMode, setViewMode] = useState('pdf');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -255,6 +280,7 @@ export default function MonthWiseReportView() {
     inputData: reportData,
     comparator: getComparator(table.order, table.orderBy),
     filters,
+    activeIds,
   });
 
   const notFound = !dataFiltered.length && !!filters.name;

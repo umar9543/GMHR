@@ -41,7 +41,8 @@ import UserTableFiltersResult from '../user-table-filters-result';
 const defaultFilters = {
   name: '',
   role: [],
-  status: 'all',
+  // Opens on the people in service; the tabs still reach everybody.
+  status: 'Active',
 };
 
 const TABLE_HEAD = [

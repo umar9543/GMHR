@@ -4,8 +4,7 @@ import RoleGuard from 'src/auth/guard/RoleGuard';
 import { AuthGuard } from 'src/auth/guard';
 import DashboardLayout from 'src/layouts/dashboard';
 
-import { LoadingScreen, SplashScreen } from 'src/components/loading-screen';
-import useUserData from 'src/routes/hooks/useUserData';
+import { LoadingScreen } from 'src/components/loading-screen';
 import HRShiftRosterListPage from 'src/pages/dashboard/HR_Module/ShiftRoster/view';
 
 
@@ -71,6 +70,14 @@ const SalarySheetListPage = lazy(() => import('src/pages/dashboard/HR_Module/Sal
 const SalarySheetNewPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/sheet/new'));
 const SalarySheetEditPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/sheet/edit'));
 const PayrollReportPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/report'));
+const EmployeeAllowancePage = lazy(() => import('src/pages/dashboard/HR_Module/benefits/allowance'));
+const EmployeeDeductionPage = lazy(() => import('src/pages/dashboard/HR_Module/benefits/deduction'));
+const EmployeeAllowanceHistoryPage = lazy(() =>
+  import('src/pages/dashboard/HR_Module/benefits/allowance-employee')
+);
+const EmployeeDeductionHistoryPage = lazy(() =>
+  import('src/pages/dashboard/HR_Module/benefits/deduction-employee')
+);
 const HRGeneralInformationPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/general-information'));
 const EmployeeListPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/list'));
 const EmployeeStatusPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/status'));
@@ -494,6 +501,43 @@ export const dashboardRoutes = [
                 <PayrollReportPage />
               </AuthGuard>
             ),
+          },
+          {
+            path: 'benefits',
+            children: [
+              {
+                path: 'allowance',
+                element: (
+                  <AuthGuard>
+                    <EmployeeAllowancePage />
+                  </AuthGuard>
+                ),
+              },
+              {
+                path: 'allowance/:employeeId',
+                element: (
+                  <AuthGuard>
+                    <EmployeeAllowanceHistoryPage />
+                  </AuthGuard>
+                ),
+              },
+              {
+                path: 'deduction',
+                element: (
+                  <AuthGuard>
+                    <EmployeeDeductionPage />
+                  </AuthGuard>
+                ),
+              },
+              {
+                path: 'deduction/:employeeId',
+                element: (
+                  <AuthGuard>
+                    <EmployeeDeductionHistoryPage />
+                  </AuthGuard>
+                ),
+              },
+            ],
           },
           {
             path: 'Policy',

@@ -80,18 +80,45 @@ export async function getAttendanceMonthWise(year, month, empId) {
 /**
  * Paged, server-searched employee picker source.
  *
- * The endpoint returns untyped rows, so the keys arrive PascalCase (Id/Name)
- * rather than camelCase - they are normalised here.
+ * Only employees in service are offered: the pickers are used to mark and
+ * report attendance, and a discharged guard cannot be on a sheet. The paged
+ * list endpoint is used rather than the dropdown one because it takes a status;
+ * pass includeInactive to ask for everybody.
  */
-export async function getEmployeeOptions(search = '', pageSize = 50) {
-  const params = new URLSearchParams({ page: '1', pageSize: String(pageSize) });
+export async function getEmployeeOptions(search = '', pageSize = 50, includeInactive = false) {
+  const params = new URLSearchParams({
+    page: '1',
+    pageSize: String(pageSize),
+    status: includeInactive ? 'all' : 'Active',
+  });
   if (search) params.append('search', search);
 
-  const res = await apiFetch(`/api/Employee/dropdown?${params.toString()}`);
+  const res = await apiFetch(`/api/employee/paged?${params.toString()}`);
   return (res.records || res.Records || []).map((row) => ({
     id: row.id ?? row.Id,
-    name: row.name ?? row.Name ?? '',
+    name:
+      row.name ??
+      `${row.firstName ?? row.FirstName ?? ''} ${row.lastName ?? row.LastName ?? ''}`.trim(),
   }));
+}
+
+/**
+ * The ids of every employee in service, for screens that receive rows covering
+ * the whole workforce and show only the serving ones.
+ */
+export async function getActiveEmployeeIds() {
+  const ids = new Set();
+  let page = 1;
+  for (;;) {
+    const params = new URLSearchParams({ page: String(page), pageSize: '1000', status: 'Active' });
+    // eslint-disable-next-line no-await-in-loop
+    const res = await apiFetch(`/api/employee/paged?${params.toString()}`);
+    const rows = res.records || res.Records || [];
+    rows.forEach((row) => ids.add(Number(row.id ?? row.Id)));
+    const total = res.totalCount ?? res.TotalCount ?? ids.size;
+    if (!rows.length || ids.size >= total) return ids;
+    page += 1;
+  }
 }
 
 /**
@@ -172,4 +199,30 @@ export async function saveEmployeeMonth(empId, days) {
     method: 'PUT',
     body: JSON.stringify({ empId, days }),
   });
+}
+
+/**
+ * The day's guards, one line each. Empty clientIds means every site.
+ */
+export async function getDailyByEmployee(dateStr, clientIds = []) {
+  const params = new URLSearchParams({ date: dateStr });
+  if (clientIds.length) params.append('clientIds', clientIds.join(','));
+
+  const res = await apiFetch(`/api/Report/DailyByEmployee?${params.toString()}`);
+  return {
+    date: res.date ?? res.Date,
+    records: (res.records ?? res.Records ?? []).map((r) => ({
+      empId: r.empId ?? r.EmpId,
+      employeeName: r.employeeName ?? r.EmployeeName ?? '',
+      clientId: r.clientId ?? r.ClientId,
+      clientName: r.clientName ?? r.ClientName ?? '',
+      groupName: r.groupName ?? r.GroupName ?? '',
+      shift: r.shift ?? r.Shift ?? 'D',
+      attendance: r.attendance ?? r.Attendance ?? '',
+      category: r.category ?? r.Category ?? '',
+      otClientId: r.otClientId ?? r.OtClientId ?? null,
+      otClientName: r.otClientName ?? r.OtClientName ?? '',
+      ovCategory: r.ovCategory ?? r.OvCategory ?? '',
+    })),
+  };
 }
