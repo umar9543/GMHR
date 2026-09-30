@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -18,13 +18,14 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
 import LinearProgress from '@mui/material/LinearProgress';
 
 import { getShifts } from 'src/api/shift';
+import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 import { getClientRanks, getAllClientOptions } from 'src/api/hr-client';
 import { getEmployeeMonth, saveEmployeeMonth } from 'src/api/attendance';
 
@@ -49,10 +50,7 @@ const OVERTIME_MARK = 'P/P';
 const marksFor = (mark) =>
   LEGACY_MARKS[mark] ? [...MARKS, { value: mark, label: LEGACY_MARKS[mark] }] : MARKS;
 
-const clientCodeFilter = createFilterOptions({
-  limit: 50,
-  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
-});
+const clientCodeFilter = filterClientOptions;
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -139,7 +137,7 @@ export default function EmployeeMonthDialog({ open, onClose, employee, year, mon
   const clientById = useMemo(() => {
     const map = new Map();
     (clientOptions || []).forEach((c) =>
-      map.set(c.clientId, { ...c, label: `${c.clientId} - ${c.name}` })
+      map.set(c.clientId, { ...c, label: clientLabel(c) })
     );
     return map;
   }, [clientOptions]);
@@ -303,6 +301,7 @@ export default function EmployeeMonthDialog({ open, onClose, employee, year, mon
                     <TableCell align="center">
                       <Autocomplete
                         size="small"
+                        autoHighlight
                         options={clientChoices}
                         filterOptions={clientCodeFilter}
                         value={clientById.get(row.clientId) || null}
@@ -333,6 +332,7 @@ export default function EmployeeMonthDialog({ open, onClose, employee, year, mon
                       <Autocomplete
                         size="small"
                         disabled={!isOvertime}
+                        autoHighlight
                         options={clientChoices}
                         filterOptions={clientCodeFilter}
                         value={clientById.get(row.otClientId) || null}

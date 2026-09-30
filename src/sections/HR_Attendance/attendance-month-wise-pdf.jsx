@@ -1,5 +1,5 @@
 import React from 'react';
-import { Page, View, Text, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { Page, View, Text, Document, StyleSheet } from '@react-pdf/renderer';
 import PropTypes from 'prop-types';
 
 import { cleanEmployeeName } from 'src/utils/employee-name';

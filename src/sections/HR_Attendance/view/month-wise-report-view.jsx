@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 
 import { cleanEmployeeName } from 'src/utils/employee-name';

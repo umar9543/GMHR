@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 
 import Card from '@mui/material/Card';

@@ -15,7 +15,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { useSnackbar } from 'notistack';
 
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -24,14 +24,12 @@ import Iconify from 'src/components/iconify';
 import { getAllClientOptions } from 'src/api/hr-client';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
+import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 
 import { downloadSalarySlip } from '../salary-slip-pdf';
 
 // A client is found by its code or by its name, as everywhere else.
-const clientFilter = createFilterOptions({
-  limit: 50,
-  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
-});
+const clientFilter = filterClientOptions;
 
 const fDateOnly = (value) => {
   if (!value) return '-';
@@ -65,7 +63,7 @@ export default function SalaryStatusListView() {
       .then((rows) => {
         if (!cancelled) {
           setClientOptions(
-            (rows || []).map((c) => ({ ...c, label: `${c.clientId} - ${c.name}` }))
+            (rows || []).map((c) => ({ ...c, label: clientLabel(c) }))
           );
         }
       })

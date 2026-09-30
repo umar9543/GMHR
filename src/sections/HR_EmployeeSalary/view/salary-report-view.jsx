@@ -16,7 +16,7 @@ import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { paths } from 'src/routes/paths';
 import Iconify from 'src/components/iconify';
@@ -25,6 +25,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getEmployeeOptions } from 'src/api/attendance';
 import { getAllClientOptions } from 'src/api/hr-client';
+import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 import { getSalaryReport } from 'src/api/employee-salary';
 import { buildSalarySlipPdf, fetchSlipByEmployee } from 'src/sections/salarystatus/salary-slip-pdf';
 import {
@@ -62,10 +63,7 @@ const YEARS = Array.from({ length: 8 }, (_, i) => THIS_YEAR + 1 - i);
 // The row that stands for every client, told apart by an id no client has.
 const SELECT_ALL = { clientId: -1, name: '', label: 'All clients' };
 
-const clientFilter = createFilterOptions({
-  limit: 60,
-  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
-});
+const clientFilter = filterClientOptions;
 
 const token = () => {
   try {
@@ -105,7 +103,7 @@ export default function SalaryReportView() {
     getAllClientOptions()
       .then((list) => {
         if (!cancelled) {
-          setClientOptions((list || []).map((c) => ({ ...c, label: `${c.clientId} - ${c.name}` })));
+          setClientOptions((list || []).map((c) => ({ ...c, label: clientLabel(c) })));
         }
       })
       .catch((err) => console.error('Could not load the clients', err));

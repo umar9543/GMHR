@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Box,
   Table,
+  Paper,
   TableRow,
   TableHead,
   TableBody,
   TableCell,
   TableContainer,
   TablePagination,
-  Paper,
-  Box,
 } from '@mui/material';
 
 export default function AttendanceMonthWiseTable({ reportData }) {

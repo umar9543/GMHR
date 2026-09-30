@@ -27,7 +27,7 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import LinearProgress from '@mui/material/LinearProgress';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { paths } from 'src/routes/paths';
 import Iconify from 'src/components/iconify';
@@ -35,6 +35,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getAllClientOptions } from 'src/api/hr-client';
+import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 import { refreshSalarySheetMonth } from 'src/api/benefits';
 import { downloadSalarySlip } from 'src/sections/salarystatus/salary-slip-pdf';
 import {
@@ -65,10 +66,7 @@ const MONTHS = [
 const THIS_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 8 }, (_, i) => THIS_YEAR + 1 - i);
 
-const clientFilter = createFilterOptions({
-  limit: 50,
-  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
-});
+const clientFilter = filterClientOptions;
 
 const num = (v) => {
   const n = Number(v);
@@ -256,7 +254,7 @@ export default function SalarySheetView() {
     getAllClientOptions()
       .then((list) => {
         if (!cancelled) {
-          setClientOptions((list || []).map((c) => ({ ...c, label: `${c.clientId} - ${c.name}` })));
+          setClientOptions((list || []).map((c) => ({ ...c, label: clientLabel(c) })));
         }
       })
       .catch((err) => console.error('Could not load the clients', err));

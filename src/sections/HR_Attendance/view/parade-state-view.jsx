@@ -22,7 +22,7 @@ import Typography from '@mui/material/Typography';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import LinearProgress from '@mui/material/LinearProgress';
 import TableContainer from '@mui/material/TableContainer';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { paths } from 'src/routes/paths';
 import Iconify from 'src/components/iconify';
@@ -30,6 +30,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getAllClientOptions } from 'src/api/hr-client';
+import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 import { getParadeState, getDailyByEmployee } from 'src/api/attendance';
 
 import { groupRows, PARADE_COLUMNS } from '../parade-state-utils';
@@ -44,10 +45,7 @@ const REPORTS = [
 // The row that stands for every client, told apart by an id no client has.
 const SELECT_ALL = { clientId: -1, name: '', label: 'All clients' };
 
-const clientFilter = createFilterOptions({
-  limit: 60,
-  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
-});
+const clientFilter = filterClientOptions;
 
 /** LASTNAME is '-' for most of the legacy rows, which prints as a dangling dash. */
 const cleanName = (name) => String(name || '').replace(/\s*-\s*$/, '').trim();
@@ -82,7 +80,7 @@ export default function ParadeStateView() {
     getAllClientOptions()
       .then((list) => {
         if (!cancelled) {
-          setClientOptions((list || []).map((c) => ({ ...c, label: `${c.clientId} - ${c.name}` })));
+          setClientOptions((list || []).map((c) => ({ ...c, label: clientLabel(c) })));
         }
       })
       .catch((err) => console.error('Could not load the clients', err));

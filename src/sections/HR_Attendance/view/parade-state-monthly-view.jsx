@@ -17,7 +17,7 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
 import TableContainer from '@mui/material/TableContainer';
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import { paths } from 'src/routes/paths';
@@ -28,14 +28,12 @@ import { cleanEmployeeName } from 'src/utils/employee-name';
 
 import { getParadeStateMonthly } from 'src/api/attendance';
 import { getAllClientOptions } from 'src/api/hr-client';
+import { filterClientOptions } from 'src/utils/client-picker';
 
 import { buildMonthlyParadeStatePdf } from '../parade-state-monthly-pdf';
 
 // Typing a client code finds the client, not just its name.
-const clientFilter = createFilterOptions({
-  limit: 50,
-  stringify: (o) => `${o.clientId ?? ''} ${o.label}`,
-});
+const clientFilter = filterClientOptions;
 
 export default function ParadeStateMonthlyView() {
   const settings = useSettingsContext();

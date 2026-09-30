@@ -30,6 +30,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import { getShifts } from 'src/api/shift';
 import { useAuthFetch } from 'src/api/apibasemethods';
 import { cleanEmployeeName } from 'src/utils/employee-name';
+import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 import { getClientRanks, getClientRankMap, getAllClientOptions } from 'src/api/hr-client';
 import { getAttendanceSheet, saveAttendanceSheet, updateAttendanceSheet } from 'src/api/attendance';
 
@@ -104,6 +105,7 @@ const AttendanceRow = memo(({
       <TableCell align="center">
         <Autocomplete
           size="small"
+          autoHighlight
           options={clientChoices}
           filterOptions={clientCodeFilter}
           value={clientById.get(row.clientId) || null}
@@ -127,6 +129,7 @@ const AttendanceRow = memo(({
       <TableCell align="center">
         <Autocomplete
           size="small"
+          autoHighlight
           disabled={!isOvertime}
           options={clientChoices}
           filterOptions={clientCodeFilter}
@@ -263,10 +266,7 @@ const clientFilter = createFilterOptions({ limit: 50, stringify: (o) => o.label 
 
 // The code column is what is picked from; the name column shows what was
 // picked. Searching still matches the name, so a site is found either way.
-const clientCodeFilter = createFilterOptions({
-  limit: 50,
-  stringify: (o) => `${o.clientId} ${o.name ?? ''}`,
-});
+const clientCodeFilter = filterClientOptions;
 
 export default function AttendanceView() {
   const settings = useSettingsContext();
@@ -501,7 +501,7 @@ export default function AttendanceView() {
   // Every client, so a row already pointing at a closed site still shows it.
   const clientById = useMemo(() => {
     const map = new Map();
-    clientOptions.forEach((c) => map.set(c.clientId, { ...c, label: `${c.clientId} - ${c.name}` }));
+    clientOptions.forEach((c) => map.set(c.clientId, { ...c, label: clientLabel(c) }));
     return map;
   }, [clientOptions]);
 
