@@ -424,6 +424,13 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
               </Alert>
             )}
 
+            {plan?.isPaid && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {MONTHS[month - 1]} {year} is marked <b>Paid</b>. Refreshing it changes settled
+                payroll; saving an entry leaves paid months alone.
+              </Alert>
+            )}
+
             {plan && plan.hasSheetRow && (
               <>
                 <Table size="small" sx={{ mb: 2 }}>

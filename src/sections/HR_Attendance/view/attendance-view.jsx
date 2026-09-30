@@ -24,6 +24,7 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
 import { paths } from 'src/routes/paths';
 import { APP_API } from 'src/config-global';
+import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
@@ -35,6 +36,7 @@ import { getClientRanks, getClientRankMap, getAllClientOptions } from 'src/api/h
 import { getAttendanceSheet, saveAttendanceSheet, updateAttendanceSheet } from 'src/api/attendance';
 
 import AttendanceTableToolbar from '../attendance-table-toolbar';
+import { buildDailyEmployeePdf } from '../daily-employee-pdf';
 import AttendanceTableFiltersResult from '../attendance-filters-result';
 
 // One guard's line. Memoised: the sheet shows fifty of these, each holding
@@ -284,6 +286,7 @@ export default function AttendanceView() {
   const [dateStr, setDateStr] = useState(new Date().toISOString().split('T')[0]);
 
   const [loading, setLoading] = useState(false);
+  const [paradeBusy, setParadeBusy] = useState(false);
   const [sheetData, setSheetData] = useState(null);
 
   const [page, setPage] = useState(0);
@@ -580,6 +583,53 @@ export default function AttendanceView() {
 
   const incompleteCount = (sheetData?.details || []).filter((row) => rowProblem(row)).length;
 
+  // The sheet on screen is the report: what the client box has filtered to,
+  // in the shape the by-employee parade state prints.
+  const paradeRows = useMemo(() => {
+    const shiftCode = (shiftId) => {
+      const shift = shifts.find((sh) => sh.shiftId === shiftId);
+      return String(shift?.code || '').toUpperCase() === 'N' ? 'N' : 'D';
+    };
+
+    return filteredDetails
+      .filter((row) => row.clientId)
+      .map((row) => {
+        const mark = markOf(row);
+        return {
+          empId: row.empId,
+          employeeName: row.employeeName,
+          clientId: row.clientId,
+          clientName: clientById.get(row.clientId)?.name || `Client ${row.clientId}`,
+          groupName: clientById.get(row.clientId)?.groupName || '',
+          shift: shiftCode(row.shiftId),
+          attendance: mark,
+          category: row.rank || '',
+          otClientId: row.otClientId || null,
+          otClientName: clientById.get(row.otClientId)?.name || '',
+          // The category he covered the overtime duty under.
+          ovCategory: mark === OVERTIME_MARK ? row.rank || '' : '',
+        };
+      });
+  }, [filteredDetails, clientById, shifts]);
+
+  const handleParadePdf = async () => {
+    if (!paradeRows.length) {
+      enqueueSnackbar('No marked guards to report', { variant: 'info' });
+      return;
+    }
+
+    setParadeBusy(true);
+    try {
+      const url = await buildDailyEmployeePdf(paradeRows, dateStr);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar(err.message || 'Could not build the parade state', { variant: 'error' });
+    } finally {
+      setParadeBusy(false);
+    }
+  };
+
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -729,6 +779,19 @@ export default function AttendanceView() {
                 {incompleteCount} row(s) still need a client, a shift or an OT client
               </Typography>
             )}
+            <Button
+              size="large"
+              variant="outlined"
+              startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
+              onClick={handleParadePdf}
+              disabled={loading || paradeBusy || !paradeRows.length}
+              sx={{ whiteSpace: 'nowrap' }}
+            >
+              {paradeBusy
+                ? 'Building...'
+                : `Parade State PDF (${paradeRows.length} guard${paradeRows.length === 1 ? '' : 's'})`}
+            </Button>
+
             <Button
               size="large"
               variant="contained"

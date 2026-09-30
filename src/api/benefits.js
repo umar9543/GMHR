@@ -111,3 +111,14 @@ export async function refreshSalarySheetMonth({ month, year, deductionsFrom = 'c
 export async function refreshSalarySheet(payload) {
   return apiFetch(`${BASE}/refresh-salary-sheet`, { method: 'POST', body: JSON.stringify(payload) });
 }
+
+/**
+ * One employee's entries, applied to every month from this one onwards that
+ * already has a salary sheet row. Months marked Paid are left as they were.
+ */
+export async function refreshEmployeeMonths({ employeeId, month, year, deductionsFrom = 'current' }) {
+  return apiFetch(`${BASE}/refresh-salary-sheet/employee-months`, {
+    method: 'POST',
+    body: JSON.stringify({ employeeId, month, year, deductionsFrom }),
+  });
+}
