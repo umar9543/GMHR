@@ -39,7 +39,10 @@ import {
   deleteAccount,
   getCoaHierarchy,
   getOpeningSummary,
+  getAllocationList,
 } from 'src/api/finance';
+
+import { buildAllocationListPdf, downloadAllocationListExcel } from './coa-export';
 
 const fMoney = (v) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
@@ -76,6 +79,30 @@ export default function FinanceCoaView() {
   const [editKey, setEditKey] = useState(null); // { caCode, acCode }
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  // 'pdf' or 'excel' while the Allocation List is being built.
+  const [exporting, setExporting] = useState(null);
+
+  // The whole chart in one call; it is small enough (about 1,600 lines).
+  const handleExport = async (format) => {
+    setExporting(format);
+    try {
+      const list = await getAllocationList();
+      if (!list?.length) {
+        enqueueSnackbar('The chart of accounts is empty', { variant: 'info' });
+        return;
+      }
+      if (format === 'pdf') {
+        window.open(buildAllocationListPdf(list), '_blank');
+      } else {
+        downloadAllocationListExcel(list);
+      }
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar(err.message || 'Could not build the allocation list', { variant: 'error' });
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const loadStatic = useCallback(async () => {
     try {
@@ -230,14 +257,32 @@ export default function FinanceCoaView() {
           { name: 'Chart of Accounts' },
         ]}
         action={
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-            onClick={openCreate}
-          >
-            New Account
-          </Button>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="solar:printer-minimalistic-bold" />}
+              onClick={() => handleExport('pdf')}
+              disabled={!!exporting}
+            >
+              {exporting === 'pdf' ? 'Building...' : 'PDF'}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="mdi:microsoft-excel" />}
+              onClick={() => handleExport('excel')}
+              disabled={!!exporting}
+            >
+              {exporting === 'excel' ? 'Building...' : 'Excel'}
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Iconify icon="mingcute:add-line" />}
+              onClick={openCreate}
+            >
+              New Account
+            </Button>
+          </Stack>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
       />

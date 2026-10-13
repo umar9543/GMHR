@@ -6,7 +6,7 @@ export default function LocationListPage() {
   return (
     <>
       <Helmet>
-        <title> Location: List View</title>
+        <title> Locations | GMS</title>
       </Helmet>
 
       <LocationListView />

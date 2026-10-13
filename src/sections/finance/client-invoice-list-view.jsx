@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
@@ -17,24 +18,33 @@ import Collapse from '@mui/material/Collapse';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
 import Typography from '@mui/material/Typography';
+import ListItemText from '@mui/material/ListItemText';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import LinearProgress from '@mui/material/LinearProgress';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import {
+  getParties,
+  getFbrSettings,
+  getFbrStatuses,
   getClientInvoice,
   getClientInvoices,
   cancelClientInvoice,
   getBillingProvinces,
 } from 'src/api/finance';
+
+import { FbrStatusChip } from './fbr-invoice-panel';
+import { buildSalesTaxInvoicePdf } from './sales-tax-invoice-pdf';
 
 const fMoney = (v) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 const fDate = (v) => (v ? String(v).slice(0, 10).split('-').reverse().join('/') : '-');
@@ -43,18 +53,26 @@ const toIso = (d) => (d && !Number.isNaN(d.getTime()) ? d.toISOString().split('T
 export default function ClientInvoiceListView() {
   const settings = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
+  const router = useRouter();
 
   const [rows, setRows] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [status, setStatus] = useState('Live');
+  // Only live invoices are listed; a cancelled one is no longer owed.
+  const status = 'Live';
   const [province, setProvince] = useState('');
+  // '' is every live invoice, receivable first; or just one side of it.
+  const [collection, setCollection] = useState('');
   const [provinces, setProvinces] = useState([]);
   const [searchInput, setSearchInput] = useState('');
   const [fromDate, setFromDate] = useState(null);
   const [toDate, setToDate] = useState(null);
   const [loading, setLoading] = useState(false);
+  // FBR standing of the invoices on the page, by number, and the provinces
+  // whose invoices go to FBR - only those show it.
+  const [fbr, setFbr] = useState({});
+  const [fbrProvinces, setFbrProvinces] = useState([]);
 
   const [expanded, setExpanded] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -70,11 +88,15 @@ export default function ClientInvoiceListView() {
           search: overrides.search ?? searchInput.trim(),
           status: overrides.status ?? status,
           province: overrides.province ?? province,
+          collection: overrides.collection ?? collection,
           fromDate: toIso(overrides.fromDate ?? fromDate),
           toDate: toIso(overrides.toDate ?? toDate),
         });
         setRows(res.records || []);
         setTotalCount(res.pagination?.totalCount ?? 0);
+        getFbrStatuses((res.records || []).map((r) => r.invoiceNo))
+          .then((list) => setFbr(Object.fromEntries(list.map((x) => [x.invoiceNo, x]))))
+          .catch(() => setFbr({}));
       } catch (err) {
         console.error(err);
         enqueueSnackbar(err.message || 'Failed to load invoices', { variant: 'error' });
@@ -82,7 +104,7 @@ export default function ClientInvoiceListView() {
         setLoading(false);
       }
     },
-    [page, rowsPerPage, searchInput, status, province, fromDate, toDate, enqueueSnackbar]
+    [page, rowsPerPage, searchInput, status, province, collection, fromDate, toDate, enqueueSnackbar]
   );
 
   useEffect(() => {
@@ -93,6 +115,9 @@ export default function ClientInvoiceListView() {
         console.error(err);
       }
     })();
+    getFbrSettings()
+      .then((s) => setFbrProvinces(s.reportProvinces ?? []))
+      .catch(() => setFbrProvinces([]));
     load({ page: 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -120,6 +145,62 @@ export default function ClientInvoiceListView() {
       enqueueSnackbar(err.message || 'Failed to load the invoice', { variant: 'error' });
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  // Which invoice the print menu is open for, and which format it is asked for.
+  const [printFor, setPrintFor] = useState(null);
+  const [printing, setPrinting] = useState(false);
+
+  const handlePrint = async (format) => {
+    const row = printFor?.row;
+    setPrintFor(null);
+    if (!row) return;
+
+    setPrinting(true);
+    try {
+      // The list carries the figures; the voucher needs the client's details
+      // and the lines, so it is fetched whole.
+      const invoice = await getClientInvoice(row.invoiceNo);
+
+      // An older API does not carry the addressee on the invoice, which left
+      // the top-left block blank. The party record holds all of it and that
+      // endpoint is already live, so it is filled from there instead.
+      if (!invoice.customerAddress1 && !invoice.contactPerson && invoice.caCode) {
+        try {
+          const parties = await getParties({
+            caCode: invoice.caCode,
+            acCode: invoice.acCode,
+            pageSize: 200,
+          });
+          const party = (parties.records || parties.Records || []).find(
+            (p) => Number(p.subCode) === Number(invoice.subCode)
+          );
+          if (party) {
+            invoice.customerAddress1 = party.address1;
+            invoice.customerAddress2 = party.address2;
+            invoice.customerPhone = party.telephone;
+            invoice.customerNtn = party.ntn;
+            invoice.contactPerson = party.contactPerson;
+            invoice.contactDesignation = party.designation;
+          }
+        } catch (err) {
+          console.error('Could not read the client details', err);
+        }
+      }
+
+      // A live FBR report puts FBR's number and QR code on it.
+      const fbrReport =
+        fbr[row.invoiceNo]?.status === 'Reported' && fbr[row.invoiceNo]?.environment === 'Production'
+          ? fbr[row.invoiceNo]
+          : null;
+      const url = await buildSalesTaxInvoicePdf(invoice, { format, fbr: fbrReport });
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar(err.message || 'Could not build the invoice', { variant: 'error' });
+    } finally {
+      setPrinting(false);
     }
   };
 
@@ -171,18 +252,18 @@ export default function ClientInvoiceListView() {
           <TextField
             select
             size="small"
-            label="Status"
-            value={status}
+            label="Show"
+            value={collection}
             onChange={(e) => {
-              setStatus(e.target.value);
+              setCollection(e.target.value);
               setPage(0);
-              load({ page: 0, status: e.target.value });
+              load({ page: 0, collection: e.target.value });
             }}
-            sx={{ minWidth: 130 }}
+            sx={{ minWidth: 170 }}
           >
-            <MenuItem value="Live">Live</MenuItem>
-            <MenuItem value="Cancel">Cancelled</MenuItem>
-            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="">All invoices</MenuItem>
+            <MenuItem value="receivable">Receivable</MenuItem>
+            <MenuItem value="received">Received</MenuItem>
           </TextField>
 
           <TextField
@@ -259,7 +340,7 @@ export default function ClientInvoiceListView() {
                 <TableCell align="right">Tax</TableCell>
                 <TableCell align="right">Adj</TableCell>
                 <TableCell align="right">Net</TableCell>
-                <TableCell align="center">Status</TableCell>
+                <TableCell align="center">Balance</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -289,7 +370,18 @@ export default function ClientInvoiceListView() {
                     </TableCell>
                     <TableCell>{(row.narration || '').trim() || '-'}</TableCell>
                     <TableCell>{(row.billingRef || '').trim() || '-'}</TableCell>
-                    <TableCell>{(row.province || '').trim() || '-'}</TableCell>
+                    <TableCell>
+                      {(row.province || '').trim() || '-'}
+                      {fbrProvinces.includes((row.province || '').trim()) && row.status === 'Live' && (
+                        <Box sx={{ mt: 0.5 }}>
+                          <FbrStatusChip
+                            status={fbr[row.invoiceNo]?.status}
+                            environment={fbr[row.invoiceNo]?.environment}
+                            fbrInvoiceNumber={fbr[row.invoiceNo]?.fbrInvoiceNumber}
+                          />
+                        </Box>
+                      )}
+                    </TableCell>
                     <TableCell align="right">{fMoney(row.salesValue)}</TableCell>
                     <TableCell align="right">{fMoney(row.taxAmount)}</TableCell>
                     <TableCell align="right">
@@ -298,14 +390,59 @@ export default function ClientInvoiceListView() {
                     <TableCell align="right">
                       <Typography variant="subtitle2">{fMoney(row.netAmount)}</Typography>
                     </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        size="small"
-                        color={row.status === 'Cancel' ? 'default' : 'success'}
-                        label={row.status}
-                      />
+                    <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                      {(() => {
+                        // Receivable invoices are listed first; this says how much
+                        // of each is still to come in.
+                        const balance = Number(row.balance) || 0;
+                        const received = Number(row.received) || 0;
+                        if (balance <= 1) {
+                          return <Chip size="small" color="success" variant="soft" label="Received" />;
+                        }
+                        return (
+                          <Tooltip
+                            title={
+                              received > 0
+                                ? `Part received: ${fMoney(received)} of ${fMoney(row.netAmount)}`
+                                : 'Nothing received yet'
+                            }
+                          >
+                            <Chip
+                              size="small"
+                              color={received > 0 ? 'warning' : 'error'}
+                              variant="soft"
+                              label={`${received > 0 ? 'Due' : 'Receivable'} ${fMoney(balance)}`}
+                            />
+                          </Tooltip>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell align="right">
+                      <Tooltip title="Open the invoice">
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            router.push(paths.dashboard.Finance.vouchers.billingEdit(row.invoiceNo))
+                          }
+                        >
+                          <Iconify icon="solar:pen-bold" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Print the sales tax invoice">
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={printing}
+                            onClick={(event) =>
+                              setPrintFor({ row, anchor: event.currentTarget })
+                            }
+                          >
+                            <Iconify icon="solar:printer-minimalistic-bold" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+
                       {row.status !== 'Cancel' && (
                         <Tooltip title="Cancel invoice">
                           <IconButton size="small" color="error" onClick={() => handleCancel(row)}>
@@ -397,6 +534,26 @@ export default function ClientInvoiceListView() {
           }}
         />
       </Card>
+      <Menu
+        open={Boolean(printFor)}
+        anchorEl={printFor?.anchor}
+        onClose={() => setPrintFor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={() => handlePrint('letterhead')}>
+          <ListItemText
+            primary="With letterhead"
+            secondary="Soft copy, to email"
+          />
+        </MenuItem>
+        <MenuItem onClick={() => handlePrint('plain')}>
+          <ListItemText
+            primary="Without letterhead"
+            secondary="For the printed letterhead paper"
+          />
+        </MenuItem>
+      </Menu>
     </Container>
   );
 }

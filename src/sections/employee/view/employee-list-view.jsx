@@ -3,6 +3,7 @@ import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -21,7 +22,6 @@ import { RouterLink } from 'src/routes/components';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useDebounce } from 'src/hooks/use-debounce';
 
-import { _roles, _userList, USER_STATUS_OPTIONS } from 'src/_mock';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
@@ -49,6 +49,7 @@ import EmployeeIdCardDialog from '../employee-id-card-dialog';
 import EmployeeVerificationDialog from '../employee-verification-dialog';
 import EmployeeGuarantorDialog from '../employee-guarantor-dialog';
 import EmployeeSoldierBookDialog from '../employee-soldier-book-dialog';
+import EmployeeSalaryStatusDialog from '../employee-salary-status-dialog';
 import { stickyCellSx, ACTION_COL_WIDTH, DOCUMENTS_COL_WIDTH } from '../sticky-columns';
 import { buildEmployeeInformationFormPdf } from '../employee-information-form-pdf';
 
@@ -59,17 +60,19 @@ import { buildEmployeeInformationFormPdf } from '../employee-information-form-pd
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All' },
   { value: 'Active', label: 'Active' },
-  { value: 'In-Active', label: 'In Active' },
+  { value: 'In-Active', label: 'Inactive' },
 ];
 
 const TABLE_HEAD = [
-
+  { id: 'HRID', label: 'Employee No', width: 110 },
   { id: 'EmployeeName', label: 'Employee Name', minWidth: 220, align: 'left' },
   { id: 'FatherName', label: 'Father Name', minWidth: 150 },
   { id: 'CNIC', label: 'CNIC', minWidth: 150 },
   { id: 'CellNo', label: 'Contact Number', minWidth: 150 },
   { id: 'Address', label: 'Address', width: 220 },
-  { id: 'DepartmentName', label: 'Department', width: 180 },
+  { id: 'DepartmentName', label: 'Category', width: 180 },
+  // Civil or Ex-Armed, from the choice on the employee form.
+  { id: 'ServiceType', label: 'Service Type', width: 120 },
   { id: 'Age', label: 'Age', width: 100 },
   // { id: 'Education', label: 'Education', width: 180 },
   { id: 'APSAA', label: 'APSAA', width: 180 },
@@ -114,6 +117,7 @@ const toRow = (item) => ({
   Age: item.age ?? '',
   Address: item.address || '',
   DepartmentName: item.departmentName || '',
+  ServiceType: item.serviceType || '',
   Education: '',
   APSAA: item.apsaa || '',
   active: item.isActive ? 'Active' : 'In-Active',
@@ -190,6 +194,22 @@ export default function EmployeeListView() {
   const handleCloseSoldierBook = useCallback(() => {
     setSoldierBookOpen(false);
     setSelectedSoldierBookEmployeeId(null);
+  }, []);
+
+  const [salaryStatusOpen, setSalaryStatusOpen] = useState(false);
+  const [salaryStatusEmployee, setSalaryStatusEmployee] = useState(null);
+
+  const handleOpenSalaryStatus = useCallback((row) => {
+    setSalaryStatusEmployee({
+      id: row.HRID,
+      name: row.EmployeeName || '',
+    });
+    setSalaryStatusOpen(true);
+  }, []);
+
+  const handleCloseSalaryStatus = useCallback(() => {
+    setSalaryStatusOpen(false);
+    setSalaryStatusEmployee(null);
   }, []);
 
   const [guarantorOpen, setGuarantorOpen] = useState(false);
@@ -368,7 +388,6 @@ export default function EmployeeListView() {
         throw new Error('Failed to update privilege');
       }
 
-      console.log('Privilege updated:', response.data);
       FetchProfileData();
       return response.data;
     } catch (error) {
@@ -395,14 +414,12 @@ export default function EmployeeListView() {
       ) : (
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <CustomBreadcrumbs
-            heading="General Information List"
+            heading="Employees Info"
             links={[
-              {
-                name: 'Dashboard',
-                href: paths.dashboard.root,
-              },
-
-              { name: 'General Information List' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Employee Management', href: paths.dashboard.HR_Module.Employee.list },
+              { name: 'Employees Info' },
             ]}
             action={
               <Button
@@ -477,7 +494,7 @@ export default function EmployeeListView() {
               />
             )}
 
-            <div style={{ height: 2 }}>{fetching && <LinearProgress sx={{ height: 2 }} />}</div>
+            <Box sx={{ height: 2 }}>{fetching && <LinearProgress sx={{ height: 2 }} />}</Box>
 
             <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
               <TableSelectedAction
@@ -529,6 +546,7 @@ export default function EmployeeListView() {
                           onViewVerification={() => handleOpenVerification(row.HRID)}
                           onViewGuarantor={() => handleOpenGuarantor(row.HRID)}
                           onViewSoldierBook={() => handleOpenSoldierBook(row.HRID)}
+                          onViewSalaryStatus={() => handleOpenSalaryStatus(row)}
                           onPrintForm={() => handlePrintForm(row.HRID)}
                           // onViewProfile={() => handleViewProfile(row.HRID)}
                           // onEditPolicy={() => handleEditPolicy(row.HRID)}
@@ -600,6 +618,13 @@ export default function EmployeeListView() {
         open={guarantorOpen}
         onClose={handleCloseGuarantor}
         employeeId={selectedGuarantorEmployeeId}
+      />
+
+      <EmployeeSalaryStatusDialog
+        open={salaryStatusOpen}
+        onClose={handleCloseSalaryStatus}
+        employeeId={salaryStatusEmployee?.id}
+        employeeName={salaryStatusEmployee?.name}
       />
 
       <EmployeeSoldierBookDialog

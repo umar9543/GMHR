@@ -97,16 +97,16 @@ const EARNINGS = [
   { key: 'actualBSalary', label: 'TOTAL', width: 90 },
   { key: 'allow', label: 'ALLOW', width: 80 },
   { key: 'otDays', label: 'OTDAYS', width: 75 },
-  { key: 'otRate', label: 'otrate', width: 80 },
+  { key: 'otRate', label: 'OT RATE', width: 80 },
 ];
 // Likewise deductions: they arrive with the generated sheet.
 const DEDUCTIONS = [
-  { key: 'advance', label: 'Advance', width: 90 },
+  { key: 'advance', label: 'ADVANCE', width: 90 },
   { key: 'iTax', label: 'ITAX', width: 80 },
   { key: 'loan', label: 'LOAN', width: 80 },
   { key: 'verification', label: 'VERIFIC.', width: 85 },
   { key: 'fine', label: 'FINE', width: 80 },
-  { key: 'totWDays', label: 'totwdays', width: 80 },
+  { key: 'totWDays', label: 'TOT WDAYS', width: 80 },
   { key: 'eobi', label: 'EOBI', width: 75 },
 ];
 
@@ -151,7 +151,7 @@ const SalaryRow = memo(({
       <TableCell align="center">{row.clientId ?? '-'}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.clientName || '-'}</TableCell>
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        {String(row.salaryDate ?? '').slice(0, 10) || '-'}
+        {row.salaryDate ? String(row.salaryDate).slice(0, 10).split('-').reverse().join('/') : '-'}
       </TableCell>
 
       <TableCell sx={{ py: 0.5 }}>
@@ -167,7 +167,7 @@ const SalaryRow = memo(({
             <em>-</em>
           </MenuItem>
           <MenuItem value="Paid">Paid</MenuItem>
-          <MenuItem value="UnPaid">UnPaid</MenuItem>
+          <MenuItem value="UnPaid">Unpaid</MenuItem>
         </Select>
       </TableCell>
 
@@ -637,7 +637,7 @@ export default function SalarySheetView() {
               </li>
             )}
             renderInput={(params) => <TextField {...params} label="Client" placeholder="All clients" />}
-            sx={{ width: 300 }}
+            sx={{ width: { xs: 1, sm: 300 } }}
           />
 
           <TextField
@@ -653,7 +653,7 @@ export default function SalarySheetView() {
           >
             <MenuItem value="">All</MenuItem>
             <MenuItem value="Paid">Paid</MenuItem>
-            <MenuItem value="UnPaid">UnPaid</MenuItem>
+            <MenuItem value="UnPaid">Unpaid</MenuItem>
           </TextField>
 
           <TextField
@@ -741,7 +741,7 @@ export default function SalarySheetView() {
                 disabled={bulkBusy || saving}
                 sx={{ whiteSpace: 'nowrap' }}
               >
-                Mark UnPaid
+                Mark Unpaid
               </Button>
             </>
           )}
@@ -786,23 +786,23 @@ export default function SalarySheetView() {
                 </TableCell>
                 <TableCell>Emp ID</TableCell>
                 <TableCell sx={{ minWidth: 170 }}>Employee</TableCell>
-                <TableCell sx={{ minWidth: 130 }}>rank</TableCell>
+                <TableCell sx={{ minWidth: 130 }}>Rank</TableCell>
                 {EARNINGS.map((f) => (
                   <TableCell key={f.key} align="right">
                     {f.label}
                   </TableCell>
                 ))}
-                <TableCell align="right">Gross Sal</TableCell>
+                <TableCell align="right">Gross Salary</TableCell>
                 {DEDUCTIONS.map((f) => (
                   <TableCell key={f.key} align="right">
                     {f.label}
                   </TableCell>
                 ))}
-                <TableCell align="right">NetSalary</TableCell>
-                <TableCell align="center">ClientID</TableCell>
-                <TableCell sx={{ minWidth: 150 }}>Name</TableCell>
-                <TableCell>Sal.Date</TableCell>
-                <TableCell sx={{ minWidth: 130 }}>Paid/UnPaid</TableCell>
+                <TableCell align="right">Net Salary</TableCell>
+                <TableCell align="center">Client ID</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>Client Name</TableCell>
+                <TableCell>Salary Date</TableCell>
+                <TableCell sx={{ minWidth: 130 }}>Status</TableCell>
                 <TableCell sx={{ minWidth: 180 }}>Remarks</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -835,7 +835,7 @@ export default function SalarySheetView() {
                         No salary rows for {MONTHS[month - 1]} {year}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Use Generate Salary to build the month from attendance.
+                        The salary sheet for this month has not been generated yet.
                       </Typography>
                     </Box>
                   </TableCell>

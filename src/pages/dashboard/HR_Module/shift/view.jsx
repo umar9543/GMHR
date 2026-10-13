@@ -6,7 +6,7 @@ export default function ShiftListPage() {
   return (
     <>
       <Helmet>
-        <title> Shift: Setup</title>
+        <title> Shifts | GMS</title>
       </Helmet>
 
       <ShiftListView />

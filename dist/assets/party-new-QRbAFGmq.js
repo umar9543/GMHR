@@ -1,0 +1,1 @@
+import{j as t,H as r}from"./index-fqXI1fR2.js";import{F as e}from"./party-edit-view-GPxXmIWR.js";import"./finance-biEvOjzP.js";import"./Grid-g1nPGLW9.js";import"./Autocomplete-bwKpTKDT.js";import"./Close-ccHx0731.js";function p(){return t.jsxs(t.Fragment,{children:[t.jsx(r,{children:t.jsx("title",{children:" Finance: New Party"})}),t.jsx(e,{})]})}export{p as default};

@@ -277,9 +277,9 @@ const FetchSalarySetup = useCallback(async () => {
           <CustomBreadcrumbs
             heading="Salary Setup"
             links={[
-              { name: 'Home', href: paths.dashboard.root },
-              { name: 'Salary Setup', href: paths.dashboard.HR_Module.Salary.Setup.list },
-              { name: 'list' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Salary Setup' },
             ]}
             action={
               <Box

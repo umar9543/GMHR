@@ -17,6 +17,7 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
@@ -335,7 +336,7 @@ export default function ClientNewEditView({ id }) {
   // ------------------------------------------------------------- actions
   const handleSave = async () => {
     if (!form.name.trim()) {
-      enqueueSnackbar('Customer name is required', { variant: 'warning' });
+      enqueueSnackbar('Client name is required', { variant: 'warning' });
       return;
     }
     if (!form.dailyDate) {
@@ -496,8 +497,9 @@ export default function ClientNewEditView({ id }) {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <CustomBreadcrumbs
-        heading="Company Details"
+        heading={isEdit ? 'Edit Client' : 'New Client'}
         links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'HR', href: paths.dashboard.HR_Module.root },
           { name: 'Clients', href: paths.dashboard.HR_Module.Client.list },
           { name: isEdit ? `Client ${id}` : 'New' },
@@ -548,12 +550,12 @@ export default function ClientNewEditView({ id }) {
             {optionalDateField('Expiry Date', 'expiryDate')}
           </Grid>
           <Grid item xs={12} md={4}>
-            {tick('Click if Contract Close', 'isClosed')}
+            {tick('Contract Closed', 'isClosed')}
           </Grid>
 
           <Grid item xs={12} md={8}>
             <TextField
-              label="Customer"
+              label="Client Name"
               size="small"
               fullWidth
               value={form.name}
@@ -567,13 +569,21 @@ export default function ClientNewEditView({ id }) {
 
           <Grid item xs={12} md={2}>
             <TextField
+              select
               label="Contract Code"
               size="small"
               fullWidth
               value={form.contractCode}
               onChange={(e) => setField('contractCode', e.target.value)}
-              inputProps={{ maxLength: 100 }}
-            />
+            >
+              {/* GD and EP; a legacy code such as 5GD stays listed on the client
+                  that has it, so opening that client does not change it. */}
+              {[...new Set(['GD', 'EP', form.contractCode].filter(Boolean))].map((code) => (
+                <MenuItem key={code} value={code}>
+                  {code}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} md={3}>
             <Stack direction="row">
@@ -604,7 +614,7 @@ export default function ClientNewEditView({ id }) {
             />
           </Grid>
           <Grid item xs={12} md={3}>
-            {tick('Click for OT ClientAmt', 'otChk')}
+            {tick('Use OT Client Amount', 'otChk')}
           </Grid>
         </Grid>
       </Card>
@@ -634,7 +644,7 @@ export default function ClientNewEditView({ id }) {
         <Divider />
 
         <TableContainer>
-          <Table size="small">
+          <Table size="small" sx={{ minWidth: 640 }}>
             <TableHead>
               <TableRow>
                 <TableCell sx={{ minWidth: 240 }}>Rank</TableCell>
@@ -724,7 +734,7 @@ export default function ClientNewEditView({ id }) {
             forcePopupIcon
             openOnFocus
             size="small"
-            sx={{ width: 300 }}
+            sx={{ width: { xs: 1, sm: 300 } }}
             options={addableRanks}
             inputValue={rankToAdd}
             onInputChange={(e, value) => setRankToAdd(value)}

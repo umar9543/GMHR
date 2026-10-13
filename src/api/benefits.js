@@ -3,7 +3,7 @@ import { APP_API } from 'src/config-global';
 // ----------------------------------------------------------------------
 // Benefits and Deduction: what an employee is paid on top of salary, and what
 // is taken off it. Both tabs are the same shape, so one set of helpers serves
-// them, keyed by 'allowances' or 'deductions'.
+// them, keyed by 'allowances', 'deductions' or 'bonuses' (Sal Inc).
 // ----------------------------------------------------------------------
 
 function getBearerToken() {
@@ -57,7 +57,12 @@ export async function getDeductionTypes() {
   return apiFetch(`${BASE}/deduction-types`);
 }
 
-/** A page of entries. `kind` is 'allowances' or 'deductions'. */
+/** The salary increment kinds, for the picker. */
+export async function getBonusTypes() {
+  return apiFetch(`${BASE}/bonus-types`);
+}
+
+/** A page of entries. `kind` is 'allowances', 'deductions' or 'bonuses'. */
 export async function getBenefitEntries(kind, { page = 1, pageSize = 25, search, employeeId, typeId, from, to } = {}) {
   return apiFetch(
     `${BASE}/${kind}${buildQuery({ page, pageSize, search, employeeId, typeId, from, to })}`

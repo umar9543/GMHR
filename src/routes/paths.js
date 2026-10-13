@@ -43,6 +43,11 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/finance`,
       coa: `${ROOTS.DASHBOARD}/finance/chart-of-accounts`,
       parties: `${ROOTS.DASHBOARD}/finance/parties`,
+      partyNew: `${ROOTS.DASHBOARD}/finance/parties/new`,
+      // One path segment: this router does not match multi-segment child
+      // paths reliably, so the code travels as 13-185-1.
+      partyEdit: (caCode, acCode, subCode) =>
+        `${ROOTS.DASHBOARD}/finance/parties/${caCode}-${acCode}-${subCode}`,
       reports: {
         trialBalance: `${ROOTS.DASHBOARD}/finance/reports/trial-balance`,
         ledger: `${ROOTS.DASHBOARD}/finance/reports/ledger`,
@@ -50,6 +55,10 @@ export const paths = {
         bankBook: `${ROOTS.DASHBOARD}/finance/reports/bank-book`,
         aging: `${ROOTS.DASHBOARD}/finance/reports/aging`,
         payablesAging: `${ROOTS.DASHBOARD}/finance/reports/payables-aging`,
+        profitLoss: `${ROOTS.DASHBOARD}/finance/reports/profit-loss`,
+        notes: `${ROOTS.DASHBOARD}/finance/reports/schedule-of-notes`,
+        bankPosition: `${ROOTS.DASHBOARD}/finance/reports/bank-position`,
+        deductions: `${ROOTS.DASHBOARD}/finance/reports/deduction-report`,
       },
       vouchers: {
         journalList: `${ROOTS.DASHBOARD}/finance/vouchers/journal`,
@@ -62,6 +71,7 @@ export const paths = {
         expenseNew: `${ROOTS.DASHBOARD}/finance/vouchers/expense/new`,
         billingList: `${ROOTS.DASHBOARD}/finance/vouchers/billing`,
         billingNew: `${ROOTS.DASHBOARD}/finance/vouchers/billing/new`,
+        billingEdit: (invoiceNo) => `${ROOTS.DASHBOARD}/finance/vouchers/billing/${invoiceNo}`,
       },
     },
     HR_Module: {
@@ -76,6 +86,9 @@ export const paths = {
         root: `${ROOTS.DASHBOARD}/HR_Module/employee`,
         list: `${ROOTS.DASHBOARD}/HR_Module/employee/list`,
         status: `${ROOTS.DASHBOARD}/HR_Module/employee/status`,
+        card: `${ROOTS.DASHBOARD}/HR_Module/employee/card`,
+        picture: `${ROOTS.DASHBOARD}/HR_Module/employee/picture`,
+        blacklist: `${ROOTS.DASHBOARD}/HR_Module/employee/blacklist`,
         GeneralInformation: `${ROOTS.DASHBOARD}/HR_Module/employee/general-information`,
         edit: (id) => `${ROOTS.DASHBOARD}/HR_Module/employee/${id}/edit`,
       },
@@ -130,14 +143,16 @@ export const paths = {
         },
         report: `${ROOTS.DASHBOARD}/HR_Module/Salary/report`,
       },
-      // Benefits and Deduction: the two tabs the legacy screen keeps.
+      // Benefits and Deduction: the three tabs the legacy screen keeps.
       Benefits: {
         root: `${ROOTS.DASHBOARD}/HR_Module/benefits`,
         allowance: `${ROOTS.DASHBOARD}/HR_Module/benefits/allowance`,
         deduction: `${ROOTS.DASHBOARD}/HR_Module/benefits/deduction`,
+        salInc: `${ROOTS.DASHBOARD}/HR_Module/benefits/sal-inc`,
         // One guard's history, the way the legacy screen works it.
         allowanceEmployee: (id) => `${ROOTS.DASHBOARD}/HR_Module/benefits/allowance/${id}`,
         deductionEmployee: (id) => `${ROOTS.DASHBOARD}/HR_Module/benefits/deduction/${id}`,
+        salIncEmployee: (id) => `${ROOTS.DASHBOARD}/HR_Module/benefits/sal-inc/${id}`,
       },
       Policy: {
         root: `${ROOTS.DASHBOARD}/HR_Module/Policy`,
@@ -147,6 +162,7 @@ export const paths = {
         root: `${ROOTS.DASHBOARD}/HR_Module/Attendance`,
         view: `${ROOTS.DASHBOARD}/HR_Module/Attendance/view`,
         monthWiseReport: `${ROOTS.DASHBOARD}/HR_Module/Attendance/month-wise-report`,
+        employeeWiseEntry: `${ROOTS.DASHBOARD}/HR_Module/Attendance/employee-wise-entry`,
         paradeState: `${ROOTS.DASHBOARD}/HR_Module/Attendance/parade-state`,
         paradeStateMonthly: `${ROOTS.DASHBOARD}/HR_Module/Attendance/parade-state-monthly`,
       },

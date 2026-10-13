@@ -5,7 +5,7 @@ export default function SalaryStatusCreatePage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Create a new Salary Status</title>
+        <title> New Salary Status | GMS</title>
       </Helmet>
 
       <SalaryStatusCreateView />

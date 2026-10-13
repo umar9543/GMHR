@@ -10,7 +10,7 @@ export default function HolidayListPage() {
   return (
     <>
       <Helmet>
-        <title> HR Module: Holidays List View</title>
+        <title> Holidays | GMS</title>
       </Helmet>
 
       <HolidayListView />

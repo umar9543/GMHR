@@ -9,7 +9,7 @@ export default function HRShiftRosterListPage() {
   return (
     <>
       <Helmet>
-        <title> Monthly Shift Roster: List View</title>
+        <title> Monthly Shift Roster | GMS</title>
       </Helmet>
 
       <HRShiftListView />

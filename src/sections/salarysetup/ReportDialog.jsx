@@ -153,7 +153,7 @@ export default function ReportDialog({ uploadClose, uploadOpen, tableData }) {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontSize: '20px !important' }}>
+        <DialogTitle>
           <Stack direction="row" alignItems="center">
             <Typography variant="h5" sx={{ flexGrow: 1 }}>
               Add Agency

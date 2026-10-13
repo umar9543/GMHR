@@ -1,7 +1,11 @@
 import isEqual from 'lodash/isEqual';
-import { useCallback, useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
+import { alpha } from '@mui/material/styles';
+import LinearProgress from '@mui/material/LinearProgress';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
 import Table from '@mui/material/Table';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
@@ -16,14 +20,16 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import Iconify from 'src/components/iconify';
+import { paths } from 'src/routes/paths';
+import { fDate } from 'src/utils/format-time';
 import Scrollbar from 'src/components/scrollbar';
 import Label from 'src/components/label';
 import { useSnackbar } from 'src/components/snackbar';
-import { LoadingScreen } from 'src/components/loading-screen';
 import {
   useTable,
   emptyRows,
@@ -45,14 +51,24 @@ const defaultFilters = {
   status: 'Active',
 };
 
+// In service or not, as the tabs choose.
+const STATUS_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'Active', label: 'Active' },
+  { value: 'Discharged', label: 'Discharged' },
+];
+
+const isActiveRow = (row) => !!(row.IsActive ?? row.ISACTIVE ?? row.isActive);
+
 const TABLE_HEAD = [
-  { id: 'id', label: 'Emp ID', minWidth: 100 },
-  { id: 'name', label: 'Employee Name', minWidth: 200 },
-  { id: 'fatherName', label: 'Father Name', minWidth: 180 },
-  { id: 'cnic', label: 'NIC', minWidth: 150 },
-  { id: 'contact', label: 'Contact No', minWidth: 150 },
-  { id: 'status', label: 'Status', minWidth: 120 },
-  { id: 'actions', label: 'Actions', minWidth: 120, align: 'center' },
+  { id: 'ID', label: 'Emp ID', minWidth: 100 },
+  { id: 'FIRSTNAME', label: 'Employee Name', minWidth: 200 },
+  { id: 'MIDDLENAME', label: 'Father Name', minWidth: 180 },
+  { id: 'NIC', label: 'CNIC', minWidth: 150 },
+  { id: 'CELLPHONE', label: 'Contact No', minWidth: 150 },
+  { id: 'IsActive', label: 'Status', minWidth: 120 },
+  { id: 'DischargeReason', label: 'Discharge Reason', minWidth: 220 },
+  { id: '', label: 'Actions', minWidth: 120, align: 'center' },
 ];
 
 export default function EmployeeStatusView() {
@@ -117,7 +133,21 @@ export default function EmployeeStatusView() {
 
       setTableData((prevData) =>
         prevData.map((row) =>
-          (row.ID || row.id) === employeeId ? { ...row, IsActive: newIsActive, ISACTIVE: newIsActive, isActive: newIsActive } : row
+          (row.ID || row.id) === employeeId
+            ? {
+                ...row,
+                IsActive: newIsActive,
+                ISACTIVE: newIsActive,
+                isActive: newIsActive,
+                // What was just entered, as the server saved it.
+                ...(newIsActive
+                  ? {}
+                  : {
+                      DischargeReason: inputValue.trim() || 'No reason provided.',
+                      DischargeDate: new Date().toISOString(),
+                    }),
+              }
+            : row
         )
       );
       handleCloseDialog();
@@ -151,23 +181,51 @@ export default function EmployeeStatusView() {
   const canReset = !isEqual(defaultFilters, filters);
   const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
         heading="Employee Status"
         links={[
-          { name: 'Dashboard', href: '/' },
-          { name: 'HR Module', href: '#' },
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Employee Management', href: paths.dashboard.HR_Module.Employee.list },
           { name: 'Employee Status' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
       <Card>
+        <Tabs
+          value={filters.status}
+          onChange={(event, value) => {
+            table.onResetPage();
+            setFilters((prev) => ({ ...prev, status: value }));
+          }}
+          sx={{
+            px: 2.5,
+            boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+          }}
+        >
+          {STATUS_TABS.map((tab) => (
+            <Tab
+              key={tab.value}
+              iconPosition="end"
+              value={tab.value}
+              label={tab.label}
+              icon={
+                <Label
+                  variant={((tab.value === 'all' || tab.value === filters.status) && 'filled') || 'soft'}
+                  color={(tab.value === 'Active' && 'success') || (tab.value === 'Discharged' && 'error') || 'default'}
+                >
+                  {tab.value === 'all' && tableData.length}
+                  {tab.value === 'Active' && tableData.filter(isActiveRow).length}
+                  {tab.value === 'Discharged' && tableData.filter((r) => !isActiveRow(r)).length}
+                </Label>
+              }
+            />
+          ))}
+        </Tabs>
+
         <UserTableToolbar
           filters={filters}
           onFilters={handleFilters}
@@ -183,6 +241,8 @@ export default function EmployeeStatusView() {
             sx={{ p: 2.5, pt: 0 }}
           />
         )}
+
+        {loading && <LinearProgress />}
 
         <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
           <Scrollbar>
@@ -220,6 +280,25 @@ export default function EmployeeStatusView() {
                         </Label>
                       </TableCell>
 
+                      {/* Only while discharged: an employee allowed back keeps
+                          his old reason on record, but it no longer applies. */}
+                      <TableCell sx={{ maxWidth: 320 }}>
+                        {!isActive && row.DischargeReason ? (
+                          <>
+                            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                              {row.DischargeReason}
+                            </Typography>
+                            {row.DischargeDate && (
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                {fDate(row.DischargeDate)}
+                              </Typography>
+                            )}
+                          </>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+
                       <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
                         {!isActive && (
                           <Tooltip title="Allow (Set Active)">
@@ -252,7 +331,7 @@ export default function EmployeeStatusView() {
 
                 <TableEmptyRows
                   height={table.dense ? 52 : 72}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, tableData.length)}
+                  emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
                 />
 
                 <TableNoData notFound={notFound} />
@@ -307,7 +386,7 @@ export default function EmployeeStatusView() {
 }
 
 function applyFilter({ inputData, comparator, filters }) {
-  const { name } = filters;
+  const { name, status } = filters;
 
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
@@ -318,6 +397,9 @@ function applyFilter({ inputData, comparator, filters }) {
   });
 
   inputData = stabilizedThis.map((el) => el[0]);
+
+  if (status === 'Active') inputData = inputData.filter(isActiveRow);
+  else if (status === 'Discharged') inputData = inputData.filter((row) => !isActiveRow(row));
 
   if (name) {
     const n = name.trim().toLowerCase();

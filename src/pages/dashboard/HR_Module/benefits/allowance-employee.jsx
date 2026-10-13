@@ -12,7 +12,7 @@ export default function EmployeeAllowanceHistoryPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Employee Allowance</title>
+        <title> Employee Allowance | GMS</title>
       </Helmet>
 
       <BenefitEmployeeView kind="allowances" employeeId={employeeId} />

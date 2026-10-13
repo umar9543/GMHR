@@ -12,7 +12,7 @@ export default function EmployeeEditPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Edit Employee</title>
+        <title> Edit Employee | GMS</title>
       </Helmet>
 
       <EmployeeEditView id={id} />

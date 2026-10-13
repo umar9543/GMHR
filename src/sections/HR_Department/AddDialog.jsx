@@ -1,40 +1,30 @@
 import * as Yup from 'yup';
-import { useMemo, useCallback, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
-  Button,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
-  Input,
-  InputAdornment,
   Typography,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 
 import { LoadingScreen } from 'src/components/loading-screen';
 
 import Iconify from 'src/components/iconify';
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
   RHFTextField,
-  RHFAutocomplete,
-  RHFUpload,
-  RHFUploadBox,
 } from 'src/components/hook-form';
 
-import { Get, Post } from 'src/api/apibasemethods';
+import { Post } from 'src/api/apibasemethods';
 import PropTypes from 'prop-types';
 
 // ----------------------------------------------------------------------
@@ -122,8 +112,7 @@ export default function DeptDialog({ uploadClose, uploadOpen, tableData }) {
   
  
   return (
-    <>
-      <Dialog
+    <Dialog
         open={uploadOpen}
         onClose={() => {
           uploadClose(); // Call the original close function
@@ -131,7 +120,7 @@ export default function DeptDialog({ uploadClose, uploadOpen, tableData }) {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontSize: '20px !important' }}>
+        <DialogTitle>
           <Stack direction="row" alignItems="center">
             <Typography variant="h5" sx={{ flexGrow: 1 }}>
               Add Department
@@ -170,7 +159,6 @@ export default function DeptDialog({ uploadClose, uploadOpen, tableData }) {
           </FormProvider>
         </DialogContent>
       </Dialog>
-    </>
   );
 }
 

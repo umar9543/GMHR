@@ -377,7 +377,7 @@ export default function SalaryReportView() {
                 placeholder={clients.length ? '' : 'All clients'}
               />
             )}
-            sx={{ width: 340 }}
+            sx={{ width: { xs: 1, sm: 340 } }}
           />
           )}
 
@@ -392,7 +392,7 @@ export default function SalaryReportView() {
               isOptionEqualToValue={(o, v) => o.id === v.id}
               filterOptions={(x) => x}
               renderInput={(params) => <TextField {...params} label="Employee" />}
-              sx={{ width: 300 }}
+              sx={{ width: { xs: 1, sm: 300 } }}
             />
           )}
 

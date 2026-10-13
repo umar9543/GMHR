@@ -9,7 +9,7 @@ export default function DepartmentListPage() {
   return (
     <>
       <Helmet>
-        <title> Department: List View</title>
+        <title> Departments | GMS</title>
       </Helmet>
 
       <DeptListView />

@@ -1,75 +1,54 @@
 import PropTypes from 'prop-types';
 
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import { alpha, useTheme } from '@mui/material/styles';
 
 // ----------------------------------------------------------------------
+// The sign-in screen: the company's guards at their briefing, tinted in the
+// theme's blue - deepest behind the card, clearing to the right - and a
+// frosted card holding the form: on the left on a wide screen, in the middle
+// on a phone. The company's logo is in the card itself.
+// ----------------------------------------------------------------------
 
-export default function AuthClassicLayout({ children, image, title }) {
+export default function AuthClassicLayout({ children }) {
   const theme = useTheme();
+  const { darker, dark } = theme.palette.primary;
 
   return (
     <Stack
       component="main"
+      direction="row"
       alignItems="center"
-      justifyContent="center"
+      justifyContent={{ xs: 'center', md: 'flex-start' }}
       sx={{
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #e8eef7 0%, #ffffff 100%)',
-        // p: { xs: 2, md: 4 }
+        minHeight: '100vh',
+        px: { xs: 2, md: 8 },
+        py: { xs: 2, md: 2.5 },
+        bgcolor: darker,
+        backgroundImage: {
+          xs: `linear-gradient(${alpha(darker, 0.78)}, ${alpha(dark, 0.62)}), url("/assets/illustrations/hr-login-bg.jpg")`,
+          md: `linear-gradient(90deg, ${alpha(darker, 0.9)} 0%, ${alpha(dark, 0.7)} 38%, ${alpha(dark, 0.18)} 72%, ${alpha(dark, 0.05)} 100%), url("/assets/illustrations/hr-login-bg.jpg")`,
+        },
+        backgroundSize: 'cover',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
       }}
     >
-      <Box
-        sx={{
-          position: 'absolute',
-          top: { xs: 1, md: 1 },
-          left: { xs: 16, md: 30 },
-          zIndex: 10,
-        }}
-      >
-        <img
-          src="/assets/images/gms.png"
-          alt="logo"
-          style={{ width: 140, filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.15))' }}
-        />
-      </Box>
-
       <Stack
-        direction="row"
-        alignItems="center"
+        justifyContent="center"
         sx={{
-          width: '100%',
-          height: '100vh',
-          overflow: 'hidden',
-          backgroundImage: 'url("/assets/illustrations/hr-login-bg.jpg")',
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          position: 'relative'
+          width: 1,
+          maxWidth: 420,
+          p: { xs: 3, sm: 3.5 },
+          borderRadius: 3,
+          bgcolor: alpha('#ffffff', 0.86),
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.7)',
+          boxShadow: `0 24px 48px ${alpha('#000000', 0.28)}`,
         }}
       >
-        <Stack
-          justifyContent="center"
-          sx={{
-            width: { xs: '100%', md: 420 },
-            p: { xs: 4, md: 5 },
-            ml: { xs: 2, md: 8 },
-            mr: { xs: 2, md: 8 },
-            mb: { xs: 2, md: 8 },
-            mt: { xs: 2, md: 14 }, // Shifted down to avoid top-left text
-            borderRadius: '24px',
-            bgcolor: alpha('#ffffff', 0.4),
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255,255,255,0.6)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-            zIndex: 10
-          }}
-        >
-          {children}
-        </Stack>
+        {children}
       </Stack>
     </Stack>
   );
@@ -77,6 +56,4 @@ export default function AuthClassicLayout({ children, image, title }) {
 
 AuthClassicLayout.propTypes = {
   children: PropTypes.node,
-  image: PropTypes.string,
-  title: PropTypes.string,
 };

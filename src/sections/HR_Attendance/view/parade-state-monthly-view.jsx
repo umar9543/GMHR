@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 
@@ -35,7 +36,9 @@ import { buildMonthlyParadeStatePdf } from '../parade-state-monthly-pdf';
 // Typing a client code finds the client, not just its name.
 const clientFilter = filterClientOptions;
 
-export default function ParadeStateMonthlyView() {
+// `embedded`: shown inside the Month-Wise Report page, under its heading, with
+// that page's Report dropdown (`reportPicker`) first in the filter row.
+export default function ParadeStateMonthlyView({ embedded = false, reportPicker = null }) {
   const settings = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
 
@@ -125,21 +128,12 @@ export default function ParadeStateMonthlyView() {
     return 'text.primary';
   };
 
-  return (
-    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
-      <CustomBreadcrumbs
-        heading="Monthly Parade State"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'HR', href: paths.dashboard.HR_Module.root },
-          { name: 'Attendance' },
-          { name: 'Monthly Parade State' },
-        ]}
-        sx={{ mb: { xs: 3, md: 5 } }}
-      />
-
+  const content = (
+    <>
       <Card sx={{ p: 3, mb: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          {reportPicker}
+
           <Autocomplete
             fullWidth
             options={clientOptions}
@@ -168,16 +162,18 @@ export default function ParadeStateMonthlyView() {
             color="primary"
             onClick={handleGenerate}
             disabled={loading}
-            sx={{ height: 40, px: 4, whiteSpace: 'nowrap' }}
+            size="large"
+            sx={{ px: 4, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
-            {loading ? 'Loading...' : 'Generate'}
+            {loading ? 'Generating...' : 'Generate Report'}
           </Button>
           <Button
             variant="outlined"
             startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
             onClick={handleDownload}
             disabled={!data?.records?.length || building}
-            sx={{ height: 40, px: 3, whiteSpace: 'nowrap' }}
+            size="large"
+            sx={{ px: 3, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             {building ? 'Building...' : 'PDF'}
           </Button>
@@ -275,6 +271,29 @@ export default function ParadeStateMonthlyView() {
           </Typography>
         </Card>
       )}
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <Container maxWidth={settings.themeStretch ? false : 'xl'}>
+      <CustomBreadcrumbs
+        heading="Monthly Parade State"
+        links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Attendance' },
+          { name: 'Monthly Parade State' },
+        ]}
+        sx={{ mb: { xs: 3, md: 5 } }}
+      />
+      {content}
     </Container>
   );
 }
+
+ParadeStateMonthlyView.propTypes = {
+  embedded: PropTypes.bool,
+  reportPicker: PropTypes.node,
+};

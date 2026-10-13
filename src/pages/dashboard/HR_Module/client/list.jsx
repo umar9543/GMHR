@@ -6,7 +6,7 @@ export default function ClientListPage() {
   return (
     <>
       <Helmet>
-        <title> HR: Clients</title>
+        <title> Clients | GMS</title>
       </Helmet>
 
       <ClientListView />

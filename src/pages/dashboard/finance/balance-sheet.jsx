@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import BalanceSheetView from 'src/sections/finance/balance-sheet-view';
+import FinancialStatementView from 'src/sections/finance/financial-statement-view';
 
 export default function FinanceBalanceSheetPage() {
   return (
@@ -9,7 +9,7 @@ export default function FinanceBalanceSheetPage() {
         <title> Finance: Balance Sheet</title>
       </Helmet>
 
-      <BalanceSheetView />
+      <FinancialStatementView kind="balance-sheet" />
     </>
   );
 }

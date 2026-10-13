@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSnackbar } from 'notistack';
 
+import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
+import Tabs from '@mui/material/Tabs';
+import { alpha } from '@mui/material/styles';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -24,11 +26,19 @@ import TablePagination from '@mui/material/TablePagination';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getClients, closeClient } from 'src/api/hr-client';
+
+// The tabs over the list - the same three the employee list has.
+const CLIENT_TABS = [
+  { value: 'all', label: 'All', color: 'default', count: 'all' },
+  { value: 'active', label: 'Active', color: 'success', count: 'active' },
+  { value: 'closed', label: 'Closed', color: 'error', count: 'inactive' },
+];
 
 export default function ClientListView() {
   const settings = useSettingsContext();
@@ -40,6 +50,7 @@ export default function ClientListView() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [status, setStatus] = useState('active');
+  const [counts, setCounts] = useState({ all: 0, active: 0, inactive: 0 });
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,6 +67,8 @@ export default function ClientListView() {
         });
         setRows(res.records || []);
         setTotalCount(res.pagination?.totalCount ?? 0);
+        const c = res.counts || {};
+        setCounts({ all: c.all ?? 0, active: c.active ?? 0, inactive: c.inactive ?? 0 });
       } catch (err) {
         console.error(err);
         enqueueSnackbar(err.message || 'Failed to load clients', { variant: 'error' });
@@ -118,25 +131,41 @@ export default function ClientListView() {
       />
 
       <Card>
+        {/* The same tabs the employee list has: every client, the ones in
+            service, and the closed ones, each with its count. */}
+        <Tabs
+          value={status}
+          onChange={(event, value) => {
+            setStatus(value);
+            setPage(0);
+            load(0, rowsPerPage, search, value);
+          }}
+          sx={{
+            px: 2.5,
+            boxShadow: (theme) => `inset 0 -2px 0 0 ${alpha(theme.palette.grey[500], 0.08)}`,
+          }}
+        >
+          {CLIENT_TABS.map((tab) => (
+            <Tab
+              key={tab.value}
+              iconPosition="end"
+              value={tab.value}
+              label={tab.label}
+              icon={
+                <Label
+                  variant={tab.value === 'all' || tab.value === status ? 'filled' : 'soft'}
+                  color={tab.color}
+                >
+                  {counts[tab.count]}
+                </Label>
+              }
+            />
+          ))}
+        </Tabs>
+
         {loading && <LinearProgress />}
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ p: 2.5 }}>
-          <TextField
-            select
-            size="small"
-            label="Status"
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(0);
-              load(0, rowsPerPage, search, e.target.value);
-            }}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="active">Active</MenuItem>
-            <MenuItem value="closed">Closed</MenuItem>
-            <MenuItem value="all">All</MenuItem>
-          </TextField>
 
           <TextField
             fullWidth
@@ -155,22 +184,24 @@ export default function ClientListView() {
         <Divider />
 
         <TableContainer sx={{ maxHeight: 560 }}>
-          <Table stickyHeader size="small">
+          <Table stickyHeader size="small" sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
+                <TableCell sx={{ width: 60 }}>S.No</TableCell>
                 <TableCell>Code</TableCell>
                 <TableCell>Client</TableCell>
                 <TableCell>Group</TableCell>
                 <TableCell align="center">Req. Day</TableCell>
                 <TableCell align="center">Req. Night</TableCell>
-                <TableCell align="center">Ranks</TableCell>
+                <TableCell align="center">Total Guards</TableCell>
                 <TableCell align="center">Status</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((row) => (
+              {rows.map((row, index) => (
                 <TableRow key={row.clientId} hover>
+                  <TableCell>{page * rowsPerPage + index + 1}</TableCell>
                   <TableCell>
                     <Typography variant="subtitle2">{row.clientId}</Typography>
                   </TableCell>
@@ -183,7 +214,7 @@ export default function ClientListView() {
                   <TableCell>{row.groupName || '-'}</TableCell>
                   <TableCell align="center">{row.requiredDay}</TableCell>
                   <TableCell align="center">{row.requiredNight}</TableCell>
-                  <TableCell align="center">{row.rankCount}</TableCell>
+                  <TableCell align="center">{row.totalGuards ?? 0}</TableCell>
                   <TableCell align="center">
                     <Chip
                       size="small"
@@ -217,7 +248,7 @@ export default function ClientListView() {
 
               {!loading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} align="center">
+                  <TableCell colSpan={9} align="center">
                     <Typography variant="subtitle2" sx={{ py: 3 }}>
                       No clients found.
                     </Typography>

@@ -49,10 +49,11 @@ export default function DismissalEditView({ urlData }) {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Main Buyer"
+        heading="Edit Employee Dismissal"
         links={[
-          { name: 'Home', href: paths.dashboard.root },
-          { name: 'Main Buyer',href: paths.dashboard.customer.endCustomer.root },
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Employee Dismissal', href: paths.dashboard.HR_Module.Setup.EmployeeDismissal.view },
           { name: 'Edit' },
         ]}
         sx={{

@@ -4,11 +4,13 @@ import autoTable from 'jspdf-autotable';
 // The summary block the legacy parade state prints beneath the sheet: what the
 // contracts call for against what actually stood on post, split day / night.
 //
-//   guarding strength = standard duty + overtime
+//   EP strength       = the guards on post at the EP clients (EP-GSK, ...),
+//                       the spare guards held in reserve
+//   guarding strength = standard duty + overtime - EP strength
 //   shortage          = contract - guarding strength, floored at zero
 //
-// EP strength has no source anywhere in the system, so that row prints blank -
-// exactly as the legacy report leaves it - rather than a made-up zero.
+// As the legacy report, 1 Oct 2026: standard 242/139, overtime 2/1, EP 4/0,
+// guarding 240/140.
 // ---------------------------------------------------------------------------
 
 const num = (v) => Number(v || 0);
@@ -20,12 +22,23 @@ const pair = (day, night) => ({ day: num(day), night: num(night) });
  * Builds the six summary lines from the three figures that drive them.
  * Each of contract / standard / overtime is a { day, night } pair.
  */
-export function paradeSummaryRows({ contract, standard, overtime }) {
-  const guarding = pair(standard.day + overtime.day, standard.night + overtime.night);
-  const shortage = pair(
-    atLeastZero(contract.day - guarding.day),
-    atLeastZero(contract.night - guarding.night)
+export function paradeSummaryRows({
+  contract,
+  standard,
+  overtime,
+  ep = null,
+  shortage: sites = null,
+}) {
+  const reserve = pair(ep?.day, ep?.night);
+  const guarding = pair(
+    standard.day + overtime.day - reserve.day,
+    standard.night + overtime.night - reserve.night
   );
+  // The sites' own shortages added up, when given; netting the totals would
+  // let one site's extra guards hide another site's missing ones.
+  const shortage = sites
+    ? pair(sites.day, sites.night)
+    : pair(atLeastZero(contract.day - guarding.day), atLeastZero(contract.night - guarding.night));
 
   return [
     { label: 'TOTAL STRENGTH (CONTRACT)', value: pair(contract.day, contract.night) },
@@ -33,8 +46,7 @@ export function paradeSummaryRows({ contract, standard, overtime }) {
     { label: 'TOTAL OVER TIME', value: pair(overtime.day, overtime.night) },
     { label: 'TOTAL SHORTAGE', value: shortage },
     { label: 'TOTAL GUARDING STRENGTH', value: guarding },
-    // No EP data is captured yet; the row is printed for the form's sake.
-    { label: 'TOTAL EP STRENGTH', value: null },
+    { label: 'TOTAL EP STRENGTH', value: ep ? reserve : null },
   ];
 }
 

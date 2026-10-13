@@ -6,7 +6,7 @@ export default function ParadeStatePage() {
   return (
     <>
       <Helmet>
-        <title> Attendance: Daily Parade State</title>
+        <title> Daily Parade State | GMS</title>
       </Helmet>
 
       <ParadeStateView />

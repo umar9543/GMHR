@@ -19,18 +19,14 @@ import { useAuthContext } from 'src/auth/hooks';
 import { varHover } from 'src/components/animate';
 import { useSnackbar } from 'src/components/snackbar';
 import CustomPopover, { usePopover } from 'src/components/custom-popover';
-import { decrypt, encrypt } from 'src/api/encryption';
+import { decrypt } from 'src/api/encryption';
 
 // ----------------------------------------------------------------------
 
 const OPTIONS = [
   {
     label: 'Home',
-    linkTo: '/',
-  },
-  {
-    label: 'Settings',
-    linkTo: paths.dashboard.user.account,
+    linkTo: paths.dashboard.root,
   },
 ];
 

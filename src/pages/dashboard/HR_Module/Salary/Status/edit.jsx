@@ -9,7 +9,7 @@ export default function SalaryStatusEditPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Salary Status Edit</title>
+        <title> Edit Salary Status | GMS</title>
       </Helmet>
 
       <SalaryStatusEditView id={`${id}`} />

@@ -82,6 +82,29 @@ export async function getClientRankMap() {
 }
 
 /**
+ * Every client's contracted categories with the strength asked for, keyed by
+ * client: Map<clientId, [{ rank, requiredDay, requiredNight }]>. The counts are
+ * null when the API predates them, so a caller can still check categories.
+ */
+export async function getClientRequirementMap() {
+  const rows = await apiFetch('/api/HrClient/rank-map');
+  const count = (value) => (value === undefined || value === null ? null : Number(value) || 0);
+  const map = new Map();
+  (rows || []).forEach((r) => {
+    const clientId = r.clientId ?? r.ClientId;
+    const rank = (r.rank ?? r.Rank ?? '').trim();
+    if (!clientId || !rank) return;
+    if (!map.has(clientId)) map.set(clientId, []);
+    map.get(clientId).push({
+      rank,
+      requiredDay: count(r.requiredDay ?? r.RequiredDay),
+      requiredNight: count(r.requiredNight ?? r.RequiredNight),
+    });
+  });
+  return map;
+}
+
+/**
  * A client's dated guard history, newest date first. Each entry holds the
  * guards per rank for its Daily Date.
  */

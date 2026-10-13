@@ -160,7 +160,7 @@ export default function ShiftListView() {
         <Divider />
 
         <TableContainer>
-          <Table size="small">
+          <Table size="small" sx={{ minWidth: 800 }}>
             <TableHead>
               <TableRow>
                 <TableCell>Code</TableCell>

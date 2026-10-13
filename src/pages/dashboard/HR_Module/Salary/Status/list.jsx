@@ -5,7 +5,7 @@ export default function SalaryStatusListPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Salary Status List</title>
+        <title> Salary Status | GMS</title>
       </Helmet>
 
       <SalaryStatusListView />

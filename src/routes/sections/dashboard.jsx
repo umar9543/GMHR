@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import RoleGuard from 'src/auth/guard/RoleGuard';
 import { AuthGuard } from 'src/auth/guard';
 import DashboardLayout from 'src/layouts/dashboard';
@@ -16,6 +16,8 @@ const IndexPage = lazy(() => import('src/pages/dashboard/app'));
 // Finance (database GMFIN)
 const FinanceCoaPage = lazy(() => import('src/pages/dashboard/finance/chart-of-accounts'));
 const FinancePartiesPage = lazy(() => import('src/pages/dashboard/finance/parties'));
+const FinancePartyNewPage = lazy(() => import('src/pages/dashboard/finance/party-new'));
+const FinancePartyEditPage = lazy(() => import('src/pages/dashboard/finance/party-edit'));
 const FinanceJournalListPage = lazy(() => import('src/pages/dashboard/finance/journal-list'));
 const FinanceJournalNewPage = lazy(() => import('src/pages/dashboard/finance/journal-new'));
 const FinancePaymentListPage = lazy(() => import('src/pages/dashboard/finance/payment-list'));
@@ -26,10 +28,15 @@ const FinanceExpenseListPage = lazy(() => import('src/pages/dashboard/finance/ex
 const FinanceExpenseNewPage = lazy(() => import('src/pages/dashboard/finance/expense-new'));
 const FinanceBillingListPage = lazy(() => import('src/pages/dashboard/finance/billing-list'));
 const FinanceBillingNewPage = lazy(() => import('src/pages/dashboard/finance/billing-new'));
+const FinanceBillingEditPage = lazy(() => import('src/pages/dashboard/finance/billing-edit'));
 const FinanceTrialBalancePage = lazy(() => import('src/pages/dashboard/finance/trial-balance'));
 const FinanceLedgerReportPage = lazy(() => import('src/pages/dashboard/finance/ledger-report'));
 const FinanceBalanceSheetPage = lazy(() => import('src/pages/dashboard/finance/balance-sheet'));
 const FinanceBankBookPage = lazy(() => import('src/pages/dashboard/finance/bank-book'));
+const FinanceProfitLossPage = lazy(() => import('src/pages/dashboard/finance/profit-loss'));
+const FinanceNotesPage = lazy(() => import('src/pages/dashboard/finance/schedule-of-notes'));
+const FinanceBankPositionPage = lazy(() => import('src/pages/dashboard/finance/bank-position'));
+const FinanceDeductionReportPage = lazy(() => import('src/pages/dashboard/finance/deduction-report'));
 const FinanceAgingReportPage = lazy(() => import('src/pages/dashboard/finance/aging-report'));
 const FinancePayablesAgingPage = lazy(() => import('src/pages/dashboard/finance/payables-aging'));
 
@@ -72,18 +79,26 @@ const SalarySheetEditPage = lazy(() => import('src/pages/dashboard/HR_Module/Sal
 const PayrollReportPage = lazy(() => import('src/pages/dashboard/HR_Module/Salary/report'));
 const EmployeeAllowancePage = lazy(() => import('src/pages/dashboard/HR_Module/benefits/allowance'));
 const EmployeeDeductionPage = lazy(() => import('src/pages/dashboard/HR_Module/benefits/deduction'));
+const EmployeeSalIncPage = lazy(() => import('src/pages/dashboard/HR_Module/benefits/sal-inc'));
 const EmployeeAllowanceHistoryPage = lazy(() =>
   import('src/pages/dashboard/HR_Module/benefits/allowance-employee')
 );
 const EmployeeDeductionHistoryPage = lazy(() =>
   import('src/pages/dashboard/HR_Module/benefits/deduction-employee')
 );
+const EmployeeSalIncHistoryPage = lazy(() =>
+  import('src/pages/dashboard/HR_Module/benefits/sal-inc-employee')
+);
 const HRGeneralInformationPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/general-information'));
 const EmployeeListPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/list'));
 const EmployeeStatusPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/status'));
+const EmployeeCardPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/card'));
+const EmployeePicturePage = lazy(() => import('src/pages/dashboard/HR_Module/employee/picture'));
+const BlackListPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/blacklist'));
 const EmployeeEditPage = lazy(() => import('src/pages/dashboard/HR_Module/employee/edit'));
 const AttendanceViewPage = lazy(() => import('src/pages/dashboard/HR_Module/attendance/view'));
 const MonthWiseReportPage = lazy(() => import('src/pages/dashboard/HR_Module/attendance/month-wise-report'));
+const EmployeeWiseEntryPage = lazy(() => import('src/pages/dashboard/HR_Module/attendance/employee-wise-entry'));
 const ParadeStatePage = lazy(() => import('src/pages/dashboard/HR_Module/parade-state/view'));
 const ParadeStateMonthlyPage = lazy(() => import('src/pages/dashboard/HR_Module/parade-state/monthly'));
 const ClientListPage = lazy(() => import('src/pages/dashboard/HR_Module/client/list'));
@@ -164,7 +179,14 @@ export const dashboardRoutes = [
         children: [
           { element: <FinanceCoaPage />, index: true },
           { path: 'chart-of-accounts', element: <FinanceCoaPage /> },
-          { path: 'parties', element: <FinancePartiesPage /> },
+          {
+            path: 'parties',
+            children: [
+              { element: <FinancePartiesPage />, index: true },
+              { path: 'new', element: <FinancePartyNewPage /> },
+              { path: ':partyKey', element: <FinancePartyEditPage /> },
+            ],
+          },
           {
             // One segment per level - this router does not match multi-segment
             // child paths reliably.
@@ -176,6 +198,10 @@ export const dashboardRoutes = [
               { path: 'bank-book', element: <FinanceBankBookPage /> },
               { path: 'aging', element: <FinanceAgingReportPage /> },
               { path: 'payables-aging', element: <FinancePayablesAgingPage /> },
+              { path: 'profit-loss', element: <FinanceProfitLossPage /> },
+              { path: 'schedule-of-notes', element: <FinanceNotesPage /> },
+              { path: 'bank-position', element: <FinanceBankPositionPage /> },
+              { path: 'deduction-report', element: <FinanceDeductionReportPage /> },
             ],
           },
           {
@@ -216,6 +242,7 @@ export const dashboardRoutes = [
                 children: [
                   { element: <FinanceBillingListPage />, index: true },
                   { path: 'new', element: <FinanceBillingNewPage /> },
+                  { path: ':invoiceNo', element: <FinanceBillingEditPage /> },
                 ],
               },
             ],
@@ -230,6 +257,8 @@ export const dashboardRoutes = [
           </RoleGuard>
         ),
         children: [
+          // The "HR" breadcrumb links here: the HR dashboard.
+          { index: true, element: <Navigate to="/app" replace /> },
           {
             path: 'client',
             children: [
@@ -306,6 +335,30 @@ export const dashboardRoutes = [
             element: (
               <Suspense fallback={<LoadingScreen />}>
                 <EmployeeStatusPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'employee/card',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <EmployeeCardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'employee/picture',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <EmployeePicturePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'employee/blacklist',
+            element: (
+              <Suspense fallback={<LoadingScreen />}>
+                <BlackListPage />
               </Suspense>
             ),
           },
@@ -506,6 +559,22 @@ export const dashboardRoutes = [
             path: 'benefits',
             children: [
               {
+                path: 'sal-inc',
+                element: (
+                  <AuthGuard>
+                    <EmployeeSalIncPage />
+                  </AuthGuard>
+                ),
+              },
+              {
+                path: 'sal-inc/:employeeId',
+                element: (
+                  <AuthGuard>
+                    <EmployeeSalIncHistoryPage />
+                  </AuthGuard>
+                ),
+              },
+              {
                 path: 'allowance',
                 element: (
                   <AuthGuard>
@@ -561,6 +630,14 @@ export const dashboardRoutes = [
                 element: (
                   <Suspense fallback={<LoadingScreen />}>
                     <AttendanceViewPage />
+                  </Suspense>
+                ),
+              },
+              {
+                path: 'employee-wise-entry',
+                element: (
+                  <Suspense fallback={<LoadingScreen />}>
+                    <EmployeeWiseEntryPage />
                   </Suspense>
                 ),
               },

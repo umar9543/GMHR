@@ -155,11 +155,12 @@ export default function LocationListView() {
     <>
       <Container maxWidth={settings.themeStretch ? false : 'lg'}>
         <CustomBreadcrumbs
-          heading="Location"
+          heading="Locations"
           links={[
-            { name: 'Home', href: paths.dashboard.root },
-            { name: 'Location', href: paths.dashboard.HR_Module.Setup.location },
-            { name: 'List' },
+            { name: 'Dashboard', href: paths.dashboard.root },
+            { name: 'HR', href: paths.dashboard.HR_Module.root },
+            { name: 'Setup' },
+            { name: 'Locations' },
           ]}
           action={
             <Button
@@ -373,7 +374,7 @@ function LocationDialog({ edit = false, open, onClose, row, tableData }) {
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ fontSize: '20px !important' }}>
+      <DialogTitle>
         <Stack direction="row" alignItems="center">
           <Box component="span" sx={{ flexGrow: 1 }}>
             {edit ? 'Edit Location' : 'Add Location'}

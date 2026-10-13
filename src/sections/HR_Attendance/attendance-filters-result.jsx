@@ -11,6 +11,14 @@ import Iconify from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
+const TRACK_LABELS = {
+  short: 'At a short client',
+  transferred: 'Transferred',
+  shift: 'Shift changed',
+  new: 'New entry',
+  changed: 'Changed from previous day',
+};
+
 export default function AttendanceTableFiltersResult({
   filters,
   onFilters,
@@ -23,6 +31,18 @@ export default function AttendanceTableFiltersResult({
   }, [onFilters]);
   const handleRemoveClient = useCallback(() => {
     onFilters('client', '');
+  }, [onFilters]);
+  const handleRemoveMark = useCallback(() => {
+    onFilters('mark', '');
+  }, [onFilters]);
+  const handleRemoveCategory = useCallback(() => {
+    onFilters('category', '');
+  }, [onFilters]);
+  const handleRemoveCheck = useCallback(() => {
+    onFilters('check', '');
+  }, [onFilters]);
+  const handleRemoveTrack = useCallback(() => {
+    onFilters('track', '');
   }, [onFilters]);
   return (
     <Stack spacing={1.5} {...other}>
@@ -42,6 +62,31 @@ export default function AttendanceTableFiltersResult({
         {!!filters.client && (
           <Block label="Client:">
             <Chip label={filters.client} size="small" onDelete={handleRemoveClient} />
+          </Block>
+        )}
+        {!!filters.mark && (
+          <Block label="Attendance:">
+            <Chip label={filters.mark} size="small" onDelete={handleRemoveMark} />
+          </Block>
+        )}
+        {!!filters.category && (
+          <Block label="Category:">
+            <Chip label={filters.category} size="small" onDelete={handleRemoveCategory} />
+          </Block>
+        )}
+        {!!filters.check && (
+          <Block label="Check:">
+            <Chip label="Not asked for by client" size="small" color="error" onDelete={handleRemoveCheck} />
+          </Block>
+        )}
+        {!!filters.track && (
+          <Block label="Day changes:">
+            <Chip
+              label={TRACK_LABELS[filters.track] || filters.track}
+              size="small"
+              color="warning"
+              onDelete={handleRemoveTrack}
+            />
           </Block>
         )}
         <Button

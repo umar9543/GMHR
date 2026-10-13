@@ -1,15 +1,15 @@
 import { Helmet } from 'react-helmet-async';
 
-import ClientInvoiceNewView from 'src/sections/finance/client-invoice-new-view';
+import ClientInvoiceFormView from 'src/sections/finance/client-invoice-form-view';
 
 export default function FinanceBillingNewPage() {
   return (
     <>
       <Helmet>
-        <title> Finance: New Client Invoice</title>
+        <title> Finance: New Debit Invoice</title>
       </Helmet>
 
-      <ClientInvoiceNewView />
+      <ClientInvoiceFormView />
     </>
   );
 }

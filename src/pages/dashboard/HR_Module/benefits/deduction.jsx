@@ -8,7 +8,7 @@ export default function EmployeeDeductionPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Employee Deduction</title>
+        <title> Employee Deduction | GMS</title>
       </Helmet>
 
       <BenefitsDeductionView kind="deductions" />

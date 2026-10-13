@@ -214,7 +214,7 @@ export default function UploadExcelDialog({
 
   return (
     <Dialog open={uploadOpen} onClose={uploadClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ fontSize: '20px !important' }}>Upload Agent Excel File</DialogTitle>
+      <DialogTitle>Upload Salary Setup Excel File</DialogTitle>
 
       {isLoading ? (
         renderLoading

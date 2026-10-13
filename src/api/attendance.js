@@ -48,6 +48,18 @@ export async function getAttendanceSheet(locationId, dateStr, clientId) {
 }
 
 /**
+ * Each guard's attendance on the last day before `dateStr` that carries any:
+ * { previousDate, records: [{ empId, mark, shiftId, clientId, otClientId, rank, ovRank }] }.
+ */
+export async function getPreviousDay(dateStr) {
+  const res = await apiFetch(`/api/payroll/previous-day?date=${encodeURIComponent(dateStr)}`);
+  return {
+    previousDate: res.previousDate ?? res.PreviousDate ?? null,
+    records: res.records ?? res.Records ?? [],
+  };
+}
+
+/**
  * Saves a new attendance sheet.
  */
 export async function saveAttendanceSheet(payload) {
@@ -134,6 +146,7 @@ export async function getParadeState(dateStr) {
       groupName: r.groupName ?? r.GroupName ?? '(no group)',
       clientId: r.clientId ?? r.ClientId,
       clientName: r.clientName ?? r.ClientName ?? '',
+      contractCode: r.contractCode ?? r.ContractCode ?? '',
       reqDay: r.reqDay ?? r.ReqDay ?? 0,
       reqNight: r.reqNight ?? r.ReqNight ?? 0,
       reqTotal: r.reqTotal ?? r.ReqTotal ?? 0,
@@ -143,6 +156,68 @@ export async function getParadeState(dateStr) {
       otNight: r.otNight ?? r.OtNight ?? 0,
     })),
   };
+}
+
+/**
+ * Employee Category Wise: the guards deployed at the given clients (all when
+ * none) on a date, read from that date's attendance or the latest earlier
+ * date that has any - `attendanceDate` says which.
+ */
+export async function getEmployeeCategoryWise(dateStr, clientIds = []) {
+  const qs = new URLSearchParams({ date: dateStr });
+  if (clientIds.length) qs.set('clientIds', clientIds.join(','));
+  const res = await apiFetch(`/api/Report/EmployeeCategoryWise?${qs.toString()}`);
+  return {
+    attendanceDate: res.attendanceDate ?? res.AttendanceDate ?? null,
+    records: (res.records ?? res.Records ?? []).map((r) => ({
+      empId: r.empId ?? r.EmpId,
+      employeeName: r.employeeName ?? r.EmployeeName ?? '',
+      jobTitle: r.jobTitle ?? r.JobTitle ?? '',
+      serviceType: r.serviceType ?? r.ServiceType ?? '',
+      nic: r.nic ?? r.Nic ?? '',
+      clientId: r.clientId ?? r.ClientId ?? null,
+      clientName: r.clientName ?? r.ClientName ?? '',
+      category: r.category ?? r.Category ?? '',
+      shift: r.shift ?? r.Shift ?? '',
+      mark: r.mark ?? r.Mark ?? '',
+      hasPicture: !!(r.hasPicture ?? r.HasPicture),
+    })),
+  };
+}
+
+/** The employee's photo, as GET /api/employee/{id}/picture serves it. */
+export const employeePictureUrl = (empId) => `${APP_API}/api/employee/${empId}/picture`;
+
+/**
+ * What the employee card prints, for codes and/or a code range (active
+ * employees only in a range): [{ empId, name, jobTitle, nic, joiningDate, hasPicture }].
+ */
+export async function getEmployeeCards({ ids = [], from = null, to = null } = {}) {
+  const qs = new URLSearchParams();
+  if (ids.length) qs.set('ids', ids.join(','));
+  if (from && to) {
+    qs.set('from', String(from));
+    qs.set('to', String(to));
+  }
+  const res = await apiFetch(`/api/employee/cards?${qs.toString()}`);
+  return (res.records ?? res.Records ?? []).map((r) => ({
+    empId: r.id ?? r.Id,
+    name: r.name ?? r.Name ?? '',
+    jobTitle: r.jobTitle ?? r.JobTitle ?? '',
+    nic: r.nic ?? r.Nic ?? '',
+    location: r.location ?? r.Location ?? '',
+    joiningDate: r.joiningDate ?? r.JoiningDate ?? '',
+    hasPicture: !!(r.hasPicture ?? r.HasPicture),
+  }));
+}
+
+/** Saves an employee's photo (a JPEG data URL), replacing the one on file. */
+export async function saveEmployeePicture(empId, dataUrl) {
+  return apiFetch(`/api/employee/${empId}/picture`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: dataUrl }),
+  });
 }
 
 /**
@@ -225,4 +300,28 @@ export async function getDailyByEmployee(dateStr, clientIds = []) {
       ovCategory: r.ovCategory ?? r.OvCategory ?? '',
     })),
   };
+}
+
+/**
+ * The days that carry attendance, newest first - the app's own sheets and the
+ * migrated legacy history. A day with a sheet but no rows comes back with a
+ * count of zero, which is what says it was never really marked.
+ */
+export async function getMarkedDays(from, to) {
+  const params = new URLSearchParams();
+  if (from) params.append('from', from);
+  if (to) params.append('to', to);
+
+  const res = await apiFetch(`/api/payroll/marked-days?${params.toString()}`);
+  return (res.records ?? res.Records ?? []).map((r) => ({
+    date: String(r.date ?? r.Date ?? '').slice(0, 10),
+    sheets: r.sheets ?? r.Sheets ?? 0,
+    appRows: r.appRows ?? r.AppRows ?? 0,
+    legacyRows: r.legacyRows ?? r.LegacyRows ?? 0,
+    present: r.present ?? r.Present ?? 0,
+    absent: r.absent ?? r.Absent ?? 0,
+    leave: r.leave ?? r.Leave ?? 0,
+    overtime: r.overtime ?? r.Overtime ?? 0,
+    clients: r.clients ?? r.Clients ?? 0,
+  }));
 }

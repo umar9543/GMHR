@@ -11,19 +11,12 @@ export default function GeneralInformationView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Employees General Information"
+        heading="Add Employee"
         links={[
-          {
-            name: 'Dashboard',
-            href: paths.dashboard.root,
-          },
-          {
-            name: 'Employees',
-            href: paths.dashboard.HR_Module.Employee.list,
-          },
-          {
-            name: 'Employees General Information',
-          },
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Employee Management', href: paths.dashboard.HR_Module.Employee.list },
+          { name: 'Add Employee' },
         ]}
         sx={{
           mb: { xs: 3, md: 5 },

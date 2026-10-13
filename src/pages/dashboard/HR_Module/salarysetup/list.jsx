@@ -9,7 +9,7 @@ export default function SalarySetupListPage() {
   return (
     <>
       <Helmet>
-        <title>Salary Setup : List View</title>
+        <title> Salary Setup | GMS</title>
       </Helmet>
 
       <SalarySetupListView />

@@ -8,8 +8,8 @@ import { alpha } from '@mui/material/styles';
 // Action is pinned at the edge, Documents is pinned one Action-width in.
 // ----------------------------------------------------------------------
 
-// Four 36px icon buttons plus cell padding, with a little room to spare.
-export const DOCUMENTS_COL_WIDTH = 176;
+// Five 36px icon buttons plus cell padding, with a little room to spare.
+export const DOCUMENTS_COL_WIDTH = 216;
 
 // Two 36px icon buttons plus cell padding, with a little room to spare.
 export const ACTION_COL_WIDTH = 96;

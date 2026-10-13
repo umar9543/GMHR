@@ -2,19 +2,14 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
-import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
-import Collapse from '@mui/material/Collapse';
-import Stack from '@mui/material/Stack';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import { Table, TableBody, TableHead } from '@mui/material';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Label from 'src/components/label';
@@ -42,6 +37,7 @@ export default function UserTableRow({
   onViewVerification,
   onViewGuarantor,
   onViewSoldierBook,
+  onViewSalaryStatus,
   onPrintForm,
 }) {
   const {
@@ -58,6 +54,8 @@ export default function UserTableRow({
     APSAA,
     NIC,
     Age,
+    HRID,
+    ServiceType,
   } = row;
 
   const confirm = useBoolean();
@@ -80,7 +78,9 @@ export default function UserTableRow({
           <Checkbox checked={selected} onClick={onSelectRow} />
         </TableCell> */}
 
-        <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{HRID}</TableCell>
+        <TableCell>
+          <Stack direction="row" alignItems="center">
           <Avatar
             alt={EmployeeName}
             src={
@@ -95,10 +95,9 @@ export default function UserTableRow({
           />
           <ListItemText
             primary={EmployeeName}
-
             primaryTypographyProps={{ typography: 'body2' }}
-
           />
+          </Stack>
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{FatherName}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{NIC}</TableCell>
@@ -111,7 +110,14 @@ export default function UserTableRow({
           </Tooltip>
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
-          {DepartmentName || 'No Role Assigned'}
+          {DepartmentName || '-'}
+        </TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          {ServiceType && (
+            <Label variant="soft" color={ServiceType === 'Ex-Armed' ? 'info' : 'default'}>
+              {ServiceType}
+            </Label>
+          )}
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{Age}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{APSAA}</TableCell>
@@ -139,7 +145,7 @@ export default function UserTableRow({
               'default'
             }
           >
-            {active}
+            {active === 'In-Active' ? 'Inactive' : active}
           </Label>
         </TableCell>
         {/* <TableCell align="center" sx={{ px: 1, whiteSpace: 'nowrap' }}>
@@ -170,6 +176,11 @@ export default function UserTableRow({
           <Tooltip title="Soldier book">
             <IconButton onClick={onViewSoldierBook}>
               <Iconify icon="solar:notebook-bold-duotone" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Salary status">
+            <IconButton onClick={onViewSalaryStatus}>
+              <Iconify icon="solar:wallet-money-bold-duotone" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Employee information form">
@@ -351,5 +362,6 @@ UserTableRow.propTypes = {
   onViewVerification: PropTypes.func,
   onViewGuarantor: PropTypes.func,
   onViewSoldierBook: PropTypes.func,
+  onViewSalaryStatus: PropTypes.func,
   onPrintForm: PropTypes.func,
 };

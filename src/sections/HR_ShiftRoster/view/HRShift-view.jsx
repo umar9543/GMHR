@@ -314,9 +314,9 @@ export default function HRShiftListView() {
       <CustomBreadcrumbs
         heading="Monthly Shift Roster"
         links={[
-          { name: 'Home', href: paths.dashboard.root },
-          { name: 'HR Module', href: paths.dashboard.HR_Module.root },
-          { name: 'Monthly Roster' },
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Monthly Shift Roster' },
         ]}
         action={
           <Button

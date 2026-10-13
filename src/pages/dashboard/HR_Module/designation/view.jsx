@@ -10,7 +10,7 @@ export default function CountryListPage() {
   return (
     <>
       <Helmet>
-        <title> Designation: List View</title>
+        <title> Designations | GMS</title>
       </Helmet>
 
       <DesignationListView />

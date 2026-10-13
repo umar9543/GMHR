@@ -8,7 +8,7 @@ export default function EmployeeStatusPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Employee Status</title>
+        <title> Employee Status | GMS</title>
       </Helmet>
 
       <EmployeeStatusView />

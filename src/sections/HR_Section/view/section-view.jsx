@@ -256,11 +256,12 @@ export default function SectionListView() {
       ) : (
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <CustomBreadcrumbs
-            heading="Section"
+            heading="Sections"
             links={[
-              { name: 'Home', href: paths.dashboard.root },
-              { name: 'Section', href: paths.dashboard.HR_Module.Setup.section },
-              { name: 'list' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Setup' },
+              { name: 'Sections' },
             ]}
             action={
               <Button

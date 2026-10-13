@@ -12,7 +12,7 @@ export default function AccountPage() {
   return (
     <>
       <Helmet>
-        <title>Employee Dismissal : Add</title>
+        <title> New Employee Dismissal | GMS</title>
       </Helmet>
 
       <DismissalAddView />

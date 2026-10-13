@@ -8,7 +8,7 @@ export default function OverviewAppPage() {
   return (
     <>
       <Helmet>
-        <title> App: Dashboard</title>
+        <title> HR Dashboard | GMS</title>
       </Helmet>
 
       <OverviewAppView />

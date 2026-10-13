@@ -218,7 +218,7 @@ export default function UploadEndCustomerExcelDialog({
 
   return (
     <Dialog open={uploadOpen} onClose={uploadClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ fontSize: '20px !important' }}>Upload End Customer Excel File</DialogTitle>
+      <DialogTitle>Upload Employee Dismissal Excel File</DialogTitle>
 
       {isLoading ? (
         renderLoading

@@ -14,7 +14,7 @@ export default function AccountPage() {
   return (
     <>
       <Helmet>
-        <title>Employee Dismissal : Edit</title>
+        <title> Edit Employee Dismissal | GMS</title>
       </Helmet>
 
       <DismissalEditView urlData={params}/>

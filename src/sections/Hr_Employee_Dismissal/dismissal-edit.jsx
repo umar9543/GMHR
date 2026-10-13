@@ -317,7 +317,7 @@ export default function DismissalEdit({ currentData }) {
       
       if (contactsResponse.status === 200) {
         enqueueSnackbar('End Customer updated successfully', { variant: 'success' });
-        navigate(paths.dashboard.customer.endCustomer.list);
+        navigate(paths.dashboard.HR_Module.Setup.EmployeeDismissal.view);
       } else {
         enqueueSnackbar('Error updating contacts', { variant: 'error' });
       }

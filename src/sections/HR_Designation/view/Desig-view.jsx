@@ -255,11 +255,12 @@ export default function DesignationListView() {
       ) : (
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <CustomBreadcrumbs
-            heading="Designation"
+            heading="Designations"
             links={[
-              { name: 'Home', href: paths.dashboard.root },
-              { name: 'Designation', href: paths.dashboard.HR_Module.Setup.designation },
-              { name: 'list' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Setup' },
+              { name: 'Designations' },
             ]}
             action={
               <Button

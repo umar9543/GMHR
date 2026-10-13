@@ -6,7 +6,7 @@ export default function ParadeStateMonthlyPage() {
   return (
     <>
       <Helmet>
-        <title> Attendance: Monthly Parade State</title>
+        <title> Monthly Parade State | GMS</title>
       </Helmet>
 
       <ParadeStateMonthlyView />

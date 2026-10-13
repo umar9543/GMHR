@@ -12,7 +12,7 @@ export default function SalarySetupEditPage() {
   return (
     <>
       <Helmet>
-        <title>Salary Setup : Edit</title>
+        <title> Edit Salary Setup | GMS</title>
       </Helmet>
 
       <SalarySetupEdit urlData={params}/>

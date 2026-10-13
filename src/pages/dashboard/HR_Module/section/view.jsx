@@ -9,7 +9,7 @@ export default function SectionListPage() {
   return (
     <>
       <Helmet>
-        <title> Section: List View</title>
+        <title> Sections | GMS</title>
       </Helmet>
 
       <SectionListView />

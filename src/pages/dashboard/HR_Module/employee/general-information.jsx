@@ -5,7 +5,7 @@ export default function HRGeneralInformationPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: HR General Information Form</title>
+        <title> Add Employee | GMS</title>
       </Helmet>
 
       <GeneralInformationView />

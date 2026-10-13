@@ -6,7 +6,7 @@ export default function ClientNewPage() {
   return (
     <>
       <Helmet>
-        <title> HR: New Client</title>
+        <title> New Client | GMS</title>
       </Helmet>
 
       <ClientNewEditView />

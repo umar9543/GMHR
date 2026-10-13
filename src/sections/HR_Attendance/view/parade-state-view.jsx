@@ -33,12 +33,15 @@ import { getAllClientOptions } from 'src/api/hr-client';
 import { clientLabel, filterClientOptions } from 'src/utils/client-picker';
 import { getParadeState, getDailyByEmployee } from 'src/api/attendance';
 
-import { groupRows, PARADE_COLUMNS } from '../parade-state-utils';
+import { isExtra, groupRows, siteCellText, PARADE_COLUMNS } from '../parade-state-utils';
 import { buildParadeStatePdf } from '../parade-state-pdf';
+import { priorityRows, buildParadePriorityPdf } from '../parade-state-priority';
 import { groupByClient, buildDailyEmployeePdf } from '../daily-employee-pdf';
 
 const REPORTS = [
   { value: 'parade', label: 'Daily Parade State' },
+  // The same figures, groups by the guards they contract for, largest first.
+  { value: 'priority', label: 'Daily Parade State (Priority)' },
   { value: 'employee', label: 'Daily Report by Employee' },
 ];
 
@@ -74,6 +77,7 @@ export default function ParadeStateView() {
   const [daily, setDaily] = useState(null);
 
   const byEmployee = reportType === 'employee';
+  const byPriority = reportType === 'priority';
 
   useEffect(() => {
     let cancelled = false;
@@ -100,8 +104,8 @@ export default function ParadeStateView() {
   // Day totals for the summary chips always come from the whole sheet; the
   // search only narrows what the table shows.
   const dayTotals = useMemo(
-    () => (result ? groupRows(result.records).grandTotals : null),
-    [result]
+    () => (result ? (byPriority ? priorityRows : groupRows)(result.records).grandTotals : null),
+    [result, byPriority]
   );
 
   const view = useMemo(() => {
@@ -115,8 +119,8 @@ export default function ParadeStateView() {
             String(r.clientId ?? '').toLowerCase().includes(q)
         )
       : result.records;
-    return groupRows(records);
-  }, [result, search]);
+    return byPriority ? priorityRows(records) : groupRows(records);
+  }, [result, search, byPriority]);
 
   const handleGenerate = async () => {
     if (!date || Number.isNaN(date.getTime())) {
@@ -185,7 +189,8 @@ export default function ParadeStateView() {
     if (!result?.records?.length) return;
     setBuilding(true);
     try {
-      const url = await buildParadeStatePdf(result.records, toIsoDate(date));
+      const build = byPriority ? buildParadePriorityPdf : buildParadeStatePdf;
+      const url = await build(result.records, toIsoDate(date));
       window.open(url, '_blank');
     } catch (err) {
       console.error(err);
@@ -195,17 +200,17 @@ export default function ParadeStateView() {
     }
   };
 
-  const numberCell = (value, highlight) => (
-    <TableCell
-      align="center"
-      sx={{
-        px: 0.5,
-        ...(highlight && value > 0 ? { color: 'error.main', fontWeight: 'bold' } : {}),
-      }}
-    >
-      {value}
-    </TableCell>
-  );
+  // A shortage still uncovered is red; a site over strength reads "+n", green.
+  const numberCell = (value, highlight, key) => {
+    let tone = {};
+    if (isExtra(value)) tone = { color: 'success.main', fontWeight: 'bold' };
+    else if (highlight && Number(value) > 0) tone = { color: 'error.main', fontWeight: 'bold' };
+    return (
+      <TableCell key={key} align="center" sx={{ px: 0.5, ...tone }}>
+        {value}
+      </TableCell>
+    );
+  };
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
@@ -303,7 +308,8 @@ export default function ParadeStateView() {
             color="primary"
             onClick={handleGenerate}
             disabled={loading}
-            sx={{ height: 40, px: 4, whiteSpace: 'nowrap' }}
+            size="large"
+            sx={{ px: 4, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             {loading ? 'Loading...' : 'Generate'}
           </Button>
@@ -312,7 +318,8 @@ export default function ParadeStateView() {
             startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
             onClick={handleDownload}
             disabled={building || (byEmployee ? !daily?.records?.length : !result?.records?.length)}
-            sx={{ height: 40, px: 3, whiteSpace: 'nowrap' }}
+            size="large"
+            sx={{ px: 3, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             {building ? 'Building...' : 'PDF'}
           </Button>
@@ -412,6 +419,17 @@ export default function ParadeStateView() {
               <Typography variant="body2" color="text.secondary">
                 DEF is strength not on post. SH is what is still uncovered after overtime.
               </Typography>
+              {byPriority && (
+                <Typography variant="body2" color="text.secondary">
+                  Groups by the guards they contract for, largest first. EP sites are counted
+                  as EP strength ({view.ep.day + view.ep.night} on post)
+                  {view.unlisted.sites > 0 &&
+                    `; ${view.unlisted.sites} site(s) asking for no guards had ${
+                      view.unlisted.day + view.unlisted.night
+                    } on post and are not listed`}
+                  .
+                </Typography>
+              )}
             </Box>
             <Stack direction="row" spacing={1}>
               <Chip
@@ -484,11 +502,16 @@ export default function ParadeStateView() {
                           <TableCell>{row.clientName}</TableCell>
                           <TableCell>{group.groupName}</TableCell>
                           {PARADE_COLUMNS.map((col) =>
-                            numberCell(row[col.key], col.key === 'shDay' || col.key === 'shNight')
+                            numberCell(
+                              siteCellText(row, col.key),
+                              col.key === 'shDay' || col.key === 'shNight',
+                              col.key
+                            )
                           )}
                         </TableRow>
                       );
                     }),
+                    (!byPriority || group.rows.length > 1) && (
                     <TableRow key={`${group.groupName}-total`} sx={{ bgcolor: 'background.neutral' }}>
                       <TableCell />
                       <TableCell />
@@ -502,7 +525,8 @@ export default function ParadeStateView() {
                           {group.totals[col.key]}
                         </TableCell>
                       ))}
-                    </TableRow>,
+                    </TableRow>
+                    ),
                   ]);
                 })()}
 

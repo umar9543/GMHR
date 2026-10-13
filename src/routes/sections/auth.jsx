@@ -10,7 +10,6 @@ import { SplashScreen } from 'src/components/loading-screen';
 
 // JWT
 const JwtLoginPage = lazy(() => import('src/pages/auth/jwt/login'));
-const JwtRegisterPage = lazy(() => import('src/pages/auth/jwt/register'));
 
 // ----------------------------------------------------------------------
 
@@ -28,16 +27,6 @@ const authJwt = {
         <GuestGuard>
           <AuthClassicLayout>
             <JwtLoginPage />
-          </AuthClassicLayout>
-        </GuestGuard>
-      ),
-    },
-    {
-      path: 'register',
-      element: (
-        <GuestGuard>
-          <AuthClassicLayout title="Manage the job more effectively with ITG">
-            <JwtRegisterPage />
           </AuthClassicLayout>
         </GuestGuard>
       ),

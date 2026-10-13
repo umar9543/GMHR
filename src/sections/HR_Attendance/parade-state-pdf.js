@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import { loadLogo, drawReportHeader } from './report-header';
-import { groupRows, PARADE_COLUMNS } from './parade-state-utils';
+import { isExtra, groupRows, siteCellText, PARADE_COLUMNS } from './parade-state-utils';
 import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
 
 function formatDate(dateStr) {
@@ -34,6 +34,8 @@ export async function buildParadeStatePdf(records, dateStr) {
 
   const head = [['Sno #', 'LOCATIONS', 'GROUP NAME', ...PARADE_COLUMNS.map((c) => c.label)]];
 
+  // kind per body row, read back when styling: 'site' | 'subtotal' | 'spacer' | 'total'.
+  const kinds = [];
   const body = [];
   let sno = 0;
   groups.forEach((group) => {
@@ -43,8 +45,9 @@ export async function buildParadeStatePdf(records, dateStr) {
         String(sno),
         row.clientName,
         group.groupName,
-        ...PARADE_COLUMNS.map((c) => String(row[c.key] ?? 0)),
+        ...PARADE_COLUMNS.map((c) => siteCellText(row, c.key)),
       ]);
+      kinds.push('site');
     });
     body.push([
       '',
@@ -52,29 +55,26 @@ export async function buildParadeStatePdf(records, dateStr) {
       group.groupName,
       ...PARADE_COLUMNS.map((c) => String(group.totals[c.key] ?? 0)),
     ]);
+    kinds.push('subtotal');
+    // A blank line after each group, so one group reads apart from the next.
+    body.push(['', '', '', ...PARADE_COLUMNS.map(() => '')]);
+    kinds.push('spacer');
   });
-  body.push([
-    '',
-    'GRAND TOTAL',
-    '',
-    ...PARADE_COLUMNS.map((c) => String(grandTotals[c.key] ?? 0)),
-  ]);
-
-  const subtotalRows = new Set();
-  let cursor = 0;
-  groups.forEach((group) => {
-    cursor += group.rows.length;
-    subtotalRows.add(cursor);
-    cursor += 1;
-  });
-  const grandTotalRow = body.length - 1;
+  body.push(['', 'GRAND TOTAL', '', ...PARADE_COLUMNS.map((c) => String(grandTotals[c.key] ?? 0))]);
+  kinds.push('total');
 
   autoTable(doc, {
     head,
     body,
     startY: 36,
     theme: 'grid',
-    styles: { fontSize: 6.5, cellPadding: 1, halign: 'center', lineColor: [80, 80, 80], lineWidth: 0.1 },
+    styles: {
+      fontSize: 6.5,
+      cellPadding: 1,
+      halign: 'center',
+      lineColor: [80, 80, 80],
+      lineWidth: 0.1,
+    },
     headStyles: { fillColor: [33, 43, 54], textColor: 255, fontStyle: 'bold', fontSize: 6.5 },
     columnStyles: {
       0: { cellWidth: 10 },
@@ -83,13 +83,25 @@ export async function buildParadeStatePdf(records, dateStr) {
     },
     didParseCell: (data) => {
       if (data.section !== 'body') return;
-      if (data.row.index === grandTotalRow || subtotalRows.has(data.row.index)) {
+      const kind = kinds[data.row.index];
+      if (kind === 'spacer') {
+        // An empty row of the table between groups: the grid stays unbroken.
+        data.cell.styles.fillColor = [255, 255, 255];
+        data.cell.styles.minCellHeight = 4;
+        return;
+      }
+      if (kind === 'total' || kind === 'subtotal') {
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fillColor = data.row.index === grandTotalRow ? [222, 226, 230] : [242, 244, 246];
+        data.cell.styles.fillColor = kind === 'total' ? [222, 226, 230] : [242, 244, 246];
       }
       // Anything still short of contracted strength is the point of the report.
       const label = head[0][data.column.index];
-      if ((label === 'SH DAY' || label === 'SH N') && Number(data.cell.raw) > 0) {
+      const isDiff = ['DEF DAY', 'DEF N', 'SH DAY', 'SH N'].includes(label);
+      if (isDiff && isExtra(data.cell.raw)) {
+        // Over strength: shown, in green, rather than as a shortage.
+        data.cell.styles.textColor = [17, 141, 87];
+        data.cell.styles.fontStyle = 'bold';
+      } else if ((label === 'SH DAY' || label === 'SH N') && Number(data.cell.raw) > 0) {
         data.cell.styles.textColor = [183, 29, 24];
         data.cell.styles.fontStyle = 'bold';
       }
@@ -103,6 +115,18 @@ export async function buildParadeStatePdf(records, dateStr) {
       contract: { day: grandTotals.reqDay, night: grandTotals.reqNight },
       standard: { day: grandTotals.preDay, night: grandTotals.preNight },
       overtime: { day: grandTotals.otDay, night: grandTotals.otNight },
+      // The EP clients' guards: the reserve, kept apart from guarding strength.
+      ep: records
+        .filter((r) => r.isEp)
+        .reduce(
+          (t, r) => ({
+            day: t.day + Number(r.preDay || 0),
+            night: t.night + Number(r.preNight || 0),
+          }),
+          { day: 0, night: 0 }
+        ),
+      // Site by site: a site over strength does not make up for one short.
+      shortage: { day: grandTotals.shDay, night: grandTotals.shNight },
     }),
   });
 
@@ -110,17 +134,10 @@ export async function buildParadeStatePdf(records, dateStr) {
   for (let i = 1; i <= pageCount; i += 1) {
     doc.setPage(i);
     doc.setFont('helvetica', 'normal').setFontSize(7);
-    doc.text(
-      `${rowCount} client sites`,
-      8,
-      doc.internal.pageSize.getHeight() - 6
-    );
-    doc.text(
-      `Page ${i} of ${pageCount}`,
-      pageWidth - 8,
-      doc.internal.pageSize.getHeight() - 6,
-      { align: 'right' }
-    );
+    doc.text(`${rowCount} client sites`, 8, doc.internal.pageSize.getHeight() - 6);
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth - 8, doc.internal.pageSize.getHeight() - 6, {
+      align: 'right',
+    });
   }
 
   return doc.output('bloburl');

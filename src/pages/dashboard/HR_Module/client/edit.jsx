@@ -9,7 +9,7 @@ export default function ClientEditPage() {
   return (
     <>
       <Helmet>
-        <title> HR: Edit Client</title>
+        <title> Edit Client | GMS</title>
       </Helmet>
 
       <ClientNewEditView id={id} />

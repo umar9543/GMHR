@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import BankBookView from 'src/sections/finance/bank-book-view';
+import LegacyBankBookView from 'src/sections/finance/legacy-bank-book-view';
 
 export default function FinanceBankBookPage() {
   return (
@@ -9,7 +9,7 @@ export default function FinanceBankBookPage() {
         <title> Finance: Bank Book</title>
       </Helmet>
 
-      <BankBookView />
+      <LegacyBankBookView />
     </>
   );
 }

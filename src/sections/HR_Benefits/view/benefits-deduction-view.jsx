@@ -30,7 +30,12 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
-import { getDeductionTypes, getAllowanceTypes, getBenefitSummary } from 'src/api/benefits';
+import {
+  getBonusTypes,
+  getDeductionTypes,
+  getAllowanceTypes,
+  getBenefitSummary,
+} from 'src/api/benefits';
 
 import BenefitEntryDialog from '../benefit-entry-dialog';
 
@@ -39,6 +44,39 @@ import BenefitEntryDialog from '../benefit-entry-dialog';
 // time. This is the way in - one line per employee - and their own page holds
 // the history and the Refresh Salary Sheet button.
 // ----------------------------------------------------------------------
+
+
+// The three tabs the legacy screen keeps. Each is the same shape over its own
+// kind, so everything that differs between them is written down once here.
+const TABS = {
+  allowances: {
+    label: 'Employee Allowance',
+    noun: 'Allowance',
+    plural: 'Allowances',
+    total: 'Total Allowance',
+    loadTypes: getAllowanceTypes,
+    list: () => paths.dashboard.HR_Module.Benefits.allowance,
+    employee: (id) => paths.dashboard.HR_Module.Benefits.allowanceEmployee(id),
+  },
+  deductions: {
+    label: 'Employee Deduction',
+    noun: 'Deduction',
+    plural: 'Deductions',
+    total: 'Total Deducted',
+    loadTypes: getDeductionTypes,
+    list: () => paths.dashboard.HR_Module.Benefits.deduction,
+    employee: (id) => paths.dashboard.HR_Module.Benefits.deductionEmployee(id),
+  },
+  bonuses: {
+    label: 'Salary Increment',
+    noun: 'Increment',
+    plural: 'Increments',
+    total: 'Total Increment',
+    loadTypes: getBonusTypes,
+    list: () => paths.dashboard.HR_Module.Benefits.salInc,
+    employee: (id) => paths.dashboard.HR_Module.Benefits.salIncEmployee(id),
+  },
+};
 
 const money = (v) =>
   Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -56,12 +94,10 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
 
+  const tab = TABS[kind] ?? TABS.allowances;
   const isDeduction = kind === 'deductions';
-  const label = isDeduction ? 'Employee Deduction' : 'Employee Allowance';
-  const employeePage = (employeeId) =>
-    isDeduction
-      ? paths.dashboard.HR_Module.Benefits.deductionEmployee(employeeId)
-      : paths.dashboard.HR_Module.Benefits.allowanceEmployee(employeeId);
+  const { label } = tab;
+  const employeePage = (employeeId) => tab.employee(employeeId);
 
   const [types, setTypes] = useState([]);
   const [rows, setRows] = useState([]);
@@ -83,7 +119,7 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
 
   useEffect(() => {
     let cancelled = false;
-    const loadTypes = isDeduction ? getDeductionTypes : getAllowanceTypes;
+    const { loadTypes } = tab;
     loadTypes()
       .then((list) => {
         if (!cancelled) setTypes(list || []);
@@ -92,7 +128,7 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
     return () => {
       cancelled = true;
     };
-  }, [isDeduction]);
+  }, [tab]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -128,7 +164,7 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
       <CustomBreadcrumbs
-        heading="Benefits &amp; Deduction"
+        heading={label}
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Payroll' },
@@ -140,7 +176,7 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
             startIcon={<Iconify icon="mingcute:add-line" />}
             onClick={() => setDialogOpen(true)}
           >
-            New {isDeduction ? 'Deduction' : 'Allowance'}
+            New {tab.noun}
           </Button>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
@@ -149,6 +185,8 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
       <Card>
         <Tabs
           value={kind}
+          variant="scrollable"
+          scrollButtons="auto"
           sx={{ px: 2.5, boxShadow: (theme) => `inset 0 -2px 0 0 ${theme.palette.divider}` }}
         >
           <Tab
@@ -160,6 +198,11 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
             value="deductions"
             label="Employee Deduction"
             onClick={() => router.push(paths.dashboard.HR_Module.Benefits.deduction)}
+          />
+          <Tab
+            value="bonuses"
+            label="Salary Increment"
+            onClick={() => router.push(paths.dashboard.HR_Module.Benefits.salInc)}
           />
         </Tabs>
 
@@ -180,13 +223,13 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
           <TextField
             select
             size="small"
-            label={isDeduction ? 'Deduction' : 'Allowance'}
+            label={tab.noun}
             value={typeId}
             onChange={(e) => {
               setTypeId(e.target.value);
               setPage(0);
             }}
-            sx={{ width: 280 }}
+            sx={{ width: { xs: 1, sm: 280 } }}
           >
             <MenuItem value="">All</MenuItem>
             {types.map((t) => (
@@ -206,7 +249,7 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
                 <TableCell sx={{ width: 100 }}>Emp ID</TableCell>
                 <TableCell sx={{ minWidth: 240 }}>Employee</TableCell>
                 <TableCell align="center">Entries</TableCell>
-                <TableCell align="right">Total {isDeduction ? 'Deducted' : 'Allowance'}</TableCell>
+                <TableCell align="right">{tab.total}</TableCell>
                 <TableCell>Latest</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -283,5 +326,5 @@ export default function BenefitsDeductionView({ kind = 'allowances' }) {
 }
 
 BenefitsDeductionView.propTypes = {
-  kind: PropTypes.oneOf(['allowances', 'deductions']),
+  kind: PropTypes.oneOf(['allowances', 'deductions', 'bonuses']),
 };

@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
@@ -42,6 +43,9 @@ import {
 } from 'src/api/attendance';
 import UserTableToolbar from '../../employee/user-table-toolbar';
 import EmployeeMonthDialog from '../employee-month-dialog';
+import ParadeStateMonthlyView from './parade-state-monthly-view';
+import MonthlyEmployeeReport from '../monthly-employee-report';
+import EmployeeCategoryWiseReport from '../employee-category-wise-report';
 import AttendanceMonthWiseTableRow from '../attendance-month-wise-table-row';
 
 const TABLE_HEAD = [
@@ -54,6 +58,14 @@ const TABLE_HEAD = [
   { id: 'totalOvertime', label: 'OT', align: 'center' },
   { id: 'totalWeekOff', label: 'WO', align: 'center' },
   { id: 'totalGazzetted', label: 'G', align: 'center' },
+];
+
+// The monthly reports this page offers, picked from its Report dropdown.
+const REPORTS = [
+  { value: 'attendance', label: 'Monthly Attendance' },
+  { value: 'employee', label: 'Monthly Report by Employee' },
+  { value: 'parade', label: 'Monthly Parade State' },
+  { value: 'category', label: 'Employee Category Wise' },
 ];
 
 const defaultFilters = {
@@ -94,6 +106,8 @@ function applyFilter({ inputData, comparator, filters, activeIds }) {
 export default function MonthWiseReportView() {
   const settings = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
+
+  const [reportType, setReportType] = useState('attendance');
 
   const [dateStr, setDateStr] = useState(new Date().toISOString().split('T')[0]);
 
@@ -239,6 +253,11 @@ export default function MonthWiseReportView() {
         // Done here rather than in a renderer, so the PDF, its preview and the
         // Data Table all show the same cleaned name.
         newRow.name = cleanEmployeeName(newRow.name);
+        // The report's query calls an overtime day "P/OT"; every other screen
+        // and the sheets themselves call it P/P, so it reads the same here.
+        for (let day = 1; day <= 31; day += 1) {
+          if (newRow[day] === 'P/OT') newRow[day] = 'P/P';
+        }
         return newRow;
       });
 
@@ -283,22 +302,49 @@ export default function MonthWiseReportView() {
     activeIds,
   });
 
-  const notFound = !dataFiltered.length && !!filters.name;
+  const notFound = !dataFiltered.length;
+
+  // First in each report's filter row, so the three read as one screen.
+  const reportPicker = (
+    <TextField
+      select
+      label="Report"
+      value={reportType}
+      onChange={(event) => setReportType(event.target.value)}
+      sx={{ minWidth: 250, flexShrink: 0 }}
+    >
+      {REPORTS.map((r) => (
+        <MenuItem key={r.value} value={r.value}>
+          {r.label}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
-        heading="Month-Wise Attendance Report"
+        heading="Month-Wise Report"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Attendance' },
           { name: 'Month-Wise Report' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
+      {reportType === 'employee' && <MonthlyEmployeeReport reportPicker={reportPicker} />}
+
+      {reportType === 'parade' && <ParadeStateMonthlyView embedded reportPicker={reportPicker} />}
+
+      {reportType === 'category' && <EmployeeCategoryWiseReport reportPicker={reportPicker} />}
+
+      {reportType === 'attendance' && (
+      <>
       <Card sx={{ p: 3, mb: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          {reportPicker}
           <DatePicker
             label="Month and Year"
             views={['year', 'month']}
@@ -321,7 +367,7 @@ export default function MonthWiseReportView() {
             value={employee}
             onChange={(event, value) => setEmployee(value)}
             onInputChange={(event, value) => setEmployeeSearch(value)}
-            getOptionLabel={(option) => (option ? `${option.name} (${option.id})` : '')}
+            getOptionLabel={(option) => (option ? `${cleanEmployeeName(option.name)} (${option.id})` : '')}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             filterOptions={(x) => x}
             renderInput={(params) => (
@@ -334,7 +380,8 @@ export default function MonthWiseReportView() {
             onClick={handleFetchReport}
             color="primary"
             disabled={loading}
-            sx={{ height: 50, px: 4 }}
+            size="large"
+            sx={{ px: 4, whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             {loading ? 'Generating...' : 'Generate Report'}
           </Button>
@@ -483,6 +530,9 @@ export default function MonthWiseReportView() {
             </Box>
           )}
         </Card>
+      )}
+
+      </>
       )}
 
       {openEmployee && (

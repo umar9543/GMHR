@@ -97,12 +97,22 @@ export function getOpeningSummary() {
 
 // ---- parties ----------------------------------------------------------
 
+/** The whole chart - headings, accounts, sub-ledgers - in Allocation List order. */
+export function getAllocationList() {
+  return apiFetch('/api/FinanceCoa/allocation-list');
+}
+
 export function getParties({ page = 1, pageSize = 25, caCode, acCode, search } = {}) {
   return apiFetch(`/api/FinanceParty${buildQuery({ page, pageSize, caCode, acCode, search })}`);
 }
 
 export function createParty(payload) {
   return apiFetch('/api/FinanceParty', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+/** One party with all its addresses, for the edit page. */
+export function getParty(caCode, acCode, subCode) {
+  return apiFetch(`/api/FinanceParty/${caCode}/${acCode}/${subCode}`);
 }
 
 export function updateParty(caCode, acCode, subCode, payload) {
@@ -224,12 +234,15 @@ export function getClientInvoices({
   search,
   status = 'Live',
   province,
+  collection,
   fromDate,
   toDate,
 } = {}) {
   const qs = new URLSearchParams({ page, pageSize, status });
   if (search) qs.append('search', search);
   if (province) qs.append('province', province);
+  // 'receivable' or 'received'; left out, both - receivable first.
+  if (collection) qs.append('collection', collection);
   if (fromDate) qs.append('fromDate', fromDate);
   if (toDate) qs.append('toDate', toDate);
   return apiFetch(`/api/finance/billing?${qs.toString()}`);
@@ -244,17 +257,88 @@ export function getBillingItems() {
   return apiFetch('/api/finance/billing/items');
 }
 
-/** Provinces with their sales-tax account and default rate. */
+/** Provinces with their sales-tax account and every rate each is charged at (rates). */
 export function getBillingProvinces() {
   return apiFetch('/api/finance/billing/provinces');
+}
+
+/** The ledgers an invoice's revenue can go to: SALE AND INCOME and the OTHER INCOME ledgers. */
+export function getBillingSalesAccounts() {
+  return apiFetch('/api/finance/billing/sales-accounts');
 }
 
 export function createClientInvoice(payload) {
   return apiFetch('/api/finance/billing', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+/** Saves an existing invoice and posts it again. */
+export function updateClientInvoice(invoiceNo, payload) {
+  return apiFetch(`/api/finance/billing/${invoiceNo}`, { method: 'PUT', body: JSON.stringify(payload) });
+}
+
+/** The invoice numbers either side of one, for the form's arrows; with none, the last. */
+export function navigateClientInvoice(from) {
+  return apiFetch(`/api/finance/billing/navigate${buildQuery({ from })}`);
+}
+
+/** A client's limit, balance, addresses and the terms of their last invoice. */
+export function getInvoicePartyContext(caCode, acCode, subCode) {
+  return apiFetch(`/api/finance/billing/party-context${buildQuery({ caCode, acCode, subCode })}`);
+}
+
+/** The locations an invoice can be raised from. */
+export function getBillingLocations() {
+  return apiFetch('/api/finance/billing/locations');
+}
+
 export function cancelClientInvoice(invoiceNo) {
   return apiFetch(`/api/finance/billing/${invoiceNo}/cancel`, { method: 'POST' });
+}
+
+// ----------------------------------------------------------------------
+// FBR Digital Invoicing. Nothing reaches FBR unless the server's Fbr:Enabled
+// is on; the invoice view (getFbrInvoice) is built on the server and never sent.
+// ----------------------------------------------------------------------
+
+/** Whether reporting is on, the environment, and whether it has a token. */
+export function getFbrSettings() {
+  return apiFetch('/api/finance/fbr/settings');
+}
+
+/** The invoice as FBR would get it, what stops it, and every call made for it. */
+export function getFbrInvoice(invoiceNo, scenarioId) {
+  return apiFetch(`/api/finance/fbr/invoice/${invoiceNo}${buildQuery({ scenarioId })}`);
+}
+
+/** FBR checks the invoice; nothing is reported. */
+export function validateFbrInvoice(invoiceNo, scenarioId) {
+  return apiFetch(`/api/finance/fbr/invoice/${invoiceNo}/validate${buildQuery({ scenarioId })}`, {
+    method: 'POST',
+  });
+}
+
+/** Reports the invoice to FBR; it must have passed validation as it stands. */
+export function submitFbrInvoice(invoiceNo, scenarioId) {
+  return apiFetch(`/api/finance/fbr/invoice/${invoiceNo}/submit${buildQuery({ scenarioId })}`, {
+    method: 'POST',
+  });
+}
+
+/** The FBR standing of these invoices, for the list. */
+export function getFbrStatuses(invoiceNos) {
+  if (!invoiceNos?.length) return Promise.resolve([]);
+  return apiFetch(`/api/finance/fbr/statuses?nos=${invoiceNos.join(',')}`);
+}
+
+export function getFbrBuyer(caCode, acCode, subCode) {
+  return apiFetch(`/api/finance/fbr/buyer/${caCode}/${acCode}/${subCode}`);
+}
+
+export function saveFbrBuyer(caCode, acCode, subCode, payload) {
+  return apiFetch(`/api/finance/fbr/buyer/${caCode}/${acCode}/${subCode}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 }
 
 // ----------------------------------------------------------------------
@@ -299,6 +383,36 @@ export function getBankBook({ caCode, acCode, fromDate, toDate }) {
   if (fromDate) qs.append('fromDate', fromDate);
   if (toDate) qs.append('toDate', toDate);
   return apiFetch(`/api/finance/reports/bank-book?${qs.toString()}`);
+}
+
+// ----------------------------------------------------------------------
+// The reports in the legacy system's own layouts. They read the posted ledger
+// (GL), as the legacy reports do, and agree with the legacy printouts.
+// ----------------------------------------------------------------------
+
+/** Per account, with its control heading; opening/closing split per party. */
+export function getStatementTrialBalance({ fromDate, toDate }) {
+  return apiFetch(`/api/finance/statements/trial-balance${buildQuery({ fromDate, toDate })}`);
+}
+
+/** Balances per main group, group and sub-group as at a date, with note numbers. */
+export function getFinancialStatements({ asAtDate }) {
+  return apiFetch(`/api/finance/statements/financial${buildQuery({ asAtDate })}`);
+}
+
+export function getBankPosition({ fromDate, toDate }) {
+  return apiFetch(`/api/finance/statements/bank-position${buildQuery({ fromDate, toDate })}`);
+}
+
+export function getStatementBankBook({ caCode, acCode, fromDate, toDate }) {
+  return apiFetch(
+    `/api/finance/statements/bank-book${buildQuery({ caCode, acCode, fromDate, toDate })}`
+  );
+}
+
+/** Tax and other deductions on the receipts against the period's invoices. */
+export function getDeductionReport({ fromDate, toDate }) {
+  return apiFetch(`/api/finance/statements/deductions${buildQuery({ fromDate, toDate })}`);
 }
 
 // ----------------------------------------------------------------------

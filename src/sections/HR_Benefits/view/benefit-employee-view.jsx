@@ -33,6 +33,7 @@ import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import {
+  getBonusTypes,
   getDeductionTypes,
   getAllowanceTypes,
   refreshSalarySheet,
@@ -69,16 +70,45 @@ const dmy = (value) => {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 };
 
+
+// The three tabs, each the same shape over its own kind. Everything that
+// differs between them is written down once here.
+const TABS = {
+  allowances: {
+    label: 'Employee Allowance',
+    noun: 'Allowance',
+    plural: 'Allowances',
+    loadTypes: getAllowanceTypes,
+    list: () => paths.dashboard.HR_Module.Benefits.allowance,
+  },
+  deductions: {
+    label: 'Employee Deduction',
+    noun: 'Deduction',
+    plural: 'Deductions',
+    loadTypes: getDeductionTypes,
+    list: () => paths.dashboard.HR_Module.Benefits.deduction,
+  },
+  bonuses: {
+    label: 'Employee Sal Inc.',
+    noun: 'Increment',
+    plural: 'Increments',
+    loadTypes: getBonusTypes,
+    list: () => paths.dashboard.HR_Module.Benefits.salInc,
+  },
+};
+
 export default function BenefitEmployeeView({ kind, employeeId }) {
   const settings = useSettingsContext();
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
 
+  const tab = TABS[kind] ?? TABS.allowances;
   const isDeduction = kind === 'deductions';
-  const label = isDeduction ? 'Employee Deduction' : 'Employee Allowance';
-  const listPath = isDeduction
-    ? paths.dashboard.HR_Module.Benefits.deduction
-    : paths.dashboard.HR_Module.Benefits.allowance;
+  // An increment is a change to what the guard is paid, not a line on one
+  // month's sheet, so that panel is not offered on this tab.
+  const canRefreshSheet = kind !== 'bonuses';
+  const { label } = tab;
+  const listPath = tab.list();
 
   const [types, setTypes] = useState([]);
   const [employee, setEmployee] = useState(null);
@@ -99,7 +129,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
 
   useEffect(() => {
     let cancelled = false;
-    const loadTypes = isDeduction ? getDeductionTypes : getAllowanceTypes;
+    const { loadTypes } = tab;
     loadTypes()
       .then((list) => {
         if (!cancelled) setTypes(list || []);
@@ -108,7 +138,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
     return () => {
       cancelled = true;
     };
-  }, [isDeduction]);
+  }, [tab]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -237,7 +267,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
                 setDialogOpen(true);
               }}
             >
-              New {isDeduction ? 'Deduction' : 'Allowance'}
+              New {tab.noun}
             </Button>
           </Stack>
         }
@@ -245,7 +275,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
       />
 
       <Grid container spacing={3}>
-        <Grid xs={12} md={7}>
+        <Grid xs={12} md={canRefreshSheet ? 7 : 12}>
           <Card>
             <Stack
               direction="row"
@@ -253,7 +283,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
               spacing={1}
               sx={{ px: 2.5, py: 2 }}
             >
-              <Typography variant="h6">{isDeduction ? 'Deductions' : 'Allowances'}</Typography>
+              <Typography variant="h6">{tab.plural}</Typography>
               <Chip size="small" label={`${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}`} />
               {employee?.isActive === 0 && (
                 <Chip size="small" variant="outlined" color="warning" label="Inactive employee" />
@@ -360,6 +390,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
           </Card>
         </Grid>
 
+        {canRefreshSheet && (
         <Grid xs={12} md={5}>
           <Card sx={{ p: 2.5 }}>
             <Typography variant="h6" sx={{ mb: 0.5 }}>
@@ -520,6 +551,7 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
             </Button>
           </Card>
         </Grid>
+        )}
       </Grid>
 
       <BenefitEntryDialog
@@ -554,6 +586,6 @@ export default function BenefitEmployeeView({ kind, employeeId }) {
 }
 
 BenefitEmployeeView.propTypes = {
-  kind: PropTypes.oneOf(['allowances', 'deductions']),
+  kind: PropTypes.oneOf(['allowances', 'deductions', 'bonuses']),
   employeeId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };

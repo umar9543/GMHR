@@ -225,7 +225,11 @@ export function useNavData() {
                 { title: t('Trial Balance'), path: paths.dashboard.Finance.reports.trialBalance },
                 { title: t('Account Ledger'), path: paths.dashboard.Finance.reports.ledger },
                 { title: t('Bank Book'), path: paths.dashboard.Finance.reports.bankBook },
+                { title: t('Bank Position'), path: paths.dashboard.Finance.reports.bankPosition },
                 { title: t('Balance Sheet'), path: paths.dashboard.Finance.reports.balanceSheet },
+                { title: t('Profit & Loss'), path: paths.dashboard.Finance.reports.profitLoss },
+                { title: t('Schedule of Notes'), path: paths.dashboard.Finance.reports.notes },
+                { title: t('Deduction Report'), path: paths.dashboard.Finance.reports.deductions },
               ],
             },
           ],
@@ -326,21 +330,44 @@ export function useNavData() {
 
             icon: ICONS.user,
 
-            path: paths.dashboard.HR_Module.HR_Users.root,
+            path: paths.dashboard.HR_Module.Employee.list,
 
             children: [
               {
-                title: t('Employees'),
+                title: t('Add Employee'),
+
+                path:
+                  paths.dashboard.HR_Module.Employee.GeneralInformation,
+              },
+              {
+                title: t('Employees Info'),
 
                 path:
                   paths.dashboard.HR_Module.Employee.list,
               },
+
+
 
               {
                 title: t('Employee Status'),
 
                 path:
                   paths.dashboard.HR_Module.Employee.status,
+              },
+              {
+                title: t('Employee Card'),
+
+                path: paths.dashboard.HR_Module.Employee.card,
+              },
+              {
+                title: t("Employee's Picture"),
+
+                path: paths.dashboard.HR_Module.Employee.picture,
+              },
+              {
+                title: t('Black List'),
+
+                path: paths.dashboard.HR_Module.Employee.blacklist,
               },
             ],
           },
@@ -355,14 +382,21 @@ export function useNavData() {
             icon: ICONS.calendar,
 
             path:
-              paths.dashboard.HR_Module.Attendance.root,
+              paths.dashboard.HR_Module.Attendance.view,
 
             children: [
               {
-                title: t('Attendance'),
+                title: t('Daily Parade State'),
 
                 path:
                   paths.dashboard.HR_Module.Attendance.view,
+              },
+
+              {
+                title: t('Employee Wise Entry'),
+
+                path:
+                  paths.dashboard.HR_Module.Attendance.employeeWiseEntry,
               },
 
               {
@@ -372,19 +406,7 @@ export function useNavData() {
                   paths.dashboard.HR_Module.Attendance.monthWiseReport,
               },
 
-              {
-                title: t('Daily Parade State'),
 
-                path:
-                  paths.dashboard.HR_Module.Attendance.paradeState,
-              },
-
-              {
-                title: t('Monthly Parade State'),
-
-                path:
-                  paths.dashboard.HR_Module.Attendance.paradeStateMonthly,
-              },
             ],
           },
 
@@ -398,7 +420,7 @@ export function useNavData() {
             icon: ICONS.banking,
 
             path:
-              paths.dashboard.HR_Module.Salary.root,
+              paths.dashboard.HR_Module.Salary.Sheet.root,
 
             children: [
               {
@@ -434,6 +456,13 @@ export function useNavData() {
 
                 path:
                   paths.dashboard.HR_Module.Benefits.deduction,
+              },
+
+              {
+                title: t('Salary Increment'),
+
+                path:
+                  paths.dashboard.HR_Module.Benefits.salInc,
               },
             ],
           },

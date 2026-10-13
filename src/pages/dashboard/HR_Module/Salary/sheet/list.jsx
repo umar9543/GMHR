@@ -7,7 +7,7 @@ export default function EmployeeSalaryListPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Salary Sheets</title>
+        <title> Salary Sheet | GMS</title>
       </Helmet>
 
       <SalarySheetView />

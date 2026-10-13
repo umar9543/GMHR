@@ -4,7 +4,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 
-import { bgGradient } from 'src/theme/css';
 
 // ----------------------------------------------------------------------
 
@@ -15,16 +14,14 @@ export default function AppWelcome({ title, description, action, img, ...other }
     <Stack
       flexDirection={{ xs: 'column', md: 'row' }}
       sx={{
-        ...bgGradient({
-          direction: '135deg',
-          startColor: alpha(theme.palette.primary.light, 0.2),
-          endColor: alpha(theme.palette.primary.main, 0.2),
-        }),
+        // The template's own primary blue, so the banner follows the theme.
+        background: `linear-gradient(135deg, ${theme.palette.primary.darker} 0%, ${theme.palette.primary.dark} 45%, ${theme.palette.primary.main} 100%)`,
+        boxShadow: `0 12px 32px ${alpha(theme.palette.primary.main, 0.24)}`,
         height: { md: 1 },
         borderRadius: 2,
         position: 'relative',
-        color: 'primary.darker',
-        backgroundColor: 'common.white',
+        overflow: 'hidden',
+        color: 'common.white',
       }}
       {...other}
     >

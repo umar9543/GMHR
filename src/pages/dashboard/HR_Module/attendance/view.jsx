@@ -7,7 +7,7 @@ export default function AttendanceViewPage() {
   return (
     <>
       <Helmet>
-        <title> HR: Attendance Sheet </title>
+        <title> Daily Parade State | GMS</title>
       </Helmet>
 
       <AttendanceView />

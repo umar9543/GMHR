@@ -7,7 +7,6 @@ import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
-import { alpha } from '@mui/material/styles';
 import { QRCodeSVG } from 'qrcode.react';
 
 import Iconify from 'src/components/iconify';

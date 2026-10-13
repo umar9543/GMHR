@@ -9,7 +9,7 @@ export default function AccountPage() {
   return (
     <>
       <Helmet>
-        <title>Agency Report: Get</title>
+        <title> Employee Dismissal Report | GMS</title>
       </Helmet>
 
       {/* <AgencyAddView /> */}

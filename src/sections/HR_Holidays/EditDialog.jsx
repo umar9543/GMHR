@@ -1,28 +1,18 @@
 import * as Yup from 'yup';
-import { useMemo, useCallback, useState, useEffect } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
-  Button,
-  Checkbox,
-  Chip,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Input,
-  InputAdornment,
   TextField,
+  IconButton,
   Typography,
-  Tooltip,
-  Switch,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 
 import { LoadingScreen } from 'src/components/loading-screen';
@@ -35,12 +25,9 @@ import { useSnackbar } from 'src/components/snackbar';
 import FormProvider, {
   RHFTextField,
   RHFAutocomplete,
-  RHFUpload,
-  RHFUploadBox,
-  RHFSwitch,
 } from 'src/components/hook-form';
 
-import { Get, Post, Put } from 'src/api/apibasemethods';
+import { Get, Put } from 'src/api/apibasemethods';
 import PropTypes from 'prop-types';
 import { DatePicker } from '@mui/x-date-pickers';
 
@@ -201,8 +188,7 @@ export default function HolidayEditDialog({ uploadClose, uploadOpen, row, tableD
   const [isLoading, setLoading] = useState(true);
 
   return (
-    <>
-      <Dialog
+    <Dialog
         open={uploadOpen}
         onClose={() => {
           uploadClose();
@@ -210,7 +196,7 @@ export default function HolidayEditDialog({ uploadClose, uploadOpen, row, tableD
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontSize: '20px !important' }}>
+        <DialogTitle>
           <Stack direction="row" alignItems="center">
             <Typography variant="h5" sx={{ flexGrow: 1 }}>
               Edit Public Holiday
@@ -343,7 +329,6 @@ export default function HolidayEditDialog({ uploadClose, uploadOpen, row, tableD
           </FormProvider>
         </DialogContent>
       </Dialog>
-    </>
   );
 }
 

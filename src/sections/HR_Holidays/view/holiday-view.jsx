@@ -261,11 +261,12 @@ const [employeeEditDialogOpen, setEmployeeEditDialogOpen] = useState(false);
       ) : (
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <CustomBreadcrumbs
-            heading="Holiday"
+            heading="Holidays"
             links={[
-              { name: 'Home', href: paths.dashboard.root },
-              { name: 'Holiday', href: paths.dashboard.HR_Module.Setup.holidays },
-              { name: 'list' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Setup' },
+              { name: 'Holidays' },
             ]}
             action={
               <Button

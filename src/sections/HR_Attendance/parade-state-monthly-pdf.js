@@ -4,9 +4,6 @@ import autoTable from 'jspdf-autotable';
 import { cleanEmployeeName } from 'src/utils/employee-name';
 import { loadLogo, drawReportHeader } from './report-header';
 
-
-import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
-
 const MONTHS = [
   'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
   'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
@@ -17,7 +14,7 @@ const MONTHS = [
  * Each day cell carries the mark with the shift underneath it.
  */
 export async function buildMonthlyParadeStatePdf(data) {
-  const { client, records, year, month, daysInMonth } = data;
+  const { client, records, year, month, daysInMonth, requiredByDay } = data;
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   // eslint-disable-next-line new-cap
@@ -59,6 +56,53 @@ export async function buildMonthlyParadeStatePdf(data) {
     ];
   });
 
+  // ---------------------------------------------------------------- totals
+  // From the table alone. Each day: guards on post by day and by night, the
+  // overtime, and the day's total - the legacy report's Total row. A P/OT
+  // guard worked both shifts here, so his overtime covers the other shift;
+  // an OT guard is posted at another client and covered overtime here, on
+  // the shift shown under his mark.
+  const perDay = new Map();
+  const sums = { day: 0, night: 0, ot: 0, otDay: 0, otNight: 0 };
+  records.forEach((row) => {
+    days.forEach((d) => {
+      const status = String(row.days[String(d)] || '');
+      if (!status) return;
+      if (!perDay.has(d)) perDay.set(d, { day: 0, night: 0, ot: 0 });
+      const t = perDay.get(d);
+      const night = row.days[`s${d}`] === 'N';
+      if (status.startsWith('P')) {
+        t[night ? 'night' : 'day'] += 1;
+        sums[night ? 'night' : 'day'] += 1;
+      }
+      if (status === 'P/OT') {
+        t.ot += 1;
+        sums.ot += 1;
+        sums[night ? 'otDay' : 'otNight'] += 1;
+      } else if (status === 'OT') {
+        t.ot += 1;
+        sums.ot += 1;
+        sums[night ? 'otNight' : 'otDay'] += 1;
+      }
+    });
+  });
+  const grand = (key) => records.reduce((n, row) => n + (Number(row[key]) || 0), 0);
+
+  const totalRow = [
+    { content: 'Total', colSpan: 2, styles: { halign: 'left', valign: 'middle' } },
+    { content: ['Day', 'Night', 'OT', 'Total'].join('\n'), styles: { halign: 'right' } },
+    ...days.map((d) => {
+      const t = perDay.get(d);
+      return t ? [t.day, t.night, t.ot, t.day + t.night + t.ot].join('\n') : '-';
+    }),
+    [sums.day, sums.night, sums.ot, sums.day + sums.night + sums.ot].join('\n'),
+    String(grand('absent')),
+    String(grand('leave')),
+    String(grand('overtime')),
+  ];
+  body.push(totalRow);
+  const totalIndex = body.length - 1;
+
   autoTable(doc, {
     head,
     body,
@@ -79,6 +123,11 @@ export async function buildMonthlyParadeStatePdf(data) {
     },
     didParseCell: (data2) => {
       if (data2.section !== 'body') return;
+      if (data2.row.index === totalIndex) {
+        data2.cell.styles.fontStyle = 'bold';
+        data2.cell.styles.fillColor = [244, 246, 248];
+        return;
+      }
       // Only the day cells carry marks; a guard named "Aslam" is not an absence.
       const firstDayColumn = 3;
       const column = data2.column.index;
@@ -90,35 +139,64 @@ export async function buildMonthlyParadeStatePdf(data) {
     margin: { left: 6, right: 6, bottom: 12 },
   });
 
-  // The monthly sheet counts guard-days, so the summary is measured the same
-  // way: contracted strength over the days actually marked this month.
-  const duty = { standard: { day: 0, night: 0 }, overtime: { day: 0, night: 0 } };
-  const markedDays = new Set();
+  // --------------------------------------------------------------- summary
+  // Guard-days over the days the table holds: what the client asked for,
+  // what was on post, the overtime that covered, and what was still short -
+  // by shift, as the parade state's SH columns count it.
+  const dutyDays = perDay.size;
+  // Each day at the strength contracted that day: a contract can change in the
+  // middle of the month (an older API sends only the month's strength).
+  const req = [...perDay.keys()].reduce(
+    (t, d) => {
+      const r = requiredByDay?.[String(d)];
+      return {
+        day: t.day + (r ? Number(r.day) || 0 : client?.reqDay || 0),
+        night: t.night + (r ? Number(r.night) || 0 : client?.reqNight || 0),
+      };
+    },
+    { day: 0, night: 0 }
+  );
+  const short = {
+    day: Math.max(0, req.day - sums.day - sums.otDay),
+    night: Math.max(0, req.night - sums.night - sums.otNight),
+  };
+  const extra = Math.max(0, sums.day + sums.night + sums.ot - req.day - req.night);
+  const line = (label, day, night) => [label, String(day), String(night), String(day + night)];
+  const summary = [
+    line('Required Guards', req.day, req.night),
+    line('Observed Guards', sums.day, sums.night),
+    line('OT Guards', sums.otDay, sums.otNight),
+    line('Shortage Guards', short.day, short.night),
+  ];
+  if (extra) summary.push(['Extra Guards', '', '', String(extra)]);
 
-  records.forEach((row) => {
-    days.forEach((d) => {
-      const status = row.days[String(d)];
-      if (!status) return;
-      markedDays.add(d);
-      const shift = row.days[`s${d}`] === 'N' ? 'night' : 'day';
-      if (String(status).startsWith('P')) duty.standard[shift] += 1;
-      if (status === 'P/OT' || status === 'OT') duty.overtime[shift] += 1;
-    });
-  });
-
-  const dutyDays = markedDays.size;
-  drawParadeSummary(doc, {
-    startY: doc.lastAutoTable.finalY + 6,
-    margin: 6,
-    caption: `Guard-days over the ${dutyDays} day(s) marked in ${MONTHS[month - 1]} ${year}.`,
-    rows: paradeSummaryRows({
-      contract: {
-        day: (client?.reqDay || 0) * dutyDays,
-        night: (client?.reqNight || 0) * dutyDays,
-      },
-      standard: duty.standard,
-      overtime: duty.overtime,
-    }),
+  let summaryY = doc.lastAutoTable.finalY + 6;
+  if (summaryY > doc.internal.pageSize.getHeight() - 40) {
+    doc.addPage();
+    summaryY = 16;
+  }
+  doc.setFont('helvetica', 'normal').setFontSize(7);
+  doc.text(
+    `Guard-days over the ${dutyDays} day(s) with attendance in ${MONTHS[month - 1]} ${year}.`,
+    6,
+    summaryY
+  );
+  autoTable(doc, {
+    head: [['', 'Day', 'Night', 'Total']],
+    body: summary,
+    startY: summaryY + 2,
+    theme: 'grid',
+    tableWidth: 90,
+    styles: { fontSize: 7, cellPadding: 1, halign: 'center', lineColor: [80, 80, 80], lineWidth: 0.1 },
+    headStyles: { fillColor: [33, 43, 54], textColor: 255, fontStyle: 'bold' },
+    columnStyles: { 0: { halign: 'left', fontStyle: 'bold', cellWidth: 36 } },
+    didParseCell: (data2) => {
+      if (data2.section === 'body' && data2.row.index === 3 && data2.column.index > 0) {
+        const n = Number(data2.cell.raw) || 0;
+        if (n > 0) data2.cell.styles.textColor = [183, 29, 24];
+      }
+    },
+    margin: { left: 6, right: 6, bottom: 12 },
   });
 
   const pageCount = doc.internal.getNumberOfPages();

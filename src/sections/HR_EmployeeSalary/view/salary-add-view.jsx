@@ -718,7 +718,8 @@ export default function EmployeeSalaryAddView({ id }) {
               onClick={handleLoadSheet}
               color="primary"
               disabled={loading || saving}
-              sx={{ height: 40, px: 4 }}
+              size="large"
+            sx={{ px: 4, whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               {loading ? 'Loading...' : 'Generate'}
             </Button>

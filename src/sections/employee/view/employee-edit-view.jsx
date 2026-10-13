@@ -49,17 +49,10 @@ export default function EmployeeEditView({ id }) {
       <CustomBreadcrumbs
         heading="Edit Employee"
         links={[
-          {
-            name: 'Dashboard',
-            href: paths.dashboard.root,
-          },
-          {
-            name: 'Employee',
-            href: paths.dashboard.HR_Module.Employee.list,
-          },
-          {
-            name: 'Edit',
-          },
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'HR', href: paths.dashboard.HR_Module.root },
+          { name: 'Employee Management', href: paths.dashboard.HR_Module.Employee.list },
+          { name: 'Edit Employee' },
         ]}
         sx={{
           mb: { xs: 3, md: 5 },

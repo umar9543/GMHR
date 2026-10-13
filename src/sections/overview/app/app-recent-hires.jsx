@@ -26,7 +26,7 @@ export default function AppRecentHires({ title, subheader, tableData, tableLabel
   const router = useRouter();
 
   const moveToView = () => {
-    router.push(paths.dashboard.Employee.list);
+    router.push(paths.dashboard.HR_Module.Employee.list);
   };
 
   return (

@@ -10,7 +10,7 @@ export default function ProfileListPage() {
   return (
     <>
       <Helmet>
-        <title> Employee Dismissal : List View</title>
+        <title> Employee Dismissal | GMS</title>
       </Helmet>
 
       <DismissalListView />

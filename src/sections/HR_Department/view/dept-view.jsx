@@ -253,11 +253,12 @@ export default function DeptListView() {
       ) : (
         <Container maxWidth={settings.themeStretch ? false : 'lg'}>
           <CustomBreadcrumbs
-            heading="Department"
+            heading="Departments"
             links={[
-              { name: 'Home', href: paths.dashboard.root },
-              { name: 'Department', href: paths.dashboard.HR_Module.Setup.department },
-              { name: 'list' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Setup' },
+              { name: 'Departments' },
             ]}
             action={
               <Button

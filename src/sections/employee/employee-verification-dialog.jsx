@@ -11,6 +11,8 @@ import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+
+import Iconify from 'src/components/iconify';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useSnackbar } from 'notistack';
 import Grid from '@mui/material/Grid';
@@ -179,14 +181,26 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
             {/* TOP ROW: Images Side by Side */}
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: '1px dashed #ccc', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0,0,0,0.01)' }, transition: 'all 0.3s' }}>
+                <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: 1, borderStyle: 'dashed', borderColor: 'divider', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }, transition: 'all 0.3s' }}>
                   <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>NIC FRONT</Typography>
-                  <Box
-                    component="img"
-                    src={frontPreview}
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; }}
-                    sx={{ width: '100%', height: 250, objectFit: 'contain', mb: 2, borderRadius: 1, backgroundColor: '#f9fafb' }}
-                  />
+                  {frontPreview ? (
+                    <Box
+                      component="img"
+                      src={frontPreview}
+                      alt=""
+                      sx={{ width: '100%', height: 250, objectFit: 'contain', mb: 2, borderRadius: 1, bgcolor: 'background.neutral' }}
+                    />
+                  ) : (
+                    <Stack
+                      alignItems="center"
+                      justifyContent="center"
+                      spacing={1}
+                      sx={{ height: 250, mb: 2, borderRadius: 1, bgcolor: 'background.neutral', color: 'text.disabled' }}
+                    >
+                      <Iconify icon="solar:card-2-bold-duotone" width={48} />
+                      <Typography variant="body2">No image uploaded</Typography>
+                    </Stack>
+                  )}
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <Button variant="contained" component="label" size="small">
                       Upload
@@ -198,14 +212,26 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: '1px dashed #ccc', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(0,0,0,0.01)' }, transition: 'all 0.3s' }}>
+                <Box sx={{ width: '100%', textAlign: 'center', p: 2, border: 1, borderStyle: 'dashed', borderColor: 'divider', borderRadius: 1, '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }, transition: 'all 0.3s' }}>
                   <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>NIC BACK</Typography>
-                  <Box
-                    component="img"
-                    src={backPreview}
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'; }}
-                    sx={{ width: '100%', height: 250, objectFit: 'contain', mb: 2, borderRadius: 1, backgroundColor: '#f9fafb' }}
-                  />
+                  {backPreview ? (
+                    <Box
+                      component="img"
+                      src={backPreview}
+                      alt=""
+                      sx={{ width: '100%', height: 250, objectFit: 'contain', mb: 2, borderRadius: 1, bgcolor: 'background.neutral' }}
+                    />
+                  ) : (
+                    <Stack
+                      alignItems="center"
+                      justifyContent="center"
+                      spacing={1}
+                      sx={{ height: 250, mb: 2, borderRadius: 1, bgcolor: 'background.neutral', color: 'text.disabled' }}
+                    >
+                      <Iconify icon="solar:card-2-bold-duotone" width={48} />
+                      <Typography variant="body2">No image uploaded</Typography>
+                    </Stack>
+                  )}
                   <Stack direction="row" spacing={1} justifyContent="center">
                     <Button variant="contained" component="label" size="small">
                       Upload

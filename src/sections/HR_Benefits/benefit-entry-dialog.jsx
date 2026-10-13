@@ -27,6 +27,12 @@ const todayText = () => new Date().toISOString().slice(0, 10);
 export default function BenefitEntryDialog({ open, kind, types, entry, onClose, onSaved }) {
   const { enqueueSnackbar } = useSnackbar();
   const isDeduction = kind === 'deductions';
+  const isBonus = kind === 'bonuses';
+  // What this tab calls one of its entries.
+  const noun = (() => {
+    if (isDeduction) return 'Deduction';
+    return isBonus ? 'Increment' : 'Allowance';
+  })();
   const editing = Boolean(entry?.id);
   // On an employee's own page the guard is settled; only the list lets you pick.
   const lockEmployee = Boolean(entry?.employeeId);
@@ -87,7 +93,7 @@ export default function BenefitEntryDialog({ open, kind, types, entry, onClose, 
       return;
     }
     if (!typeId) {
-      enqueueSnackbar(isDeduction ? 'Choose a deduction' : 'Choose an allowance', {
+      enqueueSnackbar(`Choose ${isBonus ? 'an' : 'a'} ${noun.toLowerCase()}`, {
         variant: 'warning',
       });
       return;
@@ -118,7 +124,7 @@ export default function BenefitEntryDialog({ open, kind, types, entry, onClose, 
     }
   };
 
-  const title = `${editing ? 'Edit' : 'Add'} ${isDeduction ? 'Deduction' : 'Allowance'}`;
+  const title = `${editing ? 'Edit' : 'Add'} ${noun}`;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -143,7 +149,7 @@ export default function BenefitEntryDialog({ open, kind, types, entry, onClose, 
             select
             size="small"
             required
-            label={isDeduction ? 'Deduction' : 'Allowance'}
+            label={noun}
             value={typeId}
             onChange={(e) => setTypeId(e.target.value)}
           >
@@ -162,10 +168,17 @@ export default function BenefitEntryDialog({ open, kind, types, entry, onClose, 
             placeholder="Left empty, the chosen kind's name is used"
           />
 
-          {!isDeduction && (
+          {!isDeduction && !isBonus && (
             <Alert severity="info" sx={{ py: 0.5 }}>
               An allowance stands: this amount is added to every month&apos;s salary from its date
               until the entry is deleted.
+            </Alert>
+          )}
+
+          {isBonus && (
+            <Alert severity="info" sx={{ py: 0.5 }}>
+              An increment is a one-off record of a rise, kept with its date. It does not change
+              the salary sheet by itself - set the new figure on the employee&apos;s Salary Status.
             </Alert>
           )}
 

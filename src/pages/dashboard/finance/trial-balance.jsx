@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-import TrialBalanceView from 'src/sections/finance/trial-balance-view';
+import LegacyTrialBalanceView from 'src/sections/finance/legacy-trial-balance-view';
 
 export default function FinanceTrialBalancePage() {
   return (
@@ -9,7 +9,7 @@ export default function FinanceTrialBalancePage() {
         <title> Finance: Trial Balance</title>
       </Helmet>
 
-      <TrialBalanceView />
+      <LegacyTrialBalanceView />
     </>
   );
 }

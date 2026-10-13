@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import * as Yup from 'yup';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -24,11 +24,11 @@ import DialogContent from '@mui/material/DialogContent';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import FormProvider, {
-  RHFTextField,
   RHFSelect,
-  RHFCheckbox,
-  RHFRadioGroup,
   RHFUpload,
+  RHFCheckbox,
+  RHFTextField,
+  RHFRadioGroup,
   RHFUploadAvatar,
 } from 'src/components/hook-form';
 import { enqueueSnackbar } from 'notistack';
@@ -38,6 +38,34 @@ import { APP_API } from 'src/config-global';
 import Iconify from 'src/components/iconify';
 
 const DATE_FORMAT = 'dd/MM/yyyy';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// CNICRLZ_DATE is a text column holding legacy dates such as '14-Dec-17'.
+// Two-digit years read the way SQL Server reads them: 00-49 as 20xx, 50-99
+// as 19xx. Anything else the browser can parse is accepted too.
+const parseLegacyDate = (value) => {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  const m = text.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2}|\d{4})$/);
+  if (m) {
+    const month = MONTHS.findIndex((name) => name.toLowerCase() === m[2].toLowerCase());
+    if (month >= 0) {
+      let year = Number(m[3]);
+      if (m[3].length === 2) year += year < 50 ? 2000 : 1900;
+      return new Date(year, month, Number(m[1]));
+    }
+  }
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+/** '14-Dec-17', as the legacy rows hold it. */
+const toLegacyDate = (value) => {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return `${String(d.getDate()).padStart(2, '0')}-${MONTHS[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+};
 
 /**
  * The upload boxes hold a File when the user picks one, but only
@@ -69,10 +97,18 @@ const ageFromDob = (dob) => {
 
 const STEPS = [
   'General',
-  'Address',
+  'Address & Identity',
   'Previous Information',
-  'Joining Date',
+  'Service Dates',
   'Contact Information',
+];
+
+// The fields each step checks before moving on, in step order.
+const STEP_FIELDS = [
+  ['guardsImage', 'location', 'companyNo', 'firstName', 'fatherName', 'dob', 'age', 'gender', 'maritalStatus', 'jobTitle', 'cnicReleaseDate'],
+  ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'caste', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'],
+  ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'schoolCollege', 'apsaaCourse', 'exSecurityCompanyName', 'documentDeposited'],
+  ['dateOfEnrolment', 'dateOfReEnroll', 'dischargeDate'],
 ];
 
 export default function GeneralInformationForm({ currentEmployee }) {
@@ -174,7 +210,12 @@ export default function GeneralInformationForm({ currentEmployee }) {
     // Page 2
     currentAddress: Yup.string().required('Current Address is required'),
     permanentAddress: Yup.string().required('Permanent Address is required'),
-    state: Yup.string().required('State is required'),
+    // Province. The legacy system never kept it (7,372 of 7,376 employees have
+    // none), so it is asked for on new employees but does not block editing an
+    // existing one.
+    state: currentEmployee
+      ? Yup.string().nullable()
+      : Yup.string().required('State (province) is required'),
     city: Yup.string().required('City is required'),
     homeTown: Yup.string(),
     cellPhone: Yup.string().required('Cell Phone is required'),
@@ -185,6 +226,13 @@ export default function GeneralInformationForm({ currentEmployee }) {
     fatherCnic: Yup.string(),
     nic: Yup.string().required('NIC is required'),
     cnicValidity: Yup.date().nullable().required('CNIC Validity is required'),
+    // The release date is asked for only once the original CNIC is ticked as released.
+    cnicReleaseDate: Yup.date()
+      .nullable()
+      .when('originalCnicReleased', {
+        is: true,
+        then: (schema) => schema.required('Enter the date the original CNIC was released'),
+      }),
     nicImage: Yup.mixed().required('NIC Image is required'),
     iTax: Yup.string(),
     eobi: Yup.string(),
@@ -204,7 +252,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
     // Page 4
     dateOfEnrolment: Yup.date().nullable().required('Date of Enrolment is required'),
-    dateOfReEnroll: Yup.date().nullable().required('Date of ReEnroll is required'),
+    dateOfReEnroll: Yup.date().nullable().required('Re-enrolment date is required'),
     dischargeDate: Yup.date().nullable(),
     careOf: Yup.string(),
 
@@ -232,6 +280,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
       maritalStatus: '',
       jobTitle: '',
       originalCnicReleased: false,
+      cnicReleaseDate: null,
       markOfIdentity: '',
       familyNo: '',
       guardsImage: null,
@@ -313,12 +362,18 @@ export default function GeneralInformationForm({ currentEmployee }) {
     control,
     reset,
     watch,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   const paymentMode = watch('Payment_Mode');
   const dob = watch('dob');
   const reEnroll = watch('reEnroll');
+  const originalCnicReleased = watch('originalCnicReleased');
+
+  // Unticking the release clears its date, so a stale date is never saved.
+  useEffect(() => {
+    if (!originalCnicReleased) setValue('cnicReleaseDate', null, { shouldDirty: true });
+  }, [originalCnicReleased, setValue]);
 
   useEffect(() => {
     setValue('age', ageFromDob(dob), { shouldValidate: !!dob });
@@ -350,7 +405,6 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
   useEffect(() => {
     if (currentEmployee && currentEmployee.employee) {
-      console.log("Current Employee API Response:", currentEmployee);
       const emp = currentEmployee.employee;
       // School/College and next of kin come from EMPLOYEE_ADDITIONAL_INFO.
       const extra = currentEmployee.additionalInfo || currentEmployee.AdditionalInfo || {};
@@ -373,6 +427,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         maritalStatus: emp.MARITALSTATUS === 0 ? 'Single' : 'Married',
         jobTitle: emp.FKDEPARTMENTID || '',
         originalCnicReleased: emp.ORIGCNIC === 1,
+        cnicReleaseDate: emp.ORIGCNIC === 1 ? parseLegacyDate(emp.CNICRLZ_DATE) : null,
         markOfIdentity: emp.MARKID || '',
         familyNo: emp.FAMILYNO || '',
         guardsImage: currentEmployee.employeePicture || currentEmployee.EmployeePicture ? { preview: `data:image/jpeg;base64,${currentEmployee.employeePicture || currentEmployee.EmployeePicture}`, name: 'profile.jpg' } : null,
@@ -403,7 +458,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         rank: emp.EXARMEDRANK || '',
         serviceDuration1: emp.EXARMEDSERVICE || '',
         medicalCategory: emp.MEDICAL || '',
-        exSecurityCompany: emp.EXSECURITY === 'true' ? 'Civil' : 'Ex-Armed',
+        exSecurityCompany: emp.CIVIL === 0 ? 'Ex-Armed' : 'Civil',
         serviceDuration2: emp.EXSECURITYSERVICE || '',
         // Education is kept in the NTN column, which the legacy app repurposed for it.
         education: emp.NTN || '',
@@ -445,16 +500,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
 
   const handleNext = async () => {
-    let fieldsToValidate = [];
-    if (activeStep === 0) {
-      fieldsToValidate = ['guardsImage', 'location', 'companyNo', 'firstName', 'fatherName', 'dob', 'age', 'gender', 'maritalStatus', 'jobTitle'];
-    } else if (activeStep === 1) {
-      fieldsToValidate = ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'caste', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'];
-    } else if (activeStep === 2) {
-      fieldsToValidate = ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'schoolCollege', 'apsaaCourse', 'exSecurityCompanyName', 'documentDeposited'];
-    } else if (activeStep === 3) {
-      fieldsToValidate = ['dateOfEnrolment', 'dateOfReEnroll', 'dischargeDate'];
-    }
+    const fieldsToValidate = STEP_FIELDS[activeStep] || [];
 
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
@@ -466,10 +512,11 @@ export default function GeneralInformationForm({ currentEmployee }) {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const onSubmit = handleSubmit(async (data) => {
+  // Saves the employee. `stay` keeps the page open - the Update button saves
+  // from any step and the user carries on; Submit goes back to the list.
+  const saveEmployee = async (data, { stay = false } = {}) => {
     try {
-      if (activeStep === STEPS.length - 1) {
-        // Map form data to API payload
+      // Map form data to API payload
         const payload = {
           FirstName: data.firstName || '',
           MiddleName: data.fatherName || '',
@@ -540,10 +587,12 @@ export default function GeneralInformationForm({ currentEmployee }) {
           ReEnrollChk: !!data.reEnroll,
           ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
           Kin: data.emergencyRelation || '',
-          Civil: 1,
+          // 1 civilian, 0 ex-armed - what the employee list shows as Rank.
+          Civil: data.exSecurityCompany === 'Ex-Armed' ? 0 : 1,
           ApsaaVer: false,
           OrigCnic: data.originalCnicReleased ? 1 : 0,
-          CnicRlzDate: null,
+          CnicRlzDate:
+            data.originalCnicReleased && data.cnicReleaseDate ? toLegacyDate(data.cnicReleaseDate) : null,
           NoAllow: 0,
           Forensic: false,
           ForensicDt: null,
@@ -609,20 +658,50 @@ export default function GeneralInformationForm({ currentEmployee }) {
           } else {
             enqueueSnackbar(isEdit ? 'Employee updated successfully' : 'Employee added successfully');
           }
-          router.push(paths.dashboard.HR_Module.Employee.list);
+          if (stay && isEdit) {
+            // What was saved becomes the new baseline, so Update greys out again.
+            reset(data);
+          } else {
+            router.push(paths.dashboard.HR_Module.Employee.list);
+          }
         } else {
           enqueueSnackbar(isEdit ? 'Failed to update employee' : 'Failed to add employee', {
             variant: 'error',
             autoHideDuration: 2000,
           });
         }
-      }
-
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('An error occurred during submission.');
     }
+  };
+
+  const onSubmit = handleSubmit(async (data) => {
+    if (activeStep === STEPS.length - 1) await saveEmployee(data);
   });
+
+  // A field on another step can fail the check. Open the first step that has
+  // one, where the field shows in red, and say in words what is missing.
+  const onInvalid = (errors) => {
+    const names = Object.keys(errors);
+    const stepOf = (name) => STEP_FIELDS.findIndex((fields) => fields.includes(name));
+    const firstStep = names.map(stepOf).filter((i) => i >= 0).sort((a, b) => a - b)[0];
+    if (firstStep !== undefined) setActiveStep(firstStep);
+
+    const messages = names.slice(0, 3).map((name) => {
+      const step = stepOf(name);
+      const message = errors[name]?.message || `${name} needs attention`;
+      return step >= 0 ? `${message} (${STEPS[step]} step)` : message;
+    });
+    const more = names.length > 3 ? ` and ${names.length - 3} more` : '';
+    enqueueSnackbar(`Cannot update yet: ${messages.join('; ')}${more}`, { variant: 'warning' });
+  };
+
+  const onUpdate = handleSubmit((data) => saveEmployee(data, { stay: true }), onInvalid);
+
+  // An existing employee can be saved from any step; a re-enrolment creates a
+  // new record, so it still goes through Submit at the end.
+  const canUpdateInPlace = !!currentEmployee && !isReEnrolment;
 
   const renderGeneral = (
     <Stack spacing={3}>
@@ -674,7 +753,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           helperText={isReEnrolment ? `Re-enrolment: a new record will be created (previous ID ${existingId})` : ' '}
         />
         <Stack direction="row" spacing={2} alignItems="center">
-          <RHFCheckbox name="reEnroll" label="Re Enroll" />
+          <RHFCheckbox name="reEnroll" label="Re-enrolled" />
           <RHFCheckbox name="companyCardIssued" label="Company Card Issued" />
         </Stack>
         <RHFTextField name="firstName" label="First Name" />
@@ -709,6 +788,24 @@ export default function GeneralInformationForm({ currentEmployee }) {
           ))}
         </RHFSelect>
         <RHFCheckbox name="originalCnicReleased" label="Original CNIC Released" />
+        {/* Asked for only once the original CNIC is ticked as released. */}
+        {originalCnicReleased && (
+          <Controller
+            name="cnicReleaseDate"
+            control={control}
+            render={({ field, fieldState: { error } }) => (
+              <DatePicker
+                label="CNIC Release Date"
+                value={field.value}
+                onChange={field.onChange}
+                format={DATE_FORMAT}
+                slotProps={{
+                  textField: { fullWidth: true, error: !!error, helperText: error?.message },
+                }}
+              />
+            )}
+          />
+        )}
         <RHFTextField name="familyNo" label="Family No." />
         <RHFTextField name="markOfIdentity" label="Mark of Identity" />
       </Box>
@@ -717,7 +814,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
   const renderAddress = (
     <Stack spacing={3}>
-      <Typography variant="h6">Address Details</Typography>
+      <Typography variant="h6">Address &amp; Identity</Typography>
       <Box
         rowGap={3}
         columnGap={2}
@@ -752,9 +849,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
         {paymentMode === 'JazzCash' && <RHFTextField name="jazzCash" label="Jazz Cash" />}
         <RHFTextField name="ptcl" label="PTCL" />
         <RHFTextField name="caste" label="Caste" />
-        <RHFTextField name="sect" label="SECT" />
+        <RHFTextField name="sect" label="Sect" />
         <RHFTextField name="fatherCnic" label="Father CNIC" />
-        <RHFTextField name="nic" label="NIC" />
+        <RHFTextField name="nic" label="CNIC" />
         <RHFTextField name="iTax" label="I/Tax" />
         <Controller
           name="cnicValidity"
@@ -878,6 +975,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="medicalCategory" label="Medical Category" />
         <RHFRadioGroup
           name="exSecurityCompany"
+          label="Service Type"
           options={[
             { label: 'Civil', value: 'Civil' },
             { label: 'Ex-Armed', value: 'Ex-Armed' },
@@ -896,7 +994,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
 
   const renderJoiningDate = (
     <Stack spacing={3}>
-      <Typography variant="h6">Joining Date</Typography>
+      <Typography variant="h6">Service Dates</Typography>
       <Box
         rowGap={3}
         columnGap={2}
@@ -918,7 +1016,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           name="dateOfReEnroll"
           control={control}
           render={({ field, fieldState: { error } }) => (
-            <DatePicker label="Date of ReEnroll" value={field.value} onChange={field.onChange} format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }} />
+            <DatePicker label="Re-enrolment Date" value={field.value} onChange={field.onChange} format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }} />
           )}
         />
         <Controller
@@ -928,7 +1026,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
             <DatePicker label="Discharge Date" value={field.value} onChange={field.onChange} format={DATE_FORMAT} slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }} />
           )}
         />
-        <RHFTextField name="careOf" label="Care of" />
+        <RHFTextField name="careOf" label="Care Of" />
       </Box>
     </Stack>
   );
@@ -952,7 +1050,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
       >
         <RHFTextField name="emergencyName" label="Emergency Contact Name" />
         <RHFTextField name="emergencyRelation" label="Relation" />
-        <RHFTextField name="emergencyCellPhone" label="Number" />
+        <RHFTextField name="emergencyCellPhone" label="Phone Number" />
       </Box>
 
       <Typography variant="subtitle2" color="text.secondary">
@@ -970,7 +1068,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
       >
         <RHFTextField name="nokName" label="Next of Kin Name" />
         <RHFTextField name="nokRelation" label="Relation" />
-        <RHFTextField name="nokPhone" label="Number" />
+        <RHFTextField name="nokPhone" label="Phone Number" />
       </Box>
     </Stack>
   );
@@ -1041,25 +1139,40 @@ export default function GeneralInformationForm({ currentEmployee }) {
             Back
           </Button>
 
-          {activeStep === STEPS.length - 1 ? (
-            <Button
-              type="button"
-              variant="contained"
-              loading={isSubmitting}
-              onClick={onSubmit}
-            >
-              Submit
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="contained"
-              color='primary'
-              onClick={handleNext}
-            >
-              Next
-            </Button>
-          )}
+          <Stack direction="row" spacing={1.5}>
+            {canUpdateInPlace && (
+              <Button
+                type="button"
+                variant="outlined"
+                color="primary"
+                onClick={onUpdate}
+                // Only once something has been changed.
+                disabled={!isDirty || isSubmitting}
+              >
+                {isSubmitting ? 'Updating...' : 'Update'}
+              </Button>
+            )}
+
+            {activeStep === STEPS.length - 1 ? (
+              <Button
+                type="button"
+                variant="contained"
+                disabled={isSubmitting}
+                onClick={onSubmit}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="contained"
+                color='primary'
+                onClick={handleNext}
+              >
+                Next
+              </Button>
+            )}
+          </Stack>
         </Stack>
       </FormProvider>
     </Card>

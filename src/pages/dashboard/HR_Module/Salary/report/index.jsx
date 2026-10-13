@@ -8,7 +8,7 @@ export default function SalaryReportPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Salary Report</title>
+        <title> Salary Report | GMS</title>
       </Helmet>
 
       <SalaryReportView />

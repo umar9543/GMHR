@@ -11,7 +11,7 @@ export default function EmployeeSalaryEditPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Edit Salary Sheet</title>
+        <title> Edit Salary Sheet | GMS</title>
       </Helmet>
 
       <EmployeeSalaryAddView id={id} />

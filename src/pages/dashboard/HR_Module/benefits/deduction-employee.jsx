@@ -12,7 +12,7 @@ export default function EmployeeDeductionHistoryPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Employee Deduction</title>
+        <title> Employee Deduction | GMS</title>
       </Helmet>
 
       <BenefitEmployeeView kind="deductions" employeeId={employeeId} />

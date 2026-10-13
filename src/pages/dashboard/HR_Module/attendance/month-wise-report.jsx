@@ -7,7 +7,7 @@ export default function MonthWiseReportPage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Month-Wise Report</title>
+        <title> Month-Wise Report | GMS</title>
       </Helmet>
 
       <MonthWiseReportView />

@@ -10,7 +10,7 @@ export default function SalarySetupAddPage() {
   return (
     <>
       <Helmet>
-        <title>Salary Setup : Add</title>
+        <title> New Salary Setup | GMS</title>
       </Helmet>
 
       <SalarySetupAddView />

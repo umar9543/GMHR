@@ -280,9 +280,9 @@ const FetchDismissal = useCallback(async () => {
           <CustomBreadcrumbs
             heading="Employee Dismissal"
             links={[
-              { name: 'Home', href: paths.dashboard.root },
-              { name: 'Employee Dismissal', href: paths.dashboard.HR_Module.Setup.EmployeeDismissal.view },
-              { name: 'List' },
+              { name: 'Dashboard', href: paths.dashboard.root },
+              { name: 'HR', href: paths.dashboard.HR_Module.root },
+              { name: 'Employee Dismissal' },
             ]}
             action={
               <Box

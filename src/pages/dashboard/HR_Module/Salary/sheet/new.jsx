@@ -8,7 +8,7 @@ export default function EmployeeSalaryCreatePage() {
   return (
     <>
       <Helmet>
-        <title> Dashboard: Create Salary Sheet</title>
+        <title> New Salary Sheet | GMS</title>
       </Helmet>
 
       <EmployeeSalaryAddView />
