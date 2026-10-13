@@ -13,11 +13,11 @@ import BackgroundShape from './background-shape';
 // gms-guard.png), floating and swaying gently. Until his picture has loaded,
 // the template's character stands in.
 const GUARD = '/assets/illustrations/characters/gms-guard.png';
-const FALLBACK = '/assets/illustrations/characters/character_3.png';
+// const FALLBACK = '/assets/illustrations/characters/character_3.png';
 
 function GmsIllustration({ ...other }) {
   const theme = useTheme();
-  const [character, setCharacter] = useState(FALLBACK);
+  const [character, setCharacter] = useState();
   // Gentle, looping movement - none for anyone who has asked for less motion.
   const still = useReducedMotion();
   const loop = (duration, delay = 0) => ({ duration, delay, repeat: Infinity, ease: 'easeInOut' });
