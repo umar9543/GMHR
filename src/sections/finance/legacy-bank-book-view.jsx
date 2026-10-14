@@ -24,7 +24,8 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getBankAccounts, getStatementBankBook } from 'src/api/finance';
 
-import { toIso, dmyText, monthStart } from './report-dates';
+import { toIso, dmyText } from './report-dates';
+import FiscalYearSelect, { useFiscalYear } from './fiscal-year';
 import { buildBankBookLegacyPdf } from './legacy-report-pdf';
 
 const dec2 = (v) =>
@@ -41,8 +42,8 @@ export default function LegacyBankBookView() {
   const { enqueueSnackbar } = useSnackbar();
   const [accounts, setAccounts] = useState([]);
   const [account, setAccount] = useState(null);
-  const [fromDate, setFromDate] = useState(monthStart());
-  const [toDate, setToDate] = useState(new Date());
+  // Read by financial year: 1 July to 30 June, narrowed within it if wanted.
+  const { fy, setFy, fromDate, setFromDate, toDate, setToDate, minDate, maxDate } = useFiscalYear();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
 
@@ -95,10 +96,19 @@ export default function LegacyBankBookView() {
             isOptionEqualToValue={(a, b) => a.caCode === b.caCode && a.acCode === b.acCode}
             renderInput={(params) => <TextField {...params} label="Bank / cash account" />}
           />
+          <FiscalYearSelect
+            value={fy}
+            onChange={(y) => {
+              setFy(y);
+              setData(null);
+            }}
+          />
           <DatePicker
             label="From"
             value={fromDate}
             onChange={setFromDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
@@ -106,6 +116,8 @@ export default function LegacyBankBookView() {
             label="To"
             value={toDate}
             onChange={setToDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />

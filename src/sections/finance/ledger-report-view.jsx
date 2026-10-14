@@ -26,11 +26,12 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getParties, getAccounts, getAccountLedger } from 'src/api/finance';
 
+import { toIso } from './report-dates';
 import { buildLedgerPdf } from './finance-report-pdf';
+import FiscalYearSelect, { useFiscalYear } from './fiscal-year';
 
 const fMoney = (v) => Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
 const fDate = (v) => (v ? String(v).slice(0, 10).split('-').reverse().join('/') : '-');
-const toIso = (d) => (d && !Number.isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null);
 
 export default function LedgerReportView() {
   const settings = useSettingsContext();
@@ -39,8 +40,8 @@ export default function LedgerReportView() {
   const [account, setAccount] = useState(null);
   const [party, setParty] = useState(null);
   const [partyOptions, setPartyOptions] = useState([]);
-  const [fromDate, setFromDate] = useState(null);
-  const [toDate, setToDate] = useState(null);
+  // Read by financial year: 1 July to 30 June, narrowed within it if wanted.
+  const { fy, setFy, fromDate, setFromDate, toDate, setToDate, minDate, maxDate } = useFiscalYear();
   const [loading, setLoading] = useState(false);
   const [building, setBuilding] = useState(false);
   const [data, setData] = useState(null);
@@ -164,10 +165,19 @@ export default function LedgerReportView() {
               <TextField {...params} label={partyOptions.length ? 'Party (optional)' : 'No parties'} />
             )}
           />
+          <FiscalYearSelect
+            value={fy}
+            onChange={(y) => {
+              setFy(y);
+              setData(null);
+            }}
+          />
           <DatePicker
             label="From"
             value={fromDate}
             onChange={setFromDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { sx: { minWidth: 160 } } }}
           />
@@ -175,6 +185,8 @@ export default function LedgerReportView() {
             label="To"
             value={toDate}
             onChange={setToDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { sx: { minWidth: 160 } } }}
           />

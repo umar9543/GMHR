@@ -20,7 +20,8 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getFinancialStatements } from 'src/api/finance';
 
-import { toIso, dmyText, lastFyEnd } from './report-dates';
+import { toIso, dmyText } from './report-dates';
+import FiscalYearSelect, { useFiscalYear } from './fiscal-year';
 import { amt, code2, balanceSheet, profitAndLoss, scheduleOfNotes } from './financial-statements';
 import { buildNotesPdf, buildProfitLossPdf, buildBalanceSheetLegacyPdf } from './legacy-report-pdf';
 
@@ -205,7 +206,8 @@ export default function FinancialStatementView({ kind }) {
   const { enqueueSnackbar } = useSnackbar();
   const meta = KINDS[kind];
 
-  const [asAt, setAsAt] = useState(lastFyEnd());
+  // As at the close of the financial year picked (30 June), or a date within it.
+  const { fy, setFy, toDate: asAt, setToDate: setAsAt, minDate, maxDate } = useFiscalYear();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
 
@@ -235,10 +237,19 @@ export default function FinancialStatementView({ kind }) {
 
       <Card sx={{ p: 3, mb: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          <FiscalYearSelect
+            value={fy}
+            onChange={(y) => {
+              setFy(y);
+              setData(null);
+            }}
+          />
           <DatePicker
             label={kind === 'profit-loss' ? 'Year ended' : 'As at'}
             value={asAt}
             onChange={setAsAt}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />

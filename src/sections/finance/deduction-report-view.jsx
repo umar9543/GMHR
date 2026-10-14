@@ -23,7 +23,8 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import { getDeductionReport } from 'src/api/finance';
 
 import { buildDeductionPdf } from './legacy-report-pdf';
-import { toIso, dmyText, monthStart } from './report-dates';
+import { toIso, dmyText } from './report-dates';
+import FiscalYearSelect, { useFiscalYear } from './fiscal-year';
 
 const int0 = (v) => Math.round(Number(v || 0)).toLocaleString('en-US');
 const B = { fontWeight: 700 };
@@ -60,8 +61,8 @@ const COLUMNS = [
 export default function DeductionReportView() {
   const settings = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
-  const [fromDate, setFromDate] = useState(monthStart());
-  const [toDate, setToDate] = useState(new Date());
+  // Read by financial year: 1 July to 30 June, narrowed within it if wanted.
+  const { fy, setFy, fromDate, setFromDate, toDate, setToDate, minDate, maxDate } = useFiscalYear();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
 
@@ -102,10 +103,19 @@ export default function DeductionReportView() {
 
       <Card sx={{ p: 3, mb: 3, maxWidth: settings.themeStretch ? 'none' : 1200 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          <FiscalYearSelect
+            value={fy}
+            onChange={(y) => {
+              setFy(y);
+              setData(null);
+            }}
+          />
           <DatePicker
             label="Invoices posted from"
             value={fromDate}
             onChange={setFromDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
@@ -113,6 +123,8 @@ export default function DeductionReportView() {
             label="To"
             value={toDate}
             onChange={setToDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />

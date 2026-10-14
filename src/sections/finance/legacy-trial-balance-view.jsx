@@ -25,7 +25,8 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import { getStatementTrialBalance } from 'src/api/finance';
 
-import { toIso, fyStart, dmyText } from './report-dates';
+import { toIso, dmyText } from './report-dates';
+import FiscalYearSelect, { useFiscalYear } from './fiscal-year';
 import { buildTrialBalance2Pdf, buildTrialBalance6Pdf } from './legacy-report-pdf';
 
 const int0 = (v) => Math.round(Number(v || 0)).toLocaleString('en-US');
@@ -44,8 +45,8 @@ export default function LegacyTrialBalanceView() {
   const { enqueueSnackbar } = useSnackbar();
 
   const [layout, setLayout] = useState('6');
-  const [fromDate, setFromDate] = useState(fyStart());
-  const [toDate, setToDate] = useState(new Date());
+  // Read by financial year: 1 July to 30 June, narrowed within it if wanted.
+  const { fy, setFy, fromDate, setFromDate, toDate, setToDate, minDate, maxDate } = useFiscalYear();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
 
@@ -132,11 +133,20 @@ export default function LegacyTrialBalanceView() {
               2 Column
             </ToggleButton>
           </ToggleButtonGroup>
+          <FiscalYearSelect
+            value={fy}
+            onChange={(y) => {
+              setFy(y);
+              setData(null);
+            }}
+          />
           {layout === '6' && (
             <DatePicker
               label="From"
               value={fromDate}
               onChange={setFromDate}
+              minDate={minDate}
+              maxDate={maxDate}
               format="dd/MM/yyyy"
               slotProps={{ textField: { fullWidth: true } }}
             />
@@ -145,6 +155,8 @@ export default function LegacyTrialBalanceView() {
             label={layout === '6' ? 'To' : 'As on'}
             value={toDate}
             onChange={setToDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />

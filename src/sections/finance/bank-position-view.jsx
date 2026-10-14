@@ -24,6 +24,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import { getBankPosition } from 'src/api/finance';
 
 import { toIso, dmyText } from './report-dates';
+import FiscalYearSelect, { useFiscalYear } from './fiscal-year';
 import { buildBankPositionPdf } from './legacy-report-pdf';
 
 const dec2 = (v) =>
@@ -84,8 +85,8 @@ Detail.propTypes = { rows: PropTypes.array, title: PropTypes.string, total: Prop
 export default function BankPositionView() {
   const settings = useSettingsContext();
   const { enqueueSnackbar } = useSnackbar();
-  const [fromDate, setFromDate] = useState(new Date());
-  const [toDate, setToDate] = useState(new Date());
+  // Read by financial year: 1 July to 30 June, narrowed within it if wanted.
+  const { fy, setFy, fromDate, setFromDate, toDate, setToDate, minDate, maxDate } = useFiscalYear();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
 
@@ -116,10 +117,19 @@ export default function BankPositionView() {
 
       <Card sx={{ p: 3, mb: 3 }}>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
+          <FiscalYearSelect
+            value={fy}
+            onChange={(y) => {
+              setFy(y);
+              setData(null);
+            }}
+          />
           <DatePicker
             label="From"
             value={fromDate}
             onChange={setFromDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
@@ -127,6 +137,8 @@ export default function BankPositionView() {
             label="To"
             value={toDate}
             onChange={setToDate}
+            minDate={minDate}
+            maxDate={maxDate}
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
