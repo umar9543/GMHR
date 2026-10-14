@@ -121,7 +121,7 @@ export default function LegacyBankBookView() {
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
-          <Button
+          <Button color="primary"
             variant="contained"
             onClick={run}
             disabled={loading || !account}

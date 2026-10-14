@@ -142,7 +142,7 @@ export default function BankPositionView() {
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
-          <Button variant="contained" onClick={run} disabled={loading} sx={{ height: 40, px: 4 }}>
+          <Button color="primary" variant="contained" onClick={run} disabled={loading} sx={{ height: 40, px: 4 }}>
             {loading ? 'Loading...' : 'Run'}
           </Button>
           <Button

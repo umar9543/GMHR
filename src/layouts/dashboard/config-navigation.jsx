@@ -17,6 +17,7 @@ const icon = (name) => (
 
 const ICONS = {
   job: icon('ic_job'),
+  client: icon('ic_client'),
   ai: icon('ic_ai'),
   blog: icon('ic_blog'),
   chat: icon('ic_chat'),
@@ -275,54 +276,9 @@ export function useNavData() {
           canAccessHR && {
             title: t('Clients'),
 
-            icon: ICONS.job,
+            icon: ICONS.client,
 
             path: paths.dashboard.HR_Module.Client.list,
-          },
-
-          canAccessHR && {
-            title: t('Setup'),
-
-            icon: ICONS.management,
-
-            path: paths.dashboard.HR_Module.Setup.root,
-
-            children: [
-              {
-                title: t('Location'),
-
-                path:
-                  paths.dashboard.HR_Module.Setup.location,
-              },
-
-              {
-                title: t('Shifts'),
-
-                path:
-                  paths.dashboard.HR_Module.Setup.shift,
-              },
-
-              // {
-              //   title: t('Department'),
-
-              //   path:
-              //     paths.dashboard.HR_Module.Setup.department,
-              // },
-
-              // {
-              //   title: t('Section'),
-
-              //   path:
-              //     paths.dashboard.HR_Module.Setup.section,
-              // },
-
-              // {
-              //   title: t('Designation'),
-
-              //   path:
-              //     paths.dashboard.HR_Module.Setup.designation,
-              // },
-            ],
           },
 
           canAccessHR && {

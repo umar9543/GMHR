@@ -253,7 +253,7 @@ export default function FinancialStatementView({ kind }) {
             format="dd/MM/yyyy"
             slotProps={{ textField: { fullWidth: true } }}
           />
-          <Button
+          <Button color="primary"
             variant="contained"
             onClick={run}
             disabled={loading || !asAt}

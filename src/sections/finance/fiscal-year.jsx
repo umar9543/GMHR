@@ -6,8 +6,9 @@ import TextField from '@mui/material/TextField';
 
 // ----------------------------------------------------------------------
 // The financial year, July to June, that the finance reports are read by.
-// Accounts ask for a report "for 2026-27" - 1 July 2026 to 30 June 2027 - so
-// each report picks a year first and its dates stay inside that year.
+// Accounts ask for a report "for 2026-27" - 1 July 2026 to 30 June 2027 - so a
+// report has only this box: the year picked gives the API its dates, 1 July to
+// 30 June (or "as at 30 June" for the balance sheet, P&L and notes).
 //
 // The ledgers start on 5 May 2025, so the list begins with 2024-25.
 // ----------------------------------------------------------------------
@@ -24,25 +25,11 @@ export const fyLabel = (y) => `${y}-${String((y + 1) % 100).padStart(2, '0')}`;
 /** 1 July and 30 June of the financial year starting in y. */
 export const fyBounds = (y) => ({ start: new Date(y, 6, 1), end: new Date(y + 1, 5, 30) });
 
-/**
- * A report's financial year and its dates. Picking a year sets the dates to
- * the whole year (1 July to 30 June); they can then be narrowed, but not taken
- * outside it - minDate and maxDate go to the date pickers.
- */
+/** A report's financial year, and the dates it stands for: 1 July and 30 June. */
 export function useFiscalYear(initial = fyOf()) {
-  const [fy, setFyState] = useState(initial);
-  const [fromDate, setFromDate] = useState(() => fyBounds(initial).start);
-  const [toDate, setToDate] = useState(() => fyBounds(initial).end);
-
-  const setFy = useCallback((y) => {
-    const { start, end } = fyBounds(y);
-    setFyState(y);
-    setFromDate(start);
-    setToDate(end);
-  }, []);
-
+  const [fy, setFy] = useState(initial);
   const { start, end } = fyBounds(fy);
-  return { fy, setFy, fromDate, setFromDate, toDate, setToDate, minDate: start, maxDate: end };
+  return { fy, setFy: useCallback((y) => setFy(y), []), fromDate: start, toDate: end };
 }
 
 export default function FiscalYearSelect({ value, onChange, sx }) {
@@ -55,7 +42,8 @@ export default function FiscalYearSelect({ value, onChange, sx }) {
       label="Fiscal year"
       value={value}
       onChange={(event) => onChange(Number(event.target.value))}
-      sx={{ minWidth: 210, flexShrink: 0, ...sx }}
+      fullWidth
+      sx={sx}
     >
       {years.map((y) => (
         <MenuItem key={y} value={y}>
