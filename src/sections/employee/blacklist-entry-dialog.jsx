@@ -245,7 +245,11 @@ export default function BlackListEntryDialog({ open, code, onClose, onSaved }) {
     try {
       const res = await saveBlackListEntry({
         code: entryCode,
-        date: date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : null,
+        // The calendar day as picked; toISOString() is UTC, a day early in Pakistan.
+        date:
+          date && !Number.isNaN(date.getTime())
+            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+            : null,
         people: list.map((p) => ({
           personId: p.personId,
           cnic: p.cnic,

@@ -18,7 +18,7 @@ import { useSnackbar } from 'notistack';
 import Grid from '@mui/material/Grid';
 import { APP_API } from 'src/config-global';
 
-// EVS dates travel as yyyy-MM-dd and are handled as local calendar dates;
+// Dates (EVS, NIC validity, forensic) travel as yyyy-MM-dd and are handled as local calendar dates;
 // toISOString would shift them back a day in Pakistan time.
 const pad = (n) => String(n).padStart(2, '0');
 const toLocalIsoDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -139,10 +139,9 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
       const payload = new FormData();
       Object.keys(formData).forEach((key) => {
         if (formData[key] !== null) {
-          if (key === 'EvsDate') {
+          // Every date as its calendar day (yyyy-MM-dd), not UTC.
+          if (formData[key] instanceof Date) {
             payload.append(key, toLocalIsoDate(formData[key]));
-          } else if (formData[key] instanceof Date) {
-            payload.append(key, formData[key].toISOString());
           } else {
             payload.append(key, formData[key]);
           }

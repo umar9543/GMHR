@@ -8,6 +8,7 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -20,6 +21,8 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
+import Label from 'src/components/label';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
@@ -111,6 +114,13 @@ const AttendanceRow = memo(
         <TableCell>{row.empId}</TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>
           {row.employeeName || `Employee ${row.empId}`}
+          {row.notOnSheet && (
+            <Tooltip title="In service on this date but not on the saved sheet - added absent; save to keep">
+              <Label color="warning" variant="soft" sx={{ ml: 1 }}>
+                Not on sheet
+              </Label>
+            </Tooltip>
+          )}
         </TableCell>
 
         <TableCell>
@@ -644,6 +654,25 @@ export default function AttendanceView() {
           return { ...base, ...flagsForMark('P') };
         }),
       };
+
+      // Guards in service on the date but not on its saved (or legacy) sheet -
+      // usually enrolled in the app after the day was saved. They are added
+      // absent so they can be marked; saving keeps them on the sheet.
+      const missing = (res.exists || res.fromLegacy ? res.missing ?? res.Missing ?? [] : []).map((row) => ({
+        ...row,
+        employeeName: cleanEmployeeName(row.employeeName),
+        clientId: row.clientId || gmClientId,
+        shiftId: row.shiftId || dayShiftId,
+        notOnSheet: true,
+        ...flagsForMark('A'),
+      }));
+      if (missing.length) {
+        sheet.details = [...sheet.details, ...missing].sort((a, b) => Number(a.empId) - Number(b.empId));
+        enqueueSnackbar(
+          `${missing.length} employee(s) in service on this date were not on the saved sheet - added as absent; mark them and save.`,
+          { variant: 'warning' }
+        );
+      }
 
       setSheetData(sheet);
       setFromLegacy(!!res.fromLegacy);

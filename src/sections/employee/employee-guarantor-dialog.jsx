@@ -196,7 +196,11 @@ export default function EmployeeGuarantorDialog({ open, onClose, employeeId }) {
       });
 
       Object.entries(values).forEach(([field, value]) => {
-        if (value instanceof Date) form.append(field, value.toISOString());
+        // The calendar day as picked; toISOString() is UTC, a day early in Pakistan.
+        if (value instanceof Date) {
+          const pad = (n) => String(n).padStart(2, '0');
+          form.append(field, `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`);
+        }
         else if (value !== null && value !== undefined) form.append(field, value);
       });
 

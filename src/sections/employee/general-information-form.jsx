@@ -39,6 +39,17 @@ import Iconify from 'src/components/iconify';
 
 const DATE_FORMAT = 'dd/MM/yyyy';
 
+// The calendar date as picked, yyyy-MM-dd. toISOString() gave UTC, and in
+// Pakistan (UTC+5) midnight is 19:00 the day before - so 11/10 was saved
+// as 10/10 and printed so on the PDF.
+const toDateOnly = (value) => {
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // CNICRLZ_DATE is a text column holding legacy dates such as '14-Dec-17'.
@@ -540,9 +551,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
           IncomeTax: Number(String(data.iTax || '').replace(/,/g, '')) || 0,
           Ntn: data.education || '',
           Nic: data.nic || '',
-          ProbDate: new Date().toISOString(),
+          ProbDate: toDateOnly(new Date()),
           ProbPeriod: 90,
-          HireDate: data.dateOfEnrolment ? new Date(data.dateOfEnrolment).toISOString() : new Date().toISOString(),
+          HireDate: data.dateOfEnrolment ? toDateOnly(data.dateOfEnrolment) : toDateOnly(new Date()),
           Reference: data.careOf || '',
           Ext: '',
           FkLocationId: Number(data.location) || 0,
@@ -551,8 +562,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
           PicPath: data.guardsImage?.name ? `/paths/${data.guardsImage.name}` : '',
           PAddress: data.permanentAddress || '',
           CardIssue: data.companyCardIssued ? 1 : 0,
-          Dob: data.dob ? new Date(data.dob).toISOString() : null,
-          NicValid: data.cnicValidity ? new Date(data.cnicValidity).toISOString() : null,
+          Dob: data.dob ? toDateOnly(data.dob) : null,
+          NicValid: data.cnicValidity ? toDateOnly(data.cnicValidity) : null,
           NicPicture: data.nicImage || '',
           NicPicPath: data.nicImage?.name ? `/paths/${data.nicImage.name}` : '',
           ExArmed: data.exArmedForcesGroup || '',
@@ -583,9 +594,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
           LocalPolice: false,
           LocalPicPath: '',
           MarkId: data.markOfIdentity || '',
-          ReEnrollDate: data.dateOfReEnroll ? new Date(data.dateOfReEnroll).toISOString() : null,
+          ReEnrollDate: data.dateOfReEnroll ? toDateOnly(data.dateOfReEnroll) : null,
           // A discharge date makes the employee in-active; empty puts him back in service.
-          DischargeDate: data.dischargeDate ? new Date(data.dischargeDate).toISOString() : null,
+          DischargeDate: data.dischargeDate ? toDateOnly(data.dischargeDate) : null,
           ReEnrollChk: !!data.reEnroll,
           ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
           Kin: data.emergencyRelation || '',
@@ -613,13 +624,13 @@ export default function GeneralInformationForm({ currentEmployee }) {
           SonOf1: data.SONOF1 || '',
           Address1: data.ADDRESS1 || '',
           Cnic1: data.CNIC1 || '',
-          CnicExp1: data.CNIC_EXP1 ? new Date(data.CNIC_EXP1).toISOString() : null,
+          CnicExp1: data.CNIC_EXP1 ? toDateOnly(data.CNIC_EXP1) : null,
           Cell1: data.CELL1 || '',
           GName2: data.GNAME2 || '',
           SonOf2: data.SONOF2 || '',
           Address2: data.ADDRESS2 || '',
           Cnic2: data.CNIC2 || '',
-          CnicExp2: data.CNIC_EXP2 ? new Date(data.CNIC_EXP2).toISOString() : null,
+          CnicExp2: data.CNIC_EXP2 ? toDateOnly(data.CNIC_EXP2) : null,
           Cell2: data.CELL2 || ''
         };
 
