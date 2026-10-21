@@ -228,6 +228,23 @@ export function useHrEmployeeApi() {
     return res;
   }, [authFetch]);
 
+  // Only what the Employee Status screen shows; the full list is over 13 MB.
+  const getEmployeeStatusList = useCallback(async () => {
+    const res = await authFetch(`${APP_API}/api/employee/status-list`);
+    return res.json();
+  }, [authFetch]);
+
+  const updateDischargeReason = useCallback(async (id, reason) => {
+    const res = await authFetch(`${APP_API}/api/employee/${id}/discharge-reason`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.message || body.Message || 'Could not save the discharge reason');
+    return body;
+  }, [authFetch]);
+
   const getDashboardStats = useCallback(async () => {
     const res = await authFetch(`${APP_API}/api/Employee/GetDashboardStats`);
     const data = await res.json();
@@ -239,6 +256,8 @@ export function useHrEmployeeApi() {
     getEmployeeById,
     saveEmployee,
     toggleStatus,
+    getEmployeeStatusList,
+    updateDischargeReason,
     getDashboardStats
   };
 }

@@ -60,6 +60,10 @@ const STATUS_TABS = [
 
 const isActiveRow = (row) => !!(row.IsActive ?? row.ISACTIVE ?? row.isActive);
 
+// The reason the legacy import gave its discharges; shown as where it came from.
+const LEGACY_REASON = 'Legacy GUARD_HISTORY (Date of Discharge)';
+const isLegacyReason = (reason) => reason === LEGACY_REASON;
+
 const TABLE_HEAD = [
   { id: 'ID', label: 'Emp ID', minWidth: 100 },
   { id: 'FIRSTNAME', label: 'Employee Name', minWidth: 200 },
@@ -75,7 +79,7 @@ export default function EmployeeStatusView() {
   const { enqueueSnackbar } = useSnackbar();
   const settings = useSettingsContext();
   const table = useTable();
-  const { getEmployees, toggleStatus } = useHrEmployeeApi();
+  const { getEmployeeStatusList, toggleStatus, updateDischargeReason } = useHrEmployeeApi();
 
   const [tableData, setTableData] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
@@ -84,7 +88,7 @@ export default function EmployeeStatusView() {
   const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getEmployees();
+      const data = await getEmployeeStatusList();
       if (Array.isArray(data)) {
         setTableData(data);
       }
@@ -94,7 +98,7 @@ export default function EmployeeStatusView() {
     } finally {
       setLoading(false);
     }
-  }, [getEmployees, enqueueSnackbar]);
+  }, [getEmployeeStatusList, enqueueSnackbar]);
 
   useEffect(() => {
     fetchEmployees();
@@ -115,12 +119,43 @@ export default function EmployeeStatusView() {
     });
   };
 
+  // Corrects the reason of an employee who is already discharged.
+  const handleOpenEditReason = (row) => {
+    const current = row.DischargeReason || '';
+    setDialogState({
+      isOpen: true,
+      type: 'reason',
+      employeeId: row.ID || row.id,
+      inputValue: isLegacyReason(current) ? '' : current,
+    });
+  };
+
   const handleCloseDialog = () => {
     setDialogState((prev) => ({ ...prev, isOpen: false }));
   };
 
   const handleConfirmAction = async () => {
     const { employeeId, type, inputValue } = dialogState;
+
+    if (type === 'reason') {
+      try {
+        const saved = await updateDischargeReason(employeeId, inputValue.trim());
+        setTableData((prevData) =>
+          prevData.map((row) =>
+            (row.ID || row.id) === employeeId
+              ? { ...row, DischargeReason: saved.dischargeReason ?? inputValue.trim() }
+              : row
+          )
+        );
+        enqueueSnackbar('Discharge reason updated');
+        handleCloseDialog();
+      } catch (error) {
+        console.error(error);
+        enqueueSnackbar(error.message || 'Failed to update the discharge reason', { variant: 'error' });
+      }
+      return;
+    }
+
     const newIsActive = type === 'allow';
     
     try {
@@ -285,8 +320,14 @@ export default function EmployeeStatusView() {
                       <TableCell sx={{ maxWidth: 320 }}>
                         {!isActive && row.DischargeReason ? (
                           <>
-                            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
-                              {row.DischargeReason}
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                whiteSpace: 'pre-line',
+                                ...(isLegacyReason(row.DischargeReason) && { color: 'text.secondary', fontStyle: 'italic' }),
+                              }}
+                            >
+                              {isLegacyReason(row.DischargeReason) ? 'From legacy HR' : row.DischargeReason}
                             </Typography>
                             {row.DischargeDate && (
                               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -300,6 +341,14 @@ export default function EmployeeStatusView() {
                       </TableCell>
 
                       <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                        {!isActive && (
+                          <Tooltip title="Edit discharge reason">
+                            <IconButton onClick={() => handleOpenEditReason(row)}>
+                              <Iconify icon="solar:pen-bold" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
                         {!isActive && (
                           <Tooltip title="Allow (Set Active)">
                             <span>
@@ -353,18 +402,18 @@ export default function EmployeeStatusView() {
 
       <Dialog open={dialogState.isOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {dialogState.type === 'discharge' ? 'Discharge Employee' : 'Allow Employee'}
+          {{ discharge: 'Discharge Employee', reason: 'Edit Discharge Reason', allow: 'Allow Employee' }[dialogState.type]}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <TextField
             autoFocus
             fullWidth
             margin="dense"
-            label={dialogState.type === 'discharge' ? 'Reason for Discharge' : 'Authorized Person'}
+            label={dialogState.type === 'allow' ? 'Authorized Person' : 'Reason for Discharge'}
             value={dialogState.inputValue}
             onChange={(e) => setDialogState({ ...dialogState, inputValue: e.target.value })}
-            multiline={dialogState.type === 'discharge'}
-            rows={dialogState.type === 'discharge' ? 3 : 1}
+            multiline={dialogState.type !== 'allow'}
+            rows={dialogState.type !== 'allow' ? 3 : 1}
           />
         </DialogContent>
         <DialogActions>
@@ -374,10 +423,10 @@ export default function EmployeeStatusView() {
           <Button
             onClick={handleConfirmAction}
             variant="contained"
-            color={dialogState.type === 'discharge' ? 'error' : 'success'}
+            color={{ discharge: 'error', reason: 'primary', allow: 'success' }[dialogState.type]}
             disabled={!dialogState.inputValue.trim()}
           >
-            {dialogState.type === 'discharge' ? 'Discharge' : 'Allow'}
+            {{ discharge: 'Discharge', reason: 'Save', allow: 'Allow' }[dialogState.type]}
           </Button>
         </DialogActions>
       </Dialog>
