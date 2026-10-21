@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { loadLogo, drawReportHeader } from './report-header';
 import { isExtra, groupRows, siteCellText, PARADE_COLUMNS } from './parade-state-utils';
 import { drawParadeSummary, paradeSummaryRows } from './parade-state-summary';
+import { isEpSite } from './parade-state-priority';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -116,8 +117,9 @@ export async function buildParadeStatePdf(records, dateStr) {
       standard: { day: grandTotals.preDay, night: grandTotals.preNight },
       overtime: { day: grandTotals.otDay, night: grandTotals.otNight },
       // The EP clients' guards: the reserve, kept apart from guarding strength.
+      // Same rule as the priority report: "EP-", "EP -" or contract code EP.
       ep: records
-        .filter((r) => r.isEp)
+        .filter((r) => r.isEp || isEpSite(r))
         .reduce(
           (t, r) => ({
             day: t.day + Number(r.preDay || 0),

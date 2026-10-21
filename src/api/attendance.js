@@ -154,6 +154,8 @@ export async function getParadeState(dateStr) {
       preNight: r.preNight ?? r.PreNight ?? 0,
       otDay: r.otDay ?? r.OtDay ?? 0,
       otNight: r.otNight ?? r.OtNight ?? 0,
+      // An EP client: its guards are the EP (reserve) strength.
+      isEp: !!(r.isEp ?? r.IsEp ?? false),
     })),
   };
 }
