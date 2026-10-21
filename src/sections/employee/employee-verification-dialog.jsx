@@ -252,7 +252,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
                     <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600 }}>Nadra Verification</Typography>
                     <Stack spacing={2.5}>
                       <TextField label="NIC" value={formData.Nic} onChange={handleChange('Nic')} fullWidth />
-                      <DatePicker label="NIC Validity" value={formData.NicValid} onChange={handleDateChange('NicValid')} slotProps={{ textField: { fullWidth: true } }} />
+                      <DatePicker label="NIC Validity" value={formData.NicValid} onChange={handleDateChange('NicValid')} format="dd/MM/yyyy" slotProps={{ textField: { fullWidth: true } }} />
                       <TextField select label="Verified" value={formData.NadraVerify} onChange={handleChange('NadraVerify')} fullWidth>
                         <MenuItem value="Yes">Yes</MenuItem>
                         <MenuItem value="No">No</MenuItem>
@@ -287,7 +287,7 @@ export default function EmployeeVerificationDialog({ open, onClose, employeeId }
                           <MenuItem value="No">No</MenuItem>
                         </TextField>
                       </Stack>
-                      <DatePicker label="Forensic Date" value={formData.ForensicDt} onChange={handleDateChange('ForensicDt')} slotProps={{ textField: { fullWidth: true } }} />
+                      <DatePicker label="Forensic Date" value={formData.ForensicDt} onChange={handleDateChange('ForensicDt')} format="dd/MM/yyyy" slotProps={{ textField: { fullWidth: true } }} />
                     </Stack>
                   </Box>
                 </Stack>
