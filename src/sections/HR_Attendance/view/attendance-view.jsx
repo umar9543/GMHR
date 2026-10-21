@@ -598,16 +598,49 @@ export default function AttendanceView() {
         byEmp: new Map(prev.records.map((r) => [r.empId ?? r.EmpId, r])),
       });
 
+      const prevByEmp = new Map(prev.records.map((r) => [r.empId ?? r.EmpId, r]));
+      // A new employee has no client or shift yet: he starts at the head office
+      // (client GM) on the day shift, marked absent until he is posted.
+      const dayShiftId = shifts.find((sh) => String(sh.code).toUpperCase() === 'D')?.shiftId ?? null;
+      const gmClientId =
+        clientOptions.find((c) => String(c.name || '').trim().toUpperCase() === 'GM')?.clientId ?? null;
+
       const sheet = {
         ...res.sheet,
         details: (res.sheet?.details || []).map((row) => {
           const base = { ...row, employeeName: cleanEmployeeName(row.employeeName) };
 
           // A saved sheet, or a day from the legacy history, shows what was
-          // actually marked. Only a fresh template starts everyone at Present,
-          // which is the day's usual case.
+          // actually marked.
           if (res.exists || res.fromLegacy) return base;
 
+          // A fresh day starts as an exact copy of the guard's previous day:
+          // the same mark (P, P/P, A, L...), shift, client and overtime client.
+          const before = prevByEmp.get(base.empId);
+          const beforeMark = before ? (before.mark ?? before.Mark ?? '') : '';
+          if (before && beforeMark) {
+            const pick = (camel, pascal, fallback) => before[camel] ?? before[pascal] ?? fallback;
+            return {
+              ...base,
+              shiftId: pick('shiftId', 'ShiftId', base.shiftId),
+              clientId: pick('clientId', 'ClientId', base.clientId),
+              otClientId: pick('otClientId', 'OtClientId', null),
+              rank: pick('rank', 'Rank', base.rank),
+              ovRank: pick('ovRank', 'OvRank', base.ovRank),
+              ...flagsForMark(beforeMark),
+            };
+          }
+
+          if (!base.clientId || !base.shiftId) {
+            return {
+              ...base,
+              clientId: base.clientId || gmClientId,
+              shiftId: base.shiftId || dayShiftId,
+              ...flagsForMark('A'),
+            };
+          }
+
+          // Not on the previous day but already posted: starts present.
           return { ...base, ...flagsForMark('P') };
         }),
       };

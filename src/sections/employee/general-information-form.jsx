@@ -107,7 +107,7 @@ const STEPS = [
 const STEP_FIELDS = [
   ['guardsImage', 'location', 'companyNo', 'firstName', 'fatherName', 'dob', 'age', 'gender', 'maritalStatus', 'jobTitle', 'cnicReleaseDate'],
   ['currentAddress', 'permanentAddress', 'state', 'city', 'homeTown', 'cellPhone', 'ptcl', 'caste', 'sect', 'fatherCnic', 'nic', 'cnicValidity', 'nicImage'],
-  ['exArmedForcesGroup', 'rank', 'serviceDuration1', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'schoolCollege', 'apsaaCourse', 'exSecurityCompanyName', 'documentDeposited'],
+  ['exArmedForcesGroup', 'rank', 'apsaaCourse', 'medicalCategory', 'exSecurityCompany', 'serviceDuration2', 'education', 'schoolCollege', 'serviceDuration1', 'exSecurityCompanyName', 'documentDeposited'],
   ['dateOfEnrolment', 'dateOfReEnroll', 'dischargeDate'],
 ];
 
@@ -234,7 +234,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         then: (schema) => schema.required('Enter the date the original CNIC was released'),
       }),
     nicImage: Yup.mixed().required('NIC Image is required'),
-    iTax: Yup.string(),
+    iTax: Yup.string().test('number', 'I/Tax must be a number, e.g. 0.30', (v) => !v || !Number.isNaN(Number(String(v).replace(/,/g, '')))),
     eobi: Yup.string(),
 
     // Page 3
@@ -395,7 +395,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
   useEffect(() => {
     if (paymentMode === 'Bank') {
       setValue('jazzCash', '');
-    } else if (paymentMode === 'JazzCash') {
+    } else if (paymentMode === 'Jazz Cash') {
       setValue('BankAccount', '');
     } else {
       setValue('BankAccount', '');
@@ -438,10 +438,11 @@ export default function GeneralInformationForm({ currentEmployee }) {
         permanentAddress: emp.PADDRESS || '',
         state: emp.STATE || '',
         city: emp.CITY || '',
-        homeTown: '',
+        homeTown: extra.homeTown || '',
         cellPhone: emp.CELLPHONE || '',
         OT_Rate: emp.OT_Rate || '',
-        Payment_Mode: emp.Payment_Mode || '',
+        // Older records and the earlier form wrote JazzCash without the space.
+        Payment_Mode: emp.Payment_Mode === 'JazzCash' ? 'Jazz Cash' : emp.Payment_Mode || '',
         BankAccount: emp.BankAccount || '',
         jazzCash: (emp.JC1 || '') + (emp.JC2 || ''),
         ptcl: emp.HOME || '',
@@ -449,7 +450,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         sect: emp.SECT || '',
         fatherCnic: emp.FCNIC || '',
         nic: emp.NIC || '',
-        iTax: emp.INCOMETAX ? String(emp.INCOMETAX) : '',
+        iTax: emp.INCOMETAX != null && Number(emp.INCOMETAX) !== 0 ? String(emp.INCOMETAX) : '',
         cnicValidity: emp.NICVALID ? new Date(emp.NICVALID) : null,
         eobi: emp.EOBI ? String(emp.EOBI) : '',
 
@@ -536,7 +537,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           Office: '',
           CellPhone: data.cellPhone || '',
           Email: '',
-          IncomeTax: Number(data.iTax) || 0,
+          IncomeTax: Number(String(data.iTax || '').replace(/,/g, '')) || 0,
           Ntn: data.education || '',
           Nic: data.nic || '',
           ProbDate: new Date().toISOString(),
@@ -565,6 +566,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           EmergencyName: data.emergencyName || '',
           EmergencyPhone: data.emergencyCellPhone || '',
           SchoolCollege: data.schoolCollege || '',
+          HomeTown: data.homeTown || '',
           NokName: data.nokName || '',
           NokRelation: data.nokRelation || '',
           NokPhone: data.nokPhone || '',
@@ -600,9 +602,10 @@ export default function GeneralInformationForm({ currentEmployee }) {
           Eobi: Number(data.eobi) || 0,
           FCnic: data.fatherCnic || '',
           OT_Rate: data.OT_Rate || '',
-          PaymentMode: data.Payment_Mode || '',
-          Jc1: data.Payment_Mode === 'JazzCash' && data.jazzCash ? data.jazzCash.substring(0, 4) : '',
-          Jc2: data.Payment_Mode === 'JazzCash' && data.jazzCash ? data.jazzCash.substring(4) : '',
+          // The API reads Payment_Mode; PaymentMode was never bound, so the mode was lost.
+          Payment_Mode: data.Payment_Mode || '',
+          Jc1: data.Payment_Mode === 'Jazz Cash' && data.jazzCash ? data.jazzCash.substring(0, 4) : '',
+          Jc2: data.Payment_Mode === 'Jazz Cash' && data.jazzCash ? data.jazzCash.substring(4) : '',
           Caste: data.caste || '',
           Sect: data.sect || '',
           IsActive: true,
@@ -841,12 +844,13 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="cellPhone" label="Cell Phone" />
         <RHFTextField name="OT_Rate" label="OT Rate" />
         <RHFSelect name="Payment_Mode" label="Payment Mode">
-          <MenuItem value="JazzCash">JazzCash</MenuItem>
-          <MenuItem value="Bank">Bank</MenuItem>
           <MenuItem value="Cash">Cash</MenuItem>
+          <MenuItem value="Cheque">Cheque</MenuItem>
+          <MenuItem value="Jazz Cash">Jazz Cash</MenuItem>
+          <MenuItem value="Bank">Bank</MenuItem>
         </RHFSelect>
         {paymentMode === 'Bank' && <RHFTextField name="BankAccount" label="Bank Account" />}
-        {paymentMode === 'JazzCash' && <RHFTextField name="jazzCash" label="Jazz Cash" />}
+        {paymentMode === 'Jazz Cash' && <RHFTextField name="jazzCash" label="Jazz Cash" />}
         <RHFTextField name="ptcl" label="PTCL" />
         <RHFTextField name="caste" label="Caste" />
         <RHFTextField name="sect" label="Sect" />
@@ -971,7 +975,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
           </Tooltip>
         </Stack>
         <RHFTextField name="rank" label="Rank" />
-        <RHFTextField name="serviceDuration1" label="Service Duration" />
+        <RHFTextField name="apsaaCourse" label="APSAA Course" />
         <RHFTextField name="medicalCategory" label="Medical Category" />
         <RHFRadioGroup
           name="exSecurityCompany"
@@ -985,7 +989,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
         <RHFTextField name="education" label="Education" />
         <RHFTextField name="schoolCollege" label="School / College" />
-        <RHFTextField name="apsaaCourse" label="APSAA Course" />
+        <RHFTextField name="serviceDuration1" label="Service Duration" />
         <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
         <RHFTextField name="documentDeposited" label="Document Deposited in Company" />
       </Box>

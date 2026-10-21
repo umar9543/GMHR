@@ -92,7 +92,8 @@ export default function EmployeeSalaryStatusDialog({ open, onClose, employeeId, 
           fetch(`${APP_API}/api/SalaryStatus/designations`).then((r) => r.json()),
           fetch(`${APP_API}/api/SalaryStatus/employee-types`).then((r) => r.json()),
         ]);
-        setDesignations(Array.isArray(jobs) ? jobs : []);
+        // Job titles in ascending order of their number.
+        setDesignations(Array.isArray(jobs) ? [...jobs].sort((a, b) => Number(a.id) - Number(b.id)) : []);
         setEmployeeTypes(Array.isArray(types) ? types : []);
       } catch {
         // The pickers are a convenience; the rest of the tab still works.
@@ -154,7 +155,7 @@ export default function EmployeeSalaryStatusDialog({ open, onClose, employeeId, 
       setDesignations((previous) =>
         previous.some((row) => row.id === added.id)
           ? previous
-          : [...previous, added].sort((a, b) => a.description.localeCompare(b.description))
+          : [...previous, added].sort((a, b) => Number(a.id) - Number(b.id))
       );
       setValues((previous) => ({ ...previous, designationId: String(added.id) }));
       setNewTitle(null);
