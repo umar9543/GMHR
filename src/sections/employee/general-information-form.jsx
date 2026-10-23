@@ -987,7 +987,7 @@ export default function GeneralInformationForm({ currentEmployee }) {
         </Stack>
         <RHFTextField name="rank" label="Rank" />
 
-        <RHFTextField name="medicalCategory" label="Medical Category" />
+        <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
         <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
         <RHFRadioGroup
           name="exSecurityCompany"
@@ -998,7 +998,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
           ]}
           row
         />
-        <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
+        <RHFTextField name="medicalCategory" label="Medical Category" />
+
         <RHFTextField name="education" label="Education" />
         <RHFTextField name="schoolCollege" label="School / College" />
 
