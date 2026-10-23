@@ -986,8 +986,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
           </Tooltip>
         </Stack>
         <RHFTextField name="rank" label="Rank" />
+        <RHFTextField name="serviceDuration1" label="Service Duration" />
 
-        <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
         <RHFTextField name="medicalCategory" label="Medical Category" />
 
         <RHFRadioGroup
@@ -1001,10 +1001,12 @@ export default function GeneralInformationForm({ currentEmployee }) {
         />
 
         <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
+        <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
+
         <RHFTextField name="education" label="Education" />
         <RHFTextField name="schoolCollege" label="School / College" />
 
-        <RHFTextField name="apsaaCourse" label="APSAA Course" /> <RHFTextField name="serviceDuration1" label="Service Duration" />
+        <RHFTextField name="apsaaCourse" label="APSAA Course" />
 
         <RHFTextField name="documentDeposited" label="Document Deposited in Company" />
       </Box>
