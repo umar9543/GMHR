@@ -24,6 +24,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Iconify from 'src/components/iconify';
 
 import { APP_API } from 'src/config-global';
+import { getSalaryHistory } from 'src/api/employee-salary';
 
 // ---------------------------------------------------------------------------
 // Salary Status - the legacy "Employee Information -> Salary Status" tab.
@@ -76,6 +77,37 @@ export default function EmployeeSalaryStatusDialog({ open, onClose, employeeId, 
   // The quick add beside Job Title: null when closed, else what is typed.
   const [newTitle, setNewTitle] = useState(null);
   const [addingTitle, setAddingTitle] = useState(false);
+
+  // Duties since he joined, from his salary history: every month he was paid
+  // and the days (WDAYS) and overtime days (OTDAYS) it paid. One call; the
+  // history holds up to 20 years.
+  const [duties, setDuties] = useState({ loading: false, counts: null });
+
+  useEffect(() => {
+    if (!open || !employeeId) return undefined;
+    let cancelled = false;
+    setDuties({ loading: true, counts: null });
+    getSalaryHistory(employeeId, 240)
+      .then((data) => {
+        if (cancelled) return;
+        const rows = data?.records ?? data?.Records ?? [];
+        const num = (v) => Number(v) || 0;
+        const days = rows.reduce((t, r) => t + num(r.wDays ?? r.WDays ?? r.wdays), 0);
+        const ot = rows.reduce((t, r) => t + num(r.otDays ?? r.OtDays ?? r.otdays), 0);
+        const dates = rows.map((r) => r.salaryDate ?? r.SalaryDate).filter(Boolean).sort();
+        setDuties({
+          loading: false,
+          counts: { months: rows.length, days, ot, total: days + ot, from: dates[0], to: dates[dates.length - 1] },
+        });
+      })
+      .catch(() => !cancelled && setDuties({ loading: false, counts: null }));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, employeeId]);
+
+  const monthLabel = (d) =>
+    d ? new Date(d).toLocaleString('en-GB', { month: 'short', year: 'numeric' }) : '';
 
   const set = (field) => (event) => {
     const { value, checked, type } = event.target;
@@ -399,6 +431,35 @@ export default function EmployeeSalaryStatusDialog({ open, onClose, employeeId, 
             onChange={set('contractPeriod')}
             disabled={loading}
           />
+        </Box>
+
+        <Box sx={{ mt: 2, p: 1.5, borderRadius: 1.5, bgcolor: 'background.neutral' }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Duties since joining
+            {duties.counts?.months > 0 && (
+              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                {duties.counts.months} paid month(s), {monthLabel(duties.counts.from)} - {monthLabel(duties.counts.to)}
+              </Typography>
+            )}
+          </Typography>
+          {duties.loading && <LinearProgress />}
+          {!duties.loading && !duties.counts && (
+            <Typography variant="body2" color="text.secondary">
+              Could not read the salary history.
+            </Typography>
+          )}
+          {!duties.loading && duties.counts?.months === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              No salary paid yet.
+            </Typography>
+          )}
+          {!duties.loading && duties.counts?.months > 0 && (
+            <Stack direction="row" flexWrap="wrap" gap={1}>
+              <Chip size="small" color="success" variant="soft" label={`Working days: ${duties.counts.days}`} />
+              <Chip size="small" color="info" variant="soft" label={`OT duties: ${duties.counts.ot}`} />
+              <Chip size="small" color="primary" label={`Total duties: ${duties.counts.total}`} />
+            </Stack>
+          )}
         </Box>
 
         <Divider sx={{ my: 2 }} />
