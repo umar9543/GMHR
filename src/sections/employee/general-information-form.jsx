@@ -988,7 +988,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="rank" label="Rank" />
 
         <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
-        <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
+        <RHFTextField name="medicalCategory" label="Medical Category" />
+
         <RHFRadioGroup
           name="exSecurityCompany"
           label="Service Type"
@@ -998,8 +999,8 @@ export default function GeneralInformationForm({ currentEmployee }) {
           ]}
           row
         />
-        <RHFTextField name="medicalCategory" label="Medical Category" />
 
+        <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
         <RHFTextField name="education" label="Education" />
         <RHFTextField name="schoolCollege" label="School / College" />
 
