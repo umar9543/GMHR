@@ -529,161 +529,161 @@ export default function GeneralInformationForm({ currentEmployee }) {
   const saveEmployee = async (data, { stay = false } = {}) => {
     try {
       // Map form data to API payload
-        const payload = {
-          FirstName: data.firstName || '',
-          MiddleName: data.fatherName || '',
-          LastName: '',
-          Salutation: data.gender === 'Male' ? 'Mr.' : 'Ms.',
-          Age: Number(data.age) || 0,
-          Gender: data.gender === 'Male' ? 0 : 1,
-          MaritalStatus: data.maritalStatus === 'Single' ? 0 : 1,
-          Address: data.currentAddress || '',
-          City: data.city || '',
-          Country: 'Pakistan',
-          PostalCode: '',
-          State: data.state || '',
-          FkBankId: 0,
-          BankAccount: data.Payment_Mode === 'Bank' ? data.BankAccount || '' : '',
-          Home: data.ptcl || '',
-          Office: '',
-          CellPhone: data.cellPhone || '',
-          Email: '',
-          IncomeTax: Number(String(data.iTax || '').replace(/,/g, '')) || 0,
-          Ntn: data.education || '',
-          Nic: data.nic || '',
-          ProbDate: toDateOnly(new Date()),
-          ProbPeriod: 90,
-          HireDate: data.dateOfEnrolment ? toDateOnly(data.dateOfEnrolment) : toDateOnly(new Date()),
-          Reference: data.careOf || '',
-          Ext: '',
-          FkLocationId: Number(data.location) || 0,
-          FkDepartmentId: Number(data.jobTitle) || 0,
-          EmployeePicture: data.guardsImage || '',
-          PicPath: data.guardsImage?.name ? `/paths/${data.guardsImage.name}` : '',
-          PAddress: data.permanentAddress || '',
-          CardIssue: data.companyCardIssued ? 1 : 0,
-          Dob: data.dob ? toDateOnly(data.dob) : null,
-          NicValid: data.cnicValidity ? toDateOnly(data.cnicValidity) : null,
-          NicPicture: data.nicImage || '',
-          NicPicPath: data.nicImage?.name ? `/paths/${data.nicImage.name}` : '',
-          ExArmed: data.exArmedForcesGroup || '',
-          ExArmedRank: data.rank || '',
-          ExArmedService: data.serviceDuration1 || '',
-          Medical: data.medicalCategory || '',
-          ExSecurity: data.exSecurityCompanyName || '',
-          ExSecurityService: data.serviceDuration2 || '',
-          Apsaa: data.apsaaCourse || '',
-          Documents: data.documentDeposited || '',
-          EmergencyName: data.emergencyName || '',
-          EmergencyPhone: data.emergencyCellPhone || '',
-          SchoolCollege: data.schoolCollege || '',
-          HomeTown: data.homeTown || '',
-          NokName: data.nokName || '',
-          NokRelation: data.nokRelation || '',
-          NokPhone: data.nokPhone || '',
-          // Tells the server these fields came from this form, so it may save them.
-          AdditionalInfoIncluded: true,
-          NadraVerify: false,
-          NadraPicPath: '',
-          HomeDispatch: false,
-          HomeVerify: false,
-          HomePolice: false,
-          HomePicPath: '',
-          LocalDispatch: false,
-          LocalVerify: false,
-          LocalPolice: false,
-          LocalPicPath: '',
-          MarkId: data.markOfIdentity || '',
-          ReEnrollDate: data.dateOfReEnroll ? toDateOnly(data.dateOfReEnroll) : null,
-          // A discharge date makes the employee in-active; empty puts him back in service.
-          DischargeDate: data.dischargeDate ? toDateOnly(data.dischargeDate) : null,
-          ReEnrollChk: !!data.reEnroll,
-          ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
-          Kin: data.emergencyRelation || '',
-          // 1 civilian, 0 ex-armed - what the employee list shows as Rank.
-          Civil: data.exSecurityCompany === 'Ex-Armed' ? 0 : 1,
-          ApsaaVer: false,
-          OrigCnic: data.originalCnicReleased ? 1 : 0,
-          CnicRlzDate:
-            data.originalCnicReleased && data.cnicReleaseDate ? toLegacyDate(data.cnicReleaseDate) : null,
-          NoAllow: 0,
-          Forensic: false,
-          ForensicDt: null,
-          FamilyNo: data.familyNo || '',
-          Eobi: Number(data.eobi) || 0,
-          FCnic: data.fatherCnic || '',
-          OT_Rate: data.OT_Rate || '',
-          // The API reads Payment_Mode; PaymentMode was never bound, so the mode was lost.
-          Payment_Mode: data.Payment_Mode || '',
-          Jc1: data.Payment_Mode === 'Jazz Cash' && data.jazzCash ? data.jazzCash.substring(0, 4) : '',
-          Jc2: data.Payment_Mode === 'Jazz Cash' && data.jazzCash ? data.jazzCash.substring(4) : '',
-          Caste: data.caste || '',
-          Sect: data.sect || '',
-          IsActive: true,
-          GName1: data.GNAME1 || '',
-          SonOf1: data.SONOF1 || '',
-          Address1: data.ADDRESS1 || '',
-          Cnic1: data.CNIC1 || '',
-          CnicExp1: data.CNIC_EXP1 ? toDateOnly(data.CNIC_EXP1) : null,
-          Cell1: data.CELL1 || '',
-          GName2: data.GNAME2 || '',
-          SonOf2: data.SONOF2 || '',
-          Address2: data.ADDRESS2 || '',
-          Cnic2: data.CNIC2 || '',
-          CnicExp2: data.CNIC_EXP2 ? toDateOnly(data.CNIC_EXP2) : null,
-          Cell2: data.CELL2 || ''
-        };
+      const payload = {
+        FirstName: data.firstName || '',
+        MiddleName: data.fatherName || '',
+        LastName: '',
+        Salutation: data.gender === 'Male' ? 'Mr.' : 'Ms.',
+        Age: Number(data.age) || 0,
+        Gender: data.gender === 'Male' ? 0 : 1,
+        MaritalStatus: data.maritalStatus === 'Single' ? 0 : 1,
+        Address: data.currentAddress || '',
+        City: data.city || '',
+        Country: 'Pakistan',
+        PostalCode: '',
+        State: data.state || '',
+        FkBankId: 0,
+        BankAccount: data.Payment_Mode === 'Bank' ? data.BankAccount || '' : '',
+        Home: data.ptcl || '',
+        Office: '',
+        CellPhone: data.cellPhone || '',
+        Email: '',
+        IncomeTax: Number(String(data.iTax || '').replace(/,/g, '')) || 0,
+        Ntn: data.education || '',
+        Nic: data.nic || '',
+        ProbDate: toDateOnly(new Date()),
+        ProbPeriod: 90,
+        HireDate: data.dateOfEnrolment ? toDateOnly(data.dateOfEnrolment) : toDateOnly(new Date()),
+        Reference: data.careOf || '',
+        Ext: '',
+        FkLocationId: Number(data.location) || 0,
+        FkDepartmentId: Number(data.jobTitle) || 0,
+        EmployeePicture: data.guardsImage || '',
+        PicPath: data.guardsImage?.name ? `/paths/${data.guardsImage.name}` : '',
+        PAddress: data.permanentAddress || '',
+        CardIssue: data.companyCardIssued ? 1 : 0,
+        Dob: data.dob ? toDateOnly(data.dob) : null,
+        NicValid: data.cnicValidity ? toDateOnly(data.cnicValidity) : null,
+        NicPicture: data.nicImage || '',
+        NicPicPath: data.nicImage?.name ? `/paths/${data.nicImage.name}` : '',
+        ExArmed: data.exArmedForcesGroup || '',
+        ExArmedRank: data.rank || '',
+        ExArmedService: data.serviceDuration1 || '',
+        Medical: data.medicalCategory || '',
+        ExSecurity: data.exSecurityCompanyName || '',
+        ExSecurityService: data.serviceDuration2 || '',
+        Apsaa: data.apsaaCourse || '',
+        Documents: data.documentDeposited || '',
+        EmergencyName: data.emergencyName || '',
+        EmergencyPhone: data.emergencyCellPhone || '',
+        SchoolCollege: data.schoolCollege || '',
+        HomeTown: data.homeTown || '',
+        NokName: data.nokName || '',
+        NokRelation: data.nokRelation || '',
+        NokPhone: data.nokPhone || '',
+        // Tells the server these fields came from this form, so it may save them.
+        AdditionalInfoIncluded: true,
+        NadraVerify: false,
+        NadraPicPath: '',
+        HomeDispatch: false,
+        HomeVerify: false,
+        HomePolice: false,
+        HomePicPath: '',
+        LocalDispatch: false,
+        LocalVerify: false,
+        LocalPolice: false,
+        LocalPicPath: '',
+        MarkId: data.markOfIdentity || '',
+        ReEnrollDate: data.dateOfReEnroll ? toDateOnly(data.dateOfReEnroll) : null,
+        // A discharge date makes the employee in-active; empty puts him back in service.
+        DischargeDate: data.dischargeDate ? toDateOnly(data.dischargeDate) : null,
+        ReEnrollChk: !!data.reEnroll,
+        ReEnrollId: isReEnrolment ? Number(existingId) : Number(currentEmployee?.employee?.REENROLLID) || 0,
+        Kin: data.emergencyRelation || '',
+        // 1 civilian, 0 ex-armed - what the employee list shows as Rank.
+        Civil: data.exSecurityCompany === 'Ex-Armed' ? 0 : 1,
+        ApsaaVer: false,
+        OrigCnic: data.originalCnicReleased ? 1 : 0,
+        CnicRlzDate:
+          data.originalCnicReleased && data.cnicReleaseDate ? toLegacyDate(data.cnicReleaseDate) : null,
+        NoAllow: 0,
+        Forensic: false,
+        ForensicDt: null,
+        FamilyNo: data.familyNo || '',
+        Eobi: Number(data.eobi) || 0,
+        FCnic: data.fatherCnic || '',
+        OT_Rate: data.OT_Rate || '',
+        // The API reads Payment_Mode; PaymentMode was never bound, so the mode was lost.
+        Payment_Mode: data.Payment_Mode || '',
+        Jc1: data.Payment_Mode === 'Jazz Cash' && data.jazzCash ? data.jazzCash.substring(0, 4) : '',
+        Jc2: data.Payment_Mode === 'Jazz Cash' && data.jazzCash ? data.jazzCash.substring(4) : '',
+        Caste: data.caste || '',
+        Sect: data.sect || '',
+        IsActive: true,
+        GName1: data.GNAME1 || '',
+        SonOf1: data.SONOF1 || '',
+        Address1: data.ADDRESS1 || '',
+        Cnic1: data.CNIC1 || '',
+        CnicExp1: data.CNIC_EXP1 ? toDateOnly(data.CNIC_EXP1) : null,
+        Cell1: data.CELL1 || '',
+        GName2: data.GNAME2 || '',
+        SonOf2: data.SONOF2 || '',
+        Address2: data.ADDRESS2 || '',
+        Cnic2: data.CNIC2 || '',
+        CnicExp2: data.CNIC_EXP2 ? toDateOnly(data.CNIC_EXP2) : null,
+        Cell2: data.CELL2 || ''
+      };
 
-        const formData = new FormData();
-        Object.keys(payload).forEach(key => {
-          if (key === 'EmployeePicture' || key === 'NicPicture') return;
-          if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
-            formData.append(key, payload[key]);
-          }
-        });
-
-        const [employeePicture, nicPicture] = await Promise.all([
-          toUploadFile(data.guardsImage, 'profile.jpg'),
-          toUploadFile(data.nicImage, 'nic.jpg'),
-        ]);
-        if (employeePicture) formData.append('EmployeePicture', employeePicture);
-        if (nicPicture) formData.append('NicPicture', nicPicture);
-
-        // Editing with "Re Enroll" ticked creates a new employee record (new
-        // ID) that points back to the old one, instead of updating in place.
-        const isEdit = !!currentEmployee && !isReEnrolment;
-        const endpoint = isEdit ? `${APP_API}/api/employee/${currentEmployee.employee.ID}` : `${APP_API}/api/employee`;
-        const method = isEdit ? 'PUT' : 'POST';
-
-        const response = await fetch(endpoint, {
-          method,
-          body: formData
-        });
-        if (response.ok) {
-          let savedId = null;
-          try {
-            const body = await response.json();
-            savedId = body?.EmployeeId ?? body?.employeeId ?? null;
-          } catch (e) {
-            /* no body */
-          }
-          if (isReEnrolment) {
-            enqueueSnackbar(`Employee re-enrolled with new ID ${savedId ?? ''}`.trim());
-          } else {
-            enqueueSnackbar(isEdit ? 'Employee updated successfully' : 'Employee added successfully');
-          }
-          if (stay && isEdit) {
-            // What was saved becomes the new baseline, so Update greys out again.
-            reset(data);
-          } else {
-            router.push(paths.dashboard.HR_Module.Employee.list);
-          }
-        } else {
-          enqueueSnackbar(isEdit ? 'Failed to update employee' : 'Failed to add employee', {
-            variant: 'error',
-            autoHideDuration: 2000,
-          });
+      const formData = new FormData();
+      Object.keys(payload).forEach(key => {
+        if (key === 'EmployeePicture' || key === 'NicPicture') return;
+        if (payload[key] !== null && payload[key] !== undefined && payload[key] !== '') {
+          formData.append(key, payload[key]);
         }
+      });
+
+      const [employeePicture, nicPicture] = await Promise.all([
+        toUploadFile(data.guardsImage, 'profile.jpg'),
+        toUploadFile(data.nicImage, 'nic.jpg'),
+      ]);
+      if (employeePicture) formData.append('EmployeePicture', employeePicture);
+      if (nicPicture) formData.append('NicPicture', nicPicture);
+
+      // Editing with "Re Enroll" ticked creates a new employee record (new
+      // ID) that points back to the old one, instead of updating in place.
+      const isEdit = !!currentEmployee && !isReEnrolment;
+      const endpoint = isEdit ? `${APP_API}/api/employee/${currentEmployee.employee.ID}` : `${APP_API}/api/employee`;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
+        body: formData
+      });
+      if (response.ok) {
+        let savedId = null;
+        try {
+          const body = await response.json();
+          savedId = body?.EmployeeId ?? body?.employeeId ?? null;
+        } catch (e) {
+          /* no body */
+        }
+        if (isReEnrolment) {
+          enqueueSnackbar(`Employee re-enrolled with new ID ${savedId ?? ''}`.trim());
+        } else {
+          enqueueSnackbar(isEdit ? 'Employee updated successfully' : 'Employee added successfully');
+        }
+        if (stay && isEdit) {
+          // What was saved becomes the new baseline, so Update greys out again.
+          reset(data);
+        } else {
+          router.push(paths.dashboard.HR_Module.Employee.list);
+        }
+      } else {
+        enqueueSnackbar(isEdit ? 'Failed to update employee' : 'Failed to add employee', {
+          variant: 'error',
+          autoHideDuration: 2000,
+        });
+      }
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('An error occurred during submission.');
@@ -986,8 +986,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
           </Tooltip>
         </Stack>
         <RHFTextField name="rank" label="Rank" />
-        <RHFTextField name="apsaaCourse" label="APSAA Course" />
+
         <RHFTextField name="medicalCategory" label="Medical Category" />
+        <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
         <RHFRadioGroup
           name="exSecurityCompany"
           label="Service Type"
@@ -1000,8 +1001,9 @@ export default function GeneralInformationForm({ currentEmployee }) {
         <RHFTextField name="serviceDuration2" label="Service Duration (Security Co.)" />
         <RHFTextField name="education" label="Education" />
         <RHFTextField name="schoolCollege" label="School / College" />
-        <RHFTextField name="serviceDuration1" label="Service Duration" />
-        <RHFTextField name="exSecurityCompanyName" label="Ex Security Company" />
+
+        <RHFTextField name="apsaaCourse" label="APSAA Course" /> <RHFTextField name="serviceDuration1" label="Service Duration" />
+
         <RHFTextField name="documentDeposited" label="Document Deposited in Company" />
       </Box>
     </Stack>
